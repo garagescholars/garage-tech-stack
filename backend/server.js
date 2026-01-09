@@ -63,6 +63,25 @@ const downloadImage = (url, filepath) => {
 async function processListing(docId, item) {
     const listingTitle = item.clientName ? `${item.clientName} - ${item.title}` : item.title;
     console.log(`\n🔔 NEW JOB RECEIVED: ${listingTitle}`);
+    const listingRef = db.collection('inventory').doc(docId);
+    const shouldRunCraigslist = item.platform.includes('Craigslist') || item.platform.includes('Both');
+    const shouldRunFacebook = item.platform.includes('FB') || item.platform.includes('Both');
+    const initialProgress = {};
+    if (shouldRunCraigslist) initialProgress.craigslist = 'queued';
+    if (shouldRunFacebook) initialProgress.facebook = 'queued';
+    const updateListing = (data) => (
+        listingRef.update({
+            ...data,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+        })
+    );
+
+    await updateListing({
+        status: 'Running',
+        startedAt: admin.firestore.FieldValue.serverTimestamp(),
+        progress: initialProgress,
+        lastError: null
+    });
 
     // 1. DOWNLOAD IMAGES
     const downloadedPaths = [];
@@ -95,7 +114,8 @@ async function processListing(docId, item) {
     
     // --- TASK 1: CRAIGSLIST ---
     const runCraigslist = async () => {
-        if (!item.platform.includes('Craigslist') && !item.platform.includes('Both')) return;
+        if (!shouldRunCraigslist) return 'skipped';
+        await updateListing({ 'progress.craigslist': 'running' });
         console.log('   🟣 [CL] Starting Mission...');
         const page = await browser.newPage();
         try {
@@ -243,12 +263,22 @@ async function processListing(docId, item) {
              }
           } catch (e) { console.log('      ⚠️ [CL] Payment Error:', e.message); }
 
-        } catch (e) { console.error("CL Failed:", e); }
+            await updateListing({ 'progress.craigslist': 'success' });
+            return 'success';
+        } catch (e) {
+            await updateListing({
+                'progress.craigslist': 'error',
+                lastError: e.message || String(e)
+            });
+            console.error("CL Failed:", e);
+            return 'error';
+        }
     };
 
     // --- TASK 2: FACEBOOK ---
     const runFacebook = async () => {
-        if (!item.platform.includes('FB') && !item.platform.includes('Both')) return;
+        if (!shouldRunFacebook) return 'skipped';
+        await updateListing({ 'progress.facebook': 'running' });
         console.log('   🔵 [FB] Starting Mission...');
         const page = await browser.newPage();
         try {
@@ -348,12 +378,25 @@ async function processListing(docId, item) {
 
         console.log('      ✅ [FB] Ready.');
 
-        } catch (e) { console.error("FB Failed:", e); }
+            await updateListing({ 'progress.facebook': 'success' });
+            return 'success';
+        } catch (e) {
+            await updateListing({
+                'progress.facebook': 'error',
+                lastError: e.message || String(e)
+            });
+            console.error("FB Failed:", e);
+            return 'error';
+        }
     };
 
-    await Promise.all([ runCraigslist(), runFacebook() ]);
+    const [craigslistResult, facebookResult] = await Promise.all([ runCraigslist(), runFacebook() ]);
+    const hadError = [craigslistResult, facebookResult].includes('error');
    
-    await db.collection('inventory').doc(docId).update({ status: 'Active' });
+    await updateListing({
+        status: hadError ? 'Error' : 'Active',
+        finishedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
     console.log("   ✅ Job Complete.");
 }
 

@@ -107,6 +107,21 @@ function App() {
   // Only count if isUnread is TRUE
 const unreadCount = conversations.filter(c => c.isUnread === true).length;
 
+  const statusClassMap = {
+    Pending: 'bg-slate-500/10 border-slate-500/40 text-slate-300',
+    Running: 'bg-blue-500/10 border-blue-500/50 text-blue-400',
+    Active: 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400',
+    Error: 'bg-rose-500/10 border-rose-500/50 text-rose-400'
+  };
+
+  const progressLabel = (state) => {
+    if (state === 'success') return 'OK';
+    if (state === 'running') return 'RUN';
+    if (state === 'queued') return 'Q';
+    if (state === 'error') return 'ERR';
+    return '--';
+  };
+
   // --- RENDER LOGIC ---
   if (loadingAuth) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Security...</div>;
   if (!user || !isAuthorized) return <Login />;
@@ -269,7 +284,28 @@ const unreadCount = conversations.filter(c => c.isUnread === true).length;
                                     </span>
                                 </div>
                                 <div className="col-span-1 text-right">
-                                    <span className="text-xs px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/50 text-emerald-400">Active</span>
+                                    {(() => {
+                                      const status = item.status || 'Pending';
+                                      const progress = item.progress || {};
+                                      const showCL = item.platform.includes('Craigslist') || item.platform.includes('Both');
+                                      const showFB = item.platform.includes('FB') || item.platform.includes('Both');
+                                      return (
+                                        <>
+                                          <span className={`text-xs px-2 py-1 rounded border ${statusClassMap[status] || statusClassMap.Pending}`}>{status}</span>
+                                          {(showCL || showFB) && (
+                                            <div className="mt-1 text-[10px] text-slate-400">
+                                              {showCL && <span>CL: {progressLabel(progress.craigslist)}</span>}
+                                              {showFB && <span className="ml-2">FB: {progressLabel(progress.facebook)}</span>}
+                                            </div>
+                                          )}
+                                          {status === 'Error' && item.lastError && (
+                                            <div className="mt-1 text-[10px] text-rose-400 truncate" title={item.lastError}>
+                                              Error: {item.lastError}
+                                            </div>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
                                 </div>
                                 </div>
                             ))}
