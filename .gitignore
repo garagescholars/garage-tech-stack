@@ -1,1 +1,5 @@
 node_modules
+
+# Puppeteer/Chrome runtime artifacts
+backend/chrome_profile/
+backend/temp_downloads/
