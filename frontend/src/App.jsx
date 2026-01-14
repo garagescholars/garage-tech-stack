@@ -64,6 +64,13 @@ function App() {
     const q = query(collection(db, "inventory"), orderBy("dateListed", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const toDateValue = (value) => {
+        if (!value) return new Date(0);
+        if (typeof value.toDate === 'function') return value.toDate();
+        if (typeof value === 'number') return new Date(value);
+        return new Date(value);
+      };
+      items.sort((a, b) => toDateValue(b.dateListed).getTime() - toDateValue(a.dateListed).getTime());
       setInventory(items);
     });
     return () => unsubscribe();
@@ -279,28 +286,29 @@ const unreadCount = conversations.filter(c => c.isUnread === true).length;
                                 <div className="col-span-2 text-slate-400 text-sm">{item.dateListed}</div>
                                 <div className="col-span-2 text-slate-400 text-sm">{item.clientName || '-'}</div>
                                 <div className="col-span-1">
-                                    <span className={`text-xs px-2 py-1 rounded border ${item.platform.includes('Both') ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' : 'bg-blue-500/10 border-blue-500/50 text-blue-400'}`}>
-                                    {item.platform === 'Both' ? 'Both' : (item.platform.includes('FB') ? 'FB' : 'CL')}
+                                    <span className={`text-xs px-2 py-1 rounded border ${(item.platform || '').includes('Both') ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' : 'bg-blue-500/10 border-blue-500/50 text-blue-400'}`}>
+                                    {(item.platform || '') === 'Both' ? 'Both' : ((item.platform || '').includes('FB') ? 'FB' : 'CL')}
                                     </span>
                                 </div>
                                 <div className="col-span-1 text-right">
                                     {(() => {
                                       const status = item.status || 'Pending';
                                       const progress = item.progress || {};
-                                      const showCL = item.platform.includes('Craigslist') || item.platform.includes('Both');
-                                      const showFB = item.platform.includes('FB') || item.platform.includes('Both');
+                                      const showCL = (item.platform || '').includes('Craigslist') || (item.platform || '').includes('Both');
+                                      const showFB = (item.platform || '').includes('FB') || (item.platform || '').includes('Both');
+                                      const lastError = item.lastError?.message || item.lastError;
                                       return (
                                         <>
                                           <span className={`text-xs px-2 py-1 rounded border ${statusClassMap[status] || statusClassMap.Pending}`}>{status}</span>
                                           {(showCL || showFB) && (
                                             <div className="mt-1 text-[10px] text-slate-400">
-                                              {showCL && <span>CL: {progressLabel(progress.craigslist)}</span>}
-                                              {showFB && <span className="ml-2">FB: {progressLabel(progress.facebook)}</span>}
+                                              {showCL && <span>CL: {progressLabel(progress?.craigslist)}</span>}
+                                              {showFB && <span className="ml-2">FB: {progressLabel(progress?.facebook)}</span>}
                                             </div>
                                           )}
-                                          {status === 'Error' && item.lastError && (
-                                            <div className="mt-1 text-[10px] text-rose-400 truncate" title={item.lastError}>
-                                              Error: {item.lastError}
+                                          {status === 'Error' && lastError && (
+                                            <div className="mt-1 text-[10px] text-rose-400 truncate" title={lastError}>
+                                              Error: {lastError}
                                             </div>
                                           )}
                                         </>

@@ -64,8 +64,10 @@ async function processListing(docId, item) {
     const listingTitle = item.clientName ? `${item.clientName} - ${item.title}` : item.title;
     console.log(`\n🔔 NEW JOB RECEIVED: ${listingTitle}`);
     const listingRef = db.collection('inventory').doc(docId);
-    const shouldRunCraigslist = item.platform.includes('Craigslist') || item.platform.includes('Both');
-    const shouldRunFacebook = item.platform.includes('FB') || item.platform.includes('Both');
+    const platformValue = (item.platform || '').toLowerCase();
+    const shouldRunCraigslist = platformValue.includes('craigslist') || platformValue.includes('cl') || platformValue.includes('both');
+    const shouldRunFacebook = platformValue.includes('facebook') || platformValue.includes('fb') || platformValue.includes('both');
+    console.log(`[JOB] platform=${item.platform} shouldRunCL=${shouldRunCraigslist} shouldRunFB=${shouldRunFacebook}`);
     const initialProgress = {};
     if (shouldRunCraigslist) initialProgress.craigslist = 'queued';
     if (shouldRunFacebook) initialProgress.facebook = 'queued';
@@ -75,6 +77,64 @@ async function processListing(docId, item) {
             lastUpdated: admin.firestore.FieldValue.serverTimestamp()
         })
     );
+
+    const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const sanitizePublicText = (text, clientName) => {
+        if (!text) return '';
+        if (!clientName) return text.trim();
+        const name = escapeRegExp(clientName);
+        const patterns = [
+            new RegExp(`${name}\\s*-\\s*`, 'ig'),
+            new RegExp(`${name}\\s*:\\s*`, 'ig'),
+            new RegExp(name, 'ig')
+        ];
+        let result = text;
+        patterns.forEach((pattern) => {
+            result = result.replace(pattern, '');
+        });
+        return result
+            .replace(/[ \t]+\n/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+    };
+    const containsClientName = (text, clientName) => {
+        if (!clientName || !text) return false;
+        return new RegExp(escapeRegExp(clientName), 'i').test(text);
+    };
+    const publicTitle = sanitizePublicText(item.title || '', item.clientName || '');
+    const publicDescription = sanitizePublicText(item.description || '', item.clientName || '');
+    const fbDescription = publicDescription || publicTitle;
+    if (item.clientName && (
+        containsClientName(publicTitle, item.clientName) ||
+        containsClientName(publicDescription, item.clientName) ||
+        containsClientName(fbDescription, item.clientName)
+    )) {
+        const message = 'Client name detected in public fields after sanitization';
+        await updateListing({
+            status: 'Error',
+            lastError: { platform: 'JOB', message, screenshotPath: '' },
+            finishedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        throw new Error(message);
+    }
+
+    const debugDir = path.join(__dirname, 'debug_screenshots');
+    const captureScreenshot = async (platform, step, page) => {
+        const safeStep = (step || 'unknown').replace(/[^a-z0-9_-]/gi, '-');
+        const filePath = path.join(debugDir, `${docId}_${platform.toLowerCase()}_${safeStep}.png`);
+        if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+        if (page) await page.screenshot({ path: filePath, fullPage: true }).catch(() => {});
+        return filePath;
+    };
+    const logStep = (platform, step, page) => {
+        const url = page && page.url ? page.url() : '';
+        console.log(`[${platform}] step=${step} url=${url}`);
+    };
+    const withFocus = async (page, platform, step, fn) => {
+        await page.bringToFront();
+        logStep(platform, step, page);
+        return fn();
+    };
 
     await updateListing({
         status: 'Running',
@@ -109,34 +169,52 @@ async function processListing(docId, item) {
     // 2. LAUNCH BROWSER
     const browser = await puppeteer.launch({ 
         headless: false, defaultViewport: null, userDataDir: "./chrome_profile",
-        args: ['--start-maximized', '--disable-notifications'] 
+        args: [
+            '--start-maximized',
+            '--disable-notifications',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=CalculateNativeWinOcclusion'
+        ]
     });
+
+    const pageCL = shouldRunCraigslist ? await browser.newPage() : null;
+    const pageFB = shouldRunFacebook ? await browser.newPage() : null;
     
     // --- TASK 1: CRAIGSLIST ---
-    const runCraigslist = async () => {
+    const runCraigslist = async (page) => {
         if (!shouldRunCraigslist) return 'skipped';
         await updateListing({ 'progress.craigslist': 'running' });
         console.log('   🟣 [CL] Starting Mission...');
-        const page = await browser.newPage();
+        page.setDefaultTimeout(60000);
+        page.setDefaultNavigationTimeout(90000);
+        let clStep = 'start';
         try {
-            await page.goto('https://post.craigslist.org/c/den', { waitUntil: 'domcontentloaded' });
+            clStep = 'goto';
+            await withFocus(page, 'CL', clStep, () => page.goto('https://post.craigslist.org/c/den', { waitUntil: 'domcontentloaded' }));
             
             // Login Check
             if (page.url().includes('login')) {
+                clStep = 'login';
                 console.log("      ⚠️ PLEASE LOG IN MANUALLY (Waiting 60s)...");
                 await delay(60000); 
-                await page.goto('https://post.craigslist.org/c/den', { waitUntil: 'domcontentloaded' });
+                await withFocus(page, 'CL', clStep, () => page.goto('https://post.craigslist.org/c/den', { waitUntil: 'domcontentloaded' }));
             }
 
             // Location
             try {
+              clStep = 'location';
               await page.waitForSelector('input[value="fsd"]', { timeout: 2000 });
-              await page.click('input[value="fsd"]');
-              await page.click('button[name="go"]'); 
+              await withFocus(page, 'CL', 'location_continue', async () => {
+                  await page.click('input[value="fsd"]');
+                  await page.click('button[name="go"]'); 
+              });
             } catch (e) {}
       
             // Category: Force Radio #25
             try {
+                clStep = 'category';
                 await page.waitForSelector('.picker', {timeout: 5000}); 
                 const radios = await page.$$('input[type="radio"]');
                 const TARGET_INDEX = 24; 
@@ -144,11 +222,24 @@ async function processListing(docId, item) {
                 else await radios[radios.length - 1].click();
 
                 try { await page.waitForNavigation({ timeout: 2000 }); } 
-                catch(e) { try { await page.click('button[name="go"]'); await page.waitForNavigation(); } catch(e){} }
-            } catch (e) { try { await page.click('button[name="go"]'); await page.waitForNavigation(); } catch(e){} }
+                catch(e) {
+                    try {
+                        await withFocus(page, 'CL', 'category_continue', async () => {
+                            await page.click('button[name="go"]'); await page.waitForNavigation();
+                        });
+                    } catch(e){}
+                }
+            } catch (e) {
+                try {
+                    await withFocus(page, 'CL', 'category_continue', async () => {
+                        await page.click('button[name="go"]'); await page.waitForNavigation();
+                    });
+                } catch(e){}
+            }
 
             // Sub-area
             try {
+                 clStep = 'subarea';
                  const denverLabel = await page.$('label'); 
                  if (denverLabel) {
                      await page.evaluate(() => {
@@ -156,16 +247,19 @@ async function processListing(docId, item) {
                         const den = labels.find(el => el.textContent.toLowerCase().includes('city of denver'));
                         if (den) den.click();
                     });
-                     await Promise.all([page.waitForNavigation(), page.click('button[name="go"]')]);
+                     await withFocus(page, 'CL', 'subarea_continue', async () => {
+                         await Promise.all([page.waitForNavigation(), page.click('button[name="go"]')]);
+                     });
                  }
             } catch (e) {}
       
            // Fill Form
+          clStep = 'fill_form';
           console.log('      📝 [CL] Filling Form...');
           await page.waitForSelector('input[name="PostingTitle"]', { timeout: 10000 });
           
-          let finalBody = `${listingTitle}\n\n`;
-          finalBody += (item.description && item.description.trim() !== "") ? item.description : "Item available for pickup.";
+          let finalBody = `${publicTitle}\n\n`;
+          finalBody += (publicDescription && publicDescription.trim() !== "") ? publicDescription : "Item available for pickup.";
           finalBody += "\n\nItem Available for Pickup. Please contact for details.";
     
           await page.evaluate((data) => {
@@ -175,7 +269,7 @@ async function processListing(docId, item) {
               document.querySelector('input[name="price"]').value = data.price.replace(/[^0-9.]/g, '');
               document.querySelector('input[name="postal"]').value = '80202';
               document.querySelector('textarea[name="PostingBody"]').value = data.body;
-          }, { title: listingTitle, price: item.price, body: finalBody });
+          }, { title: publicTitle, price: item.price, body: finalBody });
     
           try {
               const showPhoneCheckbox = await page.$('input[name="show_phone_ok"]');
@@ -188,7 +282,9 @@ async function processListing(docId, item) {
               }
           } catch (e) {}
     
-          await Promise.all([ page.waitForNavigation(), page.click('button[name="go"]') ]);
+          await withFocus(page, 'CL', 'form_continue', async () => {
+              await Promise.all([ page.waitForNavigation(), page.click('button[name="go"]') ]);
+          });
           
           // Map Enforcer
           let onImagePage = false;
@@ -199,7 +295,13 @@ async function processListing(docId, item) {
               if (fileInputFound) onImagePage = true;
               else {
                   const continueBtn = await page.$('button[name="go"], button.continue');
-                  if (continueBtn) try { await Promise.all([ page.waitForNavigation({ timeout: 3000 }), continueBtn.click() ]); } catch(e) {}
+                  if (continueBtn) {
+                      try {
+                          await withFocus(page, 'CL', 'map_continue', async () => {
+                              await Promise.all([ page.waitForNavigation({ timeout: 3000 }), continueBtn.click() ]);
+                          });
+                      } catch(e) {}
+                  }
                   else await delay(500);
               }
           }
@@ -226,10 +328,12 @@ async function processListing(docId, item) {
           console.log('      🚀 [CL] Going to Payment...');
           const draftContinueBtn = await page.$('button[name="go"], button.continue');
           if (draftContinueBtn) {
-              await Promise.all([
-                   page.waitForNavigation({ timeout: 20000 }), 
-                   draftContinueBtn.click()
-              ]);
+              await withFocus(page, 'CL', 'payment_continue', async () => {
+                  await Promise.all([
+                       page.waitForNavigation({ timeout: 20000 }), 
+                       draftContinueBtn.click()
+                  ]);
+              });
               await delay(2000); 
               await scrollDown(page, 5); 
           }
@@ -266,38 +370,47 @@ async function processListing(docId, item) {
             await updateListing({ 'progress.craigslist': 'success' });
             return 'success';
         } catch (e) {
+            const screenshotPath = await captureScreenshot('CL', clStep, page);
             await updateListing({
                 'progress.craigslist': 'error',
-                lastError: e.message || String(e)
+                lastError: {
+                    platform: 'CL',
+                    message: e.message || String(e),
+                    screenshotPath
+                }
             });
-            console.error("CL Failed:", e);
+            console.error(`CL Failed: ${e.message || e} screenshot=${screenshotPath}`);
             return 'error';
         }
     };
 
     // --- TASK 2: FACEBOOK ---
-    const runFacebook = async () => {
+    const runFacebook = async (page) => {
         if (!shouldRunFacebook) return 'skipped';
         await updateListing({ 'progress.facebook': 'running' });
         console.log('   🔵 [FB] Starting Mission...');
-        const page = await browser.newPage();
         try {
-            await page.goto('https://www.facebook.com/marketplace/create/item', { waitUntil: 'networkidle2' });
+            await withFocus(page, 'FB', 'goto', () => page.goto('https://www.facebook.com/marketplace/create/item', { waitUntil: 'domcontentloaded' }));
+            await page.waitForSelector('body', { timeout: 60000 });
             
             const loginField = await page.$('input[name="email"]');
             if (loginField) {
                  console.log("      ⚠️ PLEASE LOG IN TO FB MANUALLY (Waiting 60s)...");
                  await delay(60000); 
-                 await page.goto('https://www.facebook.com/marketplace/create/item', { waitUntil: 'networkidle2' });
+                 await withFocus(page, 'FB', 'login', () => page.goto('https://www.facebook.com/marketplace/create/item', { waitUntil: 'domcontentloaded' }));
             }
             await dismissFacebookPopups(page);
+            await page.waitForSelector('xpath///label[.//span[contains(text(), "Title")]]//input | //label[.//span[contains(text(), "Title")]]//textarea', { timeout: 60000 });
 
             if (downloadedPaths.length > 0) {
                 console.log(`      📸 [FB] Uploading images...`);
                 const fbFileInput = await page.waitForSelector('div[aria-label="Add photos"] input, input[type="file"]', { timeout: 10000 });
                 if (fbFileInput) {
                     await fbFileInput.uploadFile(...downloadedPaths);
-                    await delay(5000); 
+                    await page.waitForFunction(() => {
+                        const imgs = document.querySelectorAll('img');
+                        return imgs.length > 0;
+                    }, { timeout: 15000 }).catch(() => {});
                 }
                 await dismissFacebookPopups(page);
             }
@@ -315,9 +428,9 @@ async function processListing(docId, item) {
              } catch(e) {}
         };
 
-        await fillFB("Title", listingTitle);
+        await fillFB("Title", publicTitle);
         await fillFB("Price", item.price.replace(/[^0-9]/g, ''));
-        await fillFB("Description", item.description || listingTitle);
+        await fillFB("Description", fbDescription);
 
         await scrollDown(page, 20);
 
@@ -349,10 +462,17 @@ async function processListing(docId, item) {
         await scrollDown(page, 10); 
         try {
             const nextBtns = await page.$$('xpath///div[@aria-label="Next"] | //span[contains(text(), "Next")]');
-            if (nextBtns.length > 0) await nextBtns[nextBtns.length - 1].click();
+            if (nextBtns.length > 0) {
+                await withFocus(page, 'FB', 'delivery_next', async () => {
+                    await nextBtns[nextBtns.length - 1].click();
+                });
+            }
         } catch (e) {}
         
-        await delay(3000); 
+        await page.waitForFunction(() => {
+            const spans = Array.from(document.querySelectorAll('span'));
+            return spans.some(el => el.textContent.includes('Public meetup'));
+        }, { timeout: 15000 }).catch(() => {});
 
         // Delivery Logic
         console.log('      🚚 [FB] Toggling Meetup...');
@@ -367,11 +487,12 @@ async function processListing(docId, item) {
 
         // --- THE FINAL CLICK ---
         console.log('      🏁 [FB] Finalizing...');
-        await delay(1000);
         try {
             const finalNextBtns = await page.$$('xpath///div[@aria-label="Next"] | //span[contains(text(), "Next")]');
             if (finalNextBtns.length > 0) {
-                await finalNextBtns[finalNextBtns.length - 1].click();
+                await withFocus(page, 'FB', 'final_next', async () => {
+                    await finalNextBtns[finalNextBtns.length - 1].click();
+                });
                 console.log('      👉 [FB] Clicked Final Next Button');
             }
         } catch (e) {}
@@ -381,16 +502,39 @@ async function processListing(docId, item) {
             await updateListing({ 'progress.facebook': 'success' });
             return 'success';
         } catch (e) {
+            const screenshotPath = await captureScreenshot('FB', 'error', page);
             await updateListing({
                 'progress.facebook': 'error',
-                lastError: e.message || String(e)
+                lastError: {
+                    platform: 'FB',
+                    message: e.message || String(e),
+                    screenshotPath
+                }
             });
-            console.error("FB Failed:", e);
+            console.error(`FB Failed: ${e.message || e} screenshot=${screenshotPath}`);
             return 'error';
         }
     };
 
-    const [craigslistResult, facebookResult] = await Promise.all([ runCraigslist(), runFacebook() ]);
+    let focusTicker = null;
+    if (pageCL && pageFB) {
+        let focusIndex = 0;
+        focusTicker = setInterval(() => {
+            const target = focusIndex % 2 === 0 ? pageCL : pageFB;
+            focusIndex += 1;
+            if (target) target.bringToFront().catch(() => {});
+        }, 1500);
+    }
+    let craigslistResult = 'skipped';
+    let facebookResult = 'skipped';
+    try {
+        [craigslistResult, facebookResult] = await Promise.all([
+            runCraigslist(pageCL),
+            runFacebook(pageFB)
+        ]);
+    } finally {
+        if (focusTicker) clearInterval(focusTicker);
+    }
     const hadError = [craigslistResult, facebookResult].includes('error');
    
     await updateListing({
