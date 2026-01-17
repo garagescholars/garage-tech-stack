@@ -1,4 +1,11 @@
 node_modules
+.DS_Store
+.env
+.env.*
+service-account.json
+chrome_profile/
+temp_downloads/
+debug_screenshots/
 
 # Puppeteer/Chrome runtime artifacts
 backend/chrome_profile/
