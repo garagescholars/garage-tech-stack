@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const admin = require('firebase-admin');
 const { getFirestore } = require('firebase-admin/firestore');
 const os = require('os');
@@ -127,7 +129,8 @@ async function processJob(jobRef, jobData) {
         if (result.success) {
             await completeJob(jobRef, 'succeeded', {
                 lastError: null,
-                artifacts: { screenshots: result.screenshots || [] }
+                artifacts: { screenshots: result.screenshots || [] },
+                results: result.results || {}
             });
         } else {
             await completeJob(jobRef, 'failed', {
@@ -136,7 +139,8 @@ async function processJob(jobRef, jobData) {
                     platform: 'JOB',
                     screenshotPath: ''
                 },
-                artifacts: { screenshots: result.screenshots || [] }
+                artifacts: { screenshots: result.screenshots || [] },
+                results: result.results || {}
             });
         }
     } catch (error) {

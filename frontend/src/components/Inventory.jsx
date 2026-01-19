@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MoreVertical, Edit, Trash2, Facebook, Ghost, Layers, Image as ImageIcon } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Facebook, Ghost, Layers, Image as ImageIcon, ShoppingBag } from 'lucide-react';
 
 export default function Inventory({ items, onAddItem, onDeleteItem, onEditItem }) {
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -26,7 +26,26 @@ export default function Inventory({ items, onAddItem, onDeleteItem, onEditItem }
   const PlatformBadge = ({ platform }) => {
     if (platform === 'Craigslist') return (<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20"><Ghost size={12} /> CL</span>);
     if (platform === 'FB Marketplace') return (<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20"><Facebook size={12} /> FB</span>);
+    if ((platform || '').toLowerCase().includes('ebay')) return (<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20"><ShoppingBag size={12} /> EB</span>);
+    if ((platform || '').includes('All')) return (<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-gradient-to-r from-purple-500/10 to-amber-500/10 text-slate-300 border border-slate-700"><Layers size={12} /> ALL</span>);
     return (<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-gradient-to-r from-purple-500/10 to-blue-500/10 text-slate-300 border border-slate-700"><Layers size={12} /> Both</span>);
+  };
+
+  const progressLabel = (state) => {
+    if (state === 'success') return 'OK';
+    if (state === 'running') return 'RUN';
+    if (state === 'queued') return 'Q';
+    if (state === 'error') return 'ERR';
+    return '--';
+  };
+
+  const ebayStatusLabel = (ebayStatus, progress) => {
+    if (ebayStatus === 'ready_to_publish') return 'READY';
+    if (ebayStatus === 'published') return 'PUB';
+    if (ebayStatus === 'failed') return 'FAIL';
+    if (ebayStatus === 'running') return 'RUN';
+    if (ebayStatus === 'queued') return 'Q';
+    return progressLabel(progress);
   };
 
   return (
@@ -94,7 +113,25 @@ export default function Inventory({ items, onAddItem, onDeleteItem, onEditItem }
                   <td className="p-4 text-slate-400 text-sm">{item.dateListed || '-'}</td>
                   <td className="p-4 text-slate-300 text-sm">{item.clientName || <span className="text-slate-600 italic">None</span>}</td>
                   <td className="p-4"><PlatformBadge platform={item.platform} /></td>
-                  <td className="p-4"><span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${item.status === 'Active' ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : item.status === 'Sold' ? 'bg-slate-700 text-slate-400 border-slate-600' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>{item.status}</span></td>
+                  <td className="p-4">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${item.status === 'Active' ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : item.status === 'Sold' ? 'bg-slate-700 text-slate-400 border-slate-600' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>{item.status}</span>
+                    {(() => {
+                      const platformValue = item.platform || '';
+                      const progress = item.progress || {};
+                      const showCL = platformValue.includes('Craigslist') || platformValue.includes('Both') || platformValue.includes('All');
+                      const showFB = platformValue.includes('FB') || platformValue.includes('Both') || platformValue.includes('All');
+                      const showEB = platformValue.toLowerCase().includes('ebay') || platformValue.includes('All');
+                      const ebayStatus = item.ebay?.status || null;
+                      if (!showCL && !showFB && !showEB) return null;
+                      return (
+                        <div className="mt-1 text-[10px] text-slate-400">
+                          {showCL && <span>CL: {progressLabel(progress?.craigslist)}</span>}
+                          {showFB && <span className="ml-2">FB: {progressLabel(progress?.facebook)}</span>}
+                          {showEB && <span className="ml-2">EB: {ebayStatusLabel(ebayStatus, progress?.ebay)}</span>}
+                        </div>
+                      );
+                    })()}
+                  </td>
                   
                   <td className="p-4 text-right">
                     <div className="relative inline-block">

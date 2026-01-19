@@ -2,11 +2,12 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const puppeteer = require('puppeteer');
+const { runEbayListing } = require('../ebay/ebayListing');
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const PAYMENT_INFO = {
-    name: process.env.PAYMENT_NAME || 'Test Name',
+    name: process.env.PAYMENT_NAME || 'Tyler Sodia',
     cardNumber: process.env.PAYMENT_CARD_NUMBER || '0000000000000000',
     expMonth: process.env.PAYMENT_EXP_MONTH || '01',
     expYear: process.env.PAYMENT_EXP_YEAR || '30',
@@ -60,17 +61,22 @@ async function runListingAutomation(docId, item, db, admin) {
     console.log(`\n🔔 NEW JOB RECEIVED: ${listingTitle}`);
     const listingRef = db.collection('inventory').doc(docId);
     const platformValue = (item.platform || '').toLowerCase();
-    const shouldRunCraigslist = platformValue.includes('craigslist') || platformValue.includes('cl') || platformValue.includes('both');
-    const shouldRunFacebook = platformValue.includes('facebook') || platformValue.includes('fb') || platformValue.includes('both');
-    console.log(`[JOB] platform=${item.platform} shouldRunCL=${shouldRunCraigslist} shouldRunFB=${shouldRunFacebook}`);
+    const shouldRunCraigslist = platformValue.includes('craigslist') || platformValue.includes('cl') || platformValue.includes('both') || platformValue.includes('all');
+    const shouldRunFacebook = platformValue.includes('facebook') || platformValue.includes('fb') || platformValue.includes('both') || platformValue.includes('all');
+    const shouldRunEbay = platformValue.includes('ebay') || platformValue.includes('both') || platformValue.includes('all');
+    console.log(`[JOB] platform=${item.platform} shouldRunCL=${shouldRunCraigslist} shouldRunFB=${shouldRunFacebook} shouldRunEB=${shouldRunEbay}`);
     const initialProgress = {};
     if (shouldRunCraigslist) initialProgress.craigslist = 'queued';
     if (shouldRunFacebook) initialProgress.facebook = 'queued';
+    if (shouldRunEbay) initialProgress.ebay = 'queued';
+    const cleanData = (data) => Object.fromEntries(
+        Object.entries(data).filter(([, value]) => value !== undefined)
+    );
     const updateListing = (data) => (
-        listingRef.update({
+        listingRef.update(cleanData({
             ...data,
             lastUpdated: admin.firestore.FieldValue.serverTimestamp()
-        })
+        }))
     );
 
     const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -137,45 +143,53 @@ async function runListingAutomation(docId, item, db, admin) {
         status: 'Running',
         startedAt: admin.firestore.FieldValue.serverTimestamp(),
         progress: initialProgress,
-        lastError: null
+        lastError: null,
+        ...(shouldRunEbay ? { 'ebay.status': 'queued', 'ebay.enabled': true } : {})
     });
 
     const downloadedPaths = [];
-    if (item.imageUrls && item.imageUrls.length > 0) {
-        console.log(`   ⬇️ Downloading ${item.imageUrls.length} images...`);
-        const tempDir = path.join(__dirname, '..', 'temp_downloads');
-        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+    if (shouldRunCraigslist || shouldRunFacebook) {
+        if (item.imageUrls && item.imageUrls.length > 0) {
+            console.log(`   ⬇️ Downloading ${item.imageUrls.length} images...`);
+            const tempDir = path.join(__dirname, '..', 'temp_downloads');
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
-        for (let i = 0; i < item.imageUrls.length; i++) {
-            try {
-                const safeName = `img_${docId}_${i}.jpg`;
-                const destPath = path.join(tempDir, safeName);
-                await downloadImage(item.imageUrls[i], destPath);
-                downloadedPaths.push(destPath);
-            } catch (e) {
-                console.error(`      ❌ Download failed for img ${i}:`, e.message);
+            for (let i = 0; i < item.imageUrls.length; i++) {
+                try {
+                    const safeName = `img_${docId}_${i}.jpg`;
+                    const destPath = path.join(tempDir, safeName);
+                    await downloadImage(item.imageUrls[i], destPath);
+                    downloadedPaths.push(destPath);
+                } catch (e) {
+                    console.error(`      ❌ Download failed for img ${i}:`, e.message);
+                }
             }
+        } else {
+            console.log("   ⚠️ No images found in this listing.");
         }
-    } else {
-        console.log("   ⚠️ No images found in this listing.");
     }
 
-    const browser = await puppeteer.launch({
-        headless: false,
-        defaultViewport: null,
-        userDataDir: "./chrome_profile",
-        args: [
-            '--start-maximized',
-            '--disable-notifications',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=CalculateNativeWinOcclusion'
-        ]
-    });
+    let browser = null;
+    let pageCL = null;
+    let pageFB = null;
+    if (shouldRunCraigslist || shouldRunFacebook) {
+        browser = await puppeteer.launch({
+            headless: false,
+            defaultViewport: null,
+            userDataDir: "./chrome_profile",
+            args: [
+                '--start-maximized',
+                '--disable-notifications',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
+                '--disable-features=CalculateNativeWinOcclusion'
+            ]
+        });
 
-    const pageCL = shouldRunCraigslist ? await browser.newPage() : null;
-    const pageFB = shouldRunFacebook ? await browser.newPage() : null;
+        pageCL = shouldRunCraigslist ? await browser.newPage() : null;
+        pageFB = shouldRunFacebook ? await browser.newPage() : null;
+    }
 
     const runCraigslist = async (page) => {
         if (!shouldRunCraigslist) return 'skipped';
@@ -262,19 +276,35 @@ async function runListingAutomation(docId, item, db, admin) {
                 document.querySelector('textarea[name="PostingBody"]').value = data.body;
             }, { title: publicTitle, price: item.price, body: finalBody });
 
-            try {
-                const showPhoneCheckbox = await page.$('input[name="show_phone_ok"]');
-                if (showPhoneCheckbox) {
-                    await showPhoneCheckbox.click();
-                    await page.type('input[name="contact_phone"]', PAYMENT_INFO.phone);
-                    await page.type('input[name="contact_name"]', 'Garage Scholars');
-                    const contactTextOk = await page.$('input[name="contact_text_ok"]');
-                    if (contactTextOk) await contactTextOk.click();
-                }
-            } catch (e) {}
+            const ensureUnchecked = async (selector) => {
+                const el = await page.$(selector);
+                if (!el) return;
+                const checked = await page.evaluate(e => e.checked, el).catch(() => false);
+                if (checked) await el.click().catch(() => {});
+            };
+            await ensureUnchecked('input[name="show_phone_ok"]');
+            await ensureUnchecked('input[name="contact_text_ok"]');
+            await ensureUnchecked('input[name="phone_calls_ok"]');
+            const phoneInput = await page.$('input[name="contact_phone"]');
+            if (phoneInput) {
+                await phoneInput.click({ clickCount: 3 }).catch(() => {});
+                await page.keyboard.press('Backspace').catch(() => {});
+            }
 
             await withFocus(page, 'CL', 'form_continue', async () => {
-                await Promise.all([page.waitForNavigation(), page.click('button[name="go"]')]);
+                await page.click('button[name="go"]');
+                const navOk = await page.waitForNavigation({ timeout: 12000 }).then(() => true).catch(() => false);
+                if (!navOk) {
+                    const errText = await page.evaluate(() => {
+                        const candidates = Array.from(document.querySelectorAll('body *'))
+                            .filter(n => n && n.textContent && n.textContent.includes('Some required information is missing'));
+                        if (candidates.length) return candidates[0].textContent.trim().slice(0, 400);
+                        const errs = Array.from(document.querySelectorAll('.error, .warn, .postingerror'))
+                            .map(n => n.textContent.trim()).filter(Boolean);
+                        return errs.join(' | ').slice(0, 400) || 'Craigslist form did not advance (validation failed).';
+                    }).catch(() => 'Craigslist form did not advance (validation failed).');
+                    throw new Error(`[CL] ${errText}`);
+                }
             });
 
             let onImagePage = false;
@@ -497,6 +527,78 @@ async function runListingAutomation(docId, item, db, admin) {
         }
     };
 
+    const runEbay = async () => {
+        if (!shouldRunEbay) return { status: 'skipped' };
+        await updateListing({
+            'progress.ebay': 'running',
+            'ebay.enabled': true,
+            'ebay.status': 'running',
+            'ebay.error': null,
+            'ebay.lastRunAt': admin.firestore.FieldValue.serverTimestamp()
+        });
+        try {
+            const ebayResult = await runEbayListing({
+                inventoryId: docId,
+                item,
+                publicTitle,
+                publicDescription,
+                db,
+                admin
+            });
+
+            if (!ebayResult.ok) {
+                const rawError = ebayResult.rawError || null;
+                await updateListing({
+                    'progress.ebay': 'error',
+                    'ebay.status': 'failed',
+                    'ebay.error': {
+                        message: ebayResult.message || 'eBay listing failed',
+                        code: ebayResult.code || null,
+                        raw: rawError
+                    },
+                    lastError: {
+                        platform: 'EBAY',
+                        message: ebayResult.message || 'eBay listing failed',
+                        screenshotPath: ''
+                    }
+                });
+                return { status: 'error', error: ebayResult };
+            }
+
+            const ebayStatus = ebayResult.status === 'published' ? 'published' : 'ready_to_publish';
+            const ebayUpdate = {
+                'progress.ebay': 'success',
+                'ebay.enabled': true,
+                'ebay.marketplaceId': ebayResult.marketplaceId || null,
+                'ebay.sku': ebayResult.sku || null,
+                'ebay.offerId': ebayResult.offerId || null,
+                'ebay.listingId': ebayResult.listingId || null,
+                'ebay.inventoryItemId': ebayResult.inventoryItemId || null,
+                'ebay.status': ebayStatus,
+                'ebay.error': null,
+                'ebay.merchantLocationKey': ebayResult.merchantLocationKey || null,
+                'ebay.paymentPolicyId': ebayResult.paymentPolicyId || null,
+                'ebay.fulfillmentPolicyId': ebayResult.fulfillmentPolicyId || null,
+                'ebay.returnPolicyId': ebayResult.returnPolicyId || null,
+                'ebay.lastRunAt': admin.firestore.FieldValue.serverTimestamp()
+            };
+            if (ebayStatus === 'published') {
+                ebayUpdate['ebay.publishedAt'] = admin.firestore.FieldValue.serverTimestamp();
+            }
+            await updateListing(ebayUpdate);
+            return { status: 'success', result: ebayResult };
+        } catch (error) {
+            const message = error.message || String(error);
+            await updateListing({
+                'progress.ebay': 'error',
+                'ebay.status': 'failed',
+                'ebay.error': { message, code: null, raw: null },
+                lastError: { platform: 'EBAY', message, screenshotPath: '' }
+            });
+            return { status: 'error', error: { message } };
+        }
+    };
+
     let focusTicker = null;
     if (pageCL && pageFB) {
         let focusIndex = 0;
@@ -509,16 +611,18 @@ async function runListingAutomation(docId, item, db, admin) {
 
     let craigslistResult = 'skipped';
     let facebookResult = 'skipped';
+    let ebayResult = { status: 'skipped' };
     try {
-        [craigslistResult, facebookResult] = await Promise.all([
+        [craigslistResult, facebookResult, ebayResult] = await Promise.all([
             runCraigslist(pageCL),
-            runFacebook(pageFB)
+            runFacebook(pageFB),
+            runEbay()
         ]);
     } finally {
         if (focusTicker) clearInterval(focusTicker);
     }
 
-    const hadError = [craigslistResult, facebookResult].includes('error');
+    const hadError = [craigslistResult, facebookResult].includes('error') || ebayResult.status === 'error';
     await updateListing({
         status: hadError ? 'Error' : 'Active',
         finishedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -528,7 +632,19 @@ async function runListingAutomation(docId, item, db, admin) {
     return {
         success: !hadError,
         lastError: hadError ? { message: 'Automation failed', platform: 'JOB', screenshotPath: '' } : null,
-        screenshots
+        screenshots,
+        results: {
+            craigslist: craigslistResult,
+            facebook: facebookResult,
+            ebay: ebayResult.status === 'success' ? {
+                ok: true,
+                offerId: ebayResult.result.offerId || null,
+                listingId: ebayResult.result.listingId || null
+            } : ebayResult.status === 'error' ? {
+                ok: false,
+                error: ebayResult.error || null
+            } : { ok: true, skipped: true }
+        }
     };
 }
 

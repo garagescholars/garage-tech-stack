@@ -129,6 +129,23 @@ const unreadCount = conversations.filter(c => c.isUnread === true).length;
     return '--';
   };
 
+  const platformChip = (platformValue = '') => {
+    if (platformValue.includes('All')) return 'ALL';
+    if (platformValue.toLowerCase().includes('ebay')) return 'EB';
+    if (platformValue.includes('Both')) return 'Both';
+    if (platformValue.includes('FB')) return 'FB';
+    return 'CL';
+  };
+
+  const ebayStatusLabel = (ebayStatus, progress) => {
+    if (ebayStatus === 'ready_to_publish') return 'READY';
+    if (ebayStatus === 'published') return 'PUB';
+    if (ebayStatus === 'failed') return 'FAIL';
+    if (ebayStatus === 'running') return 'RUN';
+    if (ebayStatus === 'queued') return 'Q';
+    return progressLabel(progress);
+  };
+
   // --- RENDER LOGIC ---
   if (loadingAuth) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Security...</div>;
   if (!user || !isAuthorized) return <Login />;
@@ -286,24 +303,28 @@ const unreadCount = conversations.filter(c => c.isUnread === true).length;
                                 <div className="col-span-2 text-slate-400 text-sm">{item.dateListed}</div>
                                 <div className="col-span-2 text-slate-400 text-sm">{item.clientName || '-'}</div>
                                 <div className="col-span-1">
-                                    <span className={`text-xs px-2 py-1 rounded border ${(item.platform || '').includes('Both') ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' : 'bg-blue-500/10 border-blue-500/50 text-blue-400'}`}>
-                                    {(item.platform || '') === 'Both' ? 'Both' : ((item.platform || '').includes('FB') ? 'FB' : 'CL')}
+                                    <span className={`text-xs px-2 py-1 rounded border ${(item.platform || '').includes('Both') || (item.platform || '').includes('All') ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' : (item.platform || '').toLowerCase().includes('ebay') ? 'bg-amber-500/10 border-amber-500/50 text-amber-400' : 'bg-blue-500/10 border-blue-500/50 text-blue-400'}`}>
+                                    {platformChip(item.platform || '')}
                                     </span>
                                 </div>
                                 <div className="col-span-1 text-right">
                                     {(() => {
                                       const status = item.status || 'Pending';
                                       const progress = item.progress || {};
-                                      const showCL = (item.platform || '').includes('Craigslist') || (item.platform || '').includes('Both');
-                                      const showFB = (item.platform || '').includes('FB') || (item.platform || '').includes('Both');
+                                      const platformValue = item.platform || '';
+                                      const showCL = platformValue.includes('Craigslist') || platformValue.includes('Both') || platformValue.includes('All');
+                                      const showFB = platformValue.includes('FB') || platformValue.includes('Both') || platformValue.includes('All');
+                                      const showEB = platformValue.toLowerCase().includes('ebay') || platformValue.includes('All');
+                                      const ebayStatus = item.ebay?.status || null;
                                       const lastError = item.lastError?.message || item.lastError;
                                       return (
                                         <>
                                           <span className={`text-xs px-2 py-1 rounded border ${statusClassMap[status] || statusClassMap.Pending}`}>{status}</span>
-                                          {(showCL || showFB) && (
+                                          {(showCL || showFB || showEB) && (
                                             <div className="mt-1 text-[10px] text-slate-400">
                                               {showCL && <span>CL: {progressLabel(progress?.craigslist)}</span>}
                                               {showFB && <span className="ml-2">FB: {progressLabel(progress?.facebook)}</span>}
+                                              {showEB && <span className="ml-2">EB: {ebayStatusLabel(ebayStatus, progress?.ebay)}</span>}
                                             </div>
                                           )}
                                           {status === 'Error' && lastError && (
