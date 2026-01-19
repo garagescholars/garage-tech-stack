@@ -10,3 +10,9 @@ debug_screenshots/
 # Puppeteer/Chrome runtime artifacts
 backend/chrome_profile/
 backend/temp_downloads/
+
+.DS_Store
+backend/node_modules/
+node_modules/
+
+frontend/dist/
