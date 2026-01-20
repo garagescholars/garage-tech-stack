@@ -1,0 +1,22 @@
+{
+  "name": "garage-scholars-scheduling-functions",
+  "private": true,
+  "main": "lib/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": "18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "echo \"No lint configured\"",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "npm run build && firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^4.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}
