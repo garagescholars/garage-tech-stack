@@ -5,23 +5,33 @@ import { User as UserType, Job, JobStatus } from '../types';
 interface UserProfileProps {
   onBack: () => void;
   userRole: 'EMPLOYEE' | 'ADMIN';
-  setUserRole: (role: 'EMPLOYEE' | 'ADMIN') => void;
   users: UserType[];
-  setUsers: (users: UserType[]) => void;
+  onUpdateUser: (userId: string, updates: Partial<UserType>) => void;
   jobs: Job[];
+  currentUserId: string | null;
+  onUpdateUserRole: (role: 'EMPLOYEE' | 'ADMIN') => void;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, setUserRole, users, setUsers, jobs }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUpdateUser, jobs, currentUserId, onUpdateUserRole }) => {
   
   const handleGoalChange = (userId: string, newGoal: number) => {
-      setUsers(users.map(u => u.id === userId ? { ...u, monthlyGoal: newGoal } : u));
+      onUpdateUser(userId, { monthlyGoal: newGoal });
   };
 
   const handlePhoneChange = (userId: string, newPhone: string) => {
-      setUsers(users.map(u => u.id === userId ? { ...u, phoneNumber: newPhone } : u));
+      onUpdateUser(userId, { phoneNumber: newPhone });
   };
 
-  const currentUser = users.find(u => u.id === 'user-1') || users[0];
+  const currentUser = users.find(u => u.id === currentUserId) || users[0];
+  const displayUser = currentUser || {
+    id: 'unknown',
+    name: 'Scholar',
+    role: 'EMPLOYEE',
+    monthlyGoal: 0,
+    avatarInitials: 'GS',
+    achievedMilestones: [],
+    phoneNumber: ''
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans animate-in slide-in-from-right duration-200">
@@ -42,16 +52,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, setUserRole
         {/* Profile Header */}
         <div className="flex flex-col items-center text-center">
           <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg mb-4 text-white text-3xl font-bold">
-            {currentUser.avatarInitials}
+            {displayUser.avatarInitials}
           </div>
-          <h2 className="text-2xl font-bold text-slate-800">{currentUser.name}</h2>
+          <h2 className="text-2xl font-bold text-slate-800">{displayUser.name}</h2>
           <div className="flex items-center gap-2 mt-1 text-slate-500">
             <ShieldCheck size={16} className="text-blue-500" />
             <span className="font-medium">Verified Specialist</span>
           </div>
-          {currentUser.phoneNumber && (
+          {displayUser.phoneNumber && (
              <div className="flex items-center gap-1 mt-1 text-slate-400 text-sm">
-                <Phone size={12} /> {currentUser.phoneNumber}
+                <Phone size={12} /> {displayUser.phoneNumber}
              </div>
           )}
         </div>
@@ -64,7 +74,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, setUserRole
             </div>
             <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
                 <div className="text-2xl font-bold text-slate-800">
-                    {jobs.filter(j => j.assigneeId === 'user-1' && j.status === 'COMPLETED').length}
+                    {jobs.filter(j => j.assigneeId === currentUserId && j.status === 'COMPLETED').length}
                 </div>
                 <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Completed</div>
             </div>
@@ -180,7 +190,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, setUserRole
             <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-300">Current View Mode</span>
                 <button 
-                    onClick={() => setUserRole(userRole === 'ADMIN' ? 'EMPLOYEE' : 'ADMIN')}
+                    onClick={() => onUpdateUserRole(userRole === 'ADMIN' ? 'EMPLOYEE' : 'ADMIN')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${userRole === 'ADMIN' ? 'bg-yellow-500 text-black' : 'bg-slate-700 text-white'}`}
                 >
                     {userRole === 'ADMIN' ? 'Admin Master View' : 'Employee View'}

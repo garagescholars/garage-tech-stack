@@ -1,11 +1,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Job, MOCK_JOBS, Notification as AppNotification, JobStatus, User as UserType, MOCK_USERS } from './types';
+import { Job, Notification as AppNotification, JobStatus, User as UserType } from './types';
 import JobCard from './components/JobCard';
 import { JobDetail } from './views/JobDetail';
 import UserProfile from './views/UserProfile';
 import PendingApprovals from './views/PendingApprovals';
 import { broadcastMilestone, requestSmsPermissions, SmsRecipient } from './services/smsService';
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { collection, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
+import { auth, db, firebaseInitError } from './src/firebase';
 import { 
     Bell, Search, User, X, Check, Calendar as CalendarIcon, List, Timer, 
     ClipboardList, ArrowRight, Users, ChevronLeft, ChevronRight, 
@@ -16,10 +19,17 @@ import {
     ClipboardCheck
 } from 'lucide-react';
 
-const CURRENT_USER_ID = 'user-1';
+const getInitials = (name: string) => (
+  name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase())
+    .join('') || 'GS'
+);
 
-const MOCK_USERS_WITH_LOW_GOAL = MOCK_USERS.map(u => 
-  u.id === CURRENT_USER_ID ? { ...u, monthlyGoal: 300 } : u
+const stripUndefined = <T,>(data: T): T => (
+  Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)) as T
 );
 
 interface SmsLogEntry {
@@ -32,8 +42,10 @@ interface SmsLogEntry {
 }
 
 const App: React.FC = () => {
-  const [jobs, setJobs] = useState<Job[]>(MOCK_JOBS);
-  const [users, setUsers] = useState<UserType[]>(MOCK_USERS_WITH_LOW_GOAL);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showPendingView, setShowPendingView] = useState(false);
@@ -71,21 +83,117 @@ const App: React.FC = () => {
       initSms();
   }, []);
 
-  const totalPendingTasks = jobs.reduce((acc, job) => 
+  // --- Firebase Auth Bootstrap ---
+  useEffect(() => {
+      if (!auth || !db) return;
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (!user) {
+              try {
+                  await signInAnonymously(auth);
+              } catch (error) {
+                  console.error('Anonymous sign-in failed:', error);
+                  setAuthReady(true);
+              }
+              return;
+          }
+          setCurrentUserId(user.uid);
+          const displayName = user.displayName || 'Scholar';
+          const userDoc = {
+              name: displayName,
+              role: 'EMPLOYEE' as const,
+              monthlyGoal: 3000,
+              avatarInitials: getInitials(displayName),
+              achievedMilestones: [],
+              phoneNumber: user.phoneNumber || ''
+          };
+          await setDoc(doc(db, 'users', user.uid), userDoc, { merge: true });
+          setAuthReady(true);
+      });
+
+      return () => unsubscribe();
+  }, []);
+
+  // --- Firestore Subscriptions ---
+  useEffect(() => {
+      if (!db) return;
+      if (!authReady) return;
+
+      const usersRef = collection(db, 'users');
+      const usersUnsub = onSnapshot(usersRef, (snapshot) => {
+          const nextUsers = snapshot.docs.map((docSnap) => {
+              const data = docSnap.data() as Partial<UserType>;
+              return {
+                  id: docSnap.id,
+                  name: data.name || 'Scholar',
+                  role: data.role || 'EMPLOYEE',
+                  monthlyGoal: data.monthlyGoal || 0,
+                  avatarInitials: data.avatarInitials || getInitials(data.name || 'Scholar'),
+                  achievedMilestones: data.achievedMilestones || [],
+                  phoneNumber: data.phoneNumber || ''
+              };
+          });
+          setUsers(nextUsers);
+      });
+
+      const jobsRef = query(collection(db, 'jobs'), orderBy('date', 'asc'));
+      const jobsUnsub = onSnapshot(jobsRef, (snapshot) => {
+          const nextJobs = snapshot.docs.map((docSnap) => {
+              const data = docSnap.data() as Partial<Job>;
+              return {
+                  id: docSnap.id,
+                  clientName: data.clientName || 'Unknown Client',
+                  address: data.address || '',
+                  date: data.date || new Date().toISOString(),
+                  scheduledEndTime: data.scheduledEndTime || new Date().toISOString(),
+                  pay: data.pay || 0,
+                  description: data.description || '',
+                  status: data.status || JobStatus.UPCOMING,
+                  locationLat: data.locationLat || 0,
+                  locationLng: data.locationLng || 0,
+                  checklist: Array.isArray(data.checklist) ? data.checklist : [],
+                  assigneeId: data.assigneeId,
+                  assigneeName: data.assigneeName,
+                  checkInTime: data.checkInTime,
+                  checkOutTime: data.checkOutTime,
+                  checkInMedia: data.checkInMedia,
+                  checkOutMedia: data.checkOutMedia,
+                  qualityReport: data.qualityReport,
+                  cancellationReason: data.cancellationReason
+              };
+          });
+          setJobs(nextJobs);
+      });
+
+      return () => {
+          usersUnsub();
+          jobsUnsub();
+      };
+  }, [authReady]);
+
+  const totalPendingTasks = jobs.reduce((acc, job) =>
     acc + job.checklist.filter(t => t.status === 'PENDING').length, 0
   );
 
+  const currentUser = users.find(u => u.id === currentUserId) || null;
+
+  useEffect(() => {
+    if (currentUser?.role) {
+      setUserRole(currentUser.role);
+    }
+  }, [currentUser?.role]);
+
   const currentEarnings = useMemo(() => {
+    if (!currentUserId) return 0;
     return jobs
-      .filter(j => j.assigneeId === CURRENT_USER_ID && j.status === JobStatus.COMPLETED)
+      .filter(j => j.assigneeId === currentUserId && j.status === JobStatus.COMPLETED)
       .reduce((sum, j) => sum + j.pay, 0);
-  }, [jobs]);
+  }, [jobs, currentUserId]);
 
   const progressPercent = useMemo(() => {
-    const user = users.find(u => u.id === CURRENT_USER_ID);
+    const user = currentUser;
     if (!user || user.monthlyGoal <= 0) return 0;
     return Math.min(100, (currentEarnings / user.monthlyGoal) * 100);
-  }, [currentEarnings, users]);
+  }, [currentEarnings, currentUser]);
 
   // --- Milestone Logic ---
   useEffect(() => {
@@ -107,6 +215,9 @@ const App: React.FC = () => {
 
             if (milestoneHit > 0 && !user.achievedMilestones.includes(milestoneHit)) {
                 hasUpdates = true;
+                await setDoc(doc(db, 'users', user.id), {
+                    achievedMilestones: [...user.achievedMilestones, milestoneHit]
+                }, { merge: true });
                 const recipients: SmsRecipient[] = users
                     .filter(u => u.phoneNumber)
                     .map(u => ({ name: u.name, phoneNumber: u.phoneNumber! }));
@@ -148,7 +259,7 @@ const App: React.FC = () => {
       const now = Date.now();
 
       jobs.forEach(job => {
-        if (userRole === 'EMPLOYEE' && job.assigneeId !== CURRENT_USER_ID) return;
+        if (userRole === 'EMPLOYEE' && job.assigneeId !== currentUserId) return;
         if (job.status === JobStatus.UPCOMING) {
           const jobTime = new Date(job.date).getTime();
           const diffDays = (jobTime - now) / (1000 * 60 * 60 * 24);
@@ -170,7 +281,7 @@ const App: React.FC = () => {
           });
       }
       return rawNotifications;
-  }, [jobs, userRole, totalPendingTasks]);
+  }, [jobs, userRole, totalPendingTasks, currentUserId]);
 
   const notifications = useMemo(() => {
       const combined = [...manualNotifications, ...generatedNotifications];
@@ -181,7 +292,22 @@ const App: React.FC = () => {
         .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [manualNotifications, generatedNotifications, dismissedIds, readIds]);
 
-  const handleJobUpdate = (updatedJob: Job) => setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
+  const handleJobUpdate = async (updatedJob: Job) => {
+    setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
+    const { id, ...payload } = updatedJob;
+    await setDoc(doc(db, 'jobs', id), stripUndefined(payload), { merge: true });
+  };
+
+  const handleUserUpdate = async (userId: string, updates: Partial<UserType>) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+    await setDoc(doc(db, 'users', userId), stripUndefined(updates), { merge: true });
+  };
+
+  const handleUserRoleUpdate = async (role: 'EMPLOYEE' | 'ADMIN') => {
+    if (!currentUserId) return;
+    setUserRole(role);
+    await setDoc(doc(db, 'users', currentUserId), { role }, { merge: true });
+  };
   
   const handleManualNotification = (message: string, jobId: string) => {
       const newNotif: AppNotification = { 
@@ -232,7 +358,7 @@ const App: React.FC = () => {
       setAdminActionState({ type: action, job });
   };
 
-  const submitAdminAction = () => {
+  const submitAdminAction = async () => {
       if (!adminActionState) return;
       const { type, job } = adminActionState;
       let updatedJob = { ...job };
@@ -244,19 +370,49 @@ const App: React.FC = () => {
       } else if (type === 'CANCEL') {
           updatedJob.status = JobStatus.CANCELLED; updatedJob.assigneeId = undefined; updatedJob.assigneeName = undefined; updatedJob.cancellationReason = actionInputValue;
       }
-      setJobs(prev => prev.map(j => j.id === job.id ? updatedJob : j));
+      await handleJobUpdate(updatedJob);
       setAdminActionState(null);
   };
 
   const selectedJob = jobs.find(j => j.id === selectedJobId);
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  if (firebaseInitError) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex items-center justify-center p-6">
+        <div className="max-w-md rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <div className="font-bold mb-1">Firebase configuration missing</div>
+          <div>{firebaseInitError}</div>
+          <div className="mt-2 text-rose-600">Update `schedulingsystem/app/.env.local` and restart the dev server.</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex items-center justify-center">
+        <div className="text-sm text-slate-500">Loading scheduling system...</div>
+      </div>
+    );
+  }
+
   if (showPendingView && userRole === 'ADMIN') return (<PendingApprovals jobs={jobs} onUpdateJob={handleJobUpdate} onBack={() => setShowPendingView(false)} onTaskAction={handleAdminTaskAction} />);
-  if (selectedJob) return (<JobDetail job={selectedJob} users={users} onBack={() => setSelectedJobId(null)} onUpdateJob={handleJobUpdate} onNotifyAdmin={handleManualNotification} userRole={userRole} />);
-  if (showProfile) return (<UserProfile onBack={() => setShowProfile(false)} userRole={userRole} setUserRole={setUserRole} users={users} setUsers={setUsers} jobs={jobs} />);
+  if (selectedJob) return (<JobDetail job={selectedJob} users={users} onBack={() => setSelectedJobId(null)} onUpdateJob={handleJobUpdate} onNotifyAdmin={handleManualNotification} userRole={userRole} currentUserId={currentUserId} />);
+  if (showProfile) return (
+    <UserProfile
+      onBack={() => setShowProfile(false)}
+      userRole={userRole}
+      onUpdateUserRole={handleUserRoleUpdate}
+      users={users}
+      onUpdateUser={handleUserUpdate}
+      jobs={jobs}
+      currentUserId={currentUserId}
+    />
+  );
 
   const masterList = [...jobs].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const myJobs = masterList.filter(j => j.assigneeId === CURRENT_USER_ID);
+  const myJobs = masterList.filter(j => j.assigneeId === currentUserId);
   const availableJobs = masterList.filter(j => !j.assigneeId && j.status !== JobStatus.CANCELLED);
   const displayedJobs = userRole === 'ADMIN' ? masterList : (activeTab === 'MY_JOBS' ? myJobs : availableJobs);
 
@@ -298,9 +454,9 @@ const App: React.FC = () => {
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
         {userRole === 'EMPLOYEE' ? (
              <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg">
-                <h2 className="text-2xl font-bold mb-4">Hello, {users.find(u => u.id === CURRENT_USER_ID)?.name.split(' ')[0]} 👋</h2>
+                <h2 className="text-2xl font-bold mb-4">Hello, {currentUser?.name.split(' ')[0] || 'Scholar'} 👋</h2>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                    <div className="flex justify-between items-end mb-2"><span className="text-xs font-bold text-blue-100 uppercase">Goal Tracker</span><span className="text-sm font-bold">${currentEarnings} / 300</span></div>
+                    <div className="flex justify-between items-end mb-2"><span className="text-xs font-bold text-blue-100 uppercase">Goal Tracker</span><span className="text-sm font-bold">${currentEarnings} / {currentUser?.monthlyGoal || 0}</span></div>
                     <div className="w-full bg-black/20 rounded-full h-2.5 overflow-hidden"><div className={`h-full rounded-full transition-all duration-1000 ${progressPercent >= 100 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${progressPercent}%` }}></div></div>
                 </div>
              </div>

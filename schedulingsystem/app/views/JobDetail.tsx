@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Job, JobStatus, JobMedia, Task, User } from '../types';
 import CameraCapture from '../components/CameraCapture';
-import { analyzeQuality } from '../services/geminiService';
 import { ArrowLeft, MapPin, CheckCircle, Loader2, CheckSquare, Square, Trash2, Plus, ShieldAlert, Pencil, Calendar, Upload, Clock } from 'lucide-react';
 
 interface JobDetailProps {
@@ -12,11 +11,10 @@ interface JobDetailProps {
   onUpdateJob: (updatedJob: Job) => void;
   onNotifyAdmin: (message: string, jobId: string) => void;
   userRole?: 'EMPLOYEE' | 'ADMIN';
+  currentUserId: string | null;
 }
 
-const CURRENT_USER_ID = 'user-1';
-
-export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, onUpdateJob, onNotifyAdmin, userRole = 'EMPLOYEE' }) => {
+export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, onUpdateJob, onNotifyAdmin, userRole = 'EMPLOYEE', currentUserId }) => {
   const [activeStep, setActiveStep] = useState<'details' | 'checkin' | 'checkout' | 'report'>('details');
   const [mediaBuffer, setMediaBuffer] = useState<Partial<JobMedia>>({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -108,14 +106,10 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
       videoTimestamp: mediaBuffer.videoTimestamp || saved?.videoTimestamp || now,
     };
     
-    // Internal analysis for admin view only
-    let report = "Quality Check Pending...";
-    try { 
-      if (job.checkInMedia) {
-        report = await analyzeQuality(job.checkInMedia, checkOutMedia, job.description); 
-      }
-    }
-    catch (e) { report = "Manual review required."; }
+    // Stage 3: Gemini disabled. Stub a placeholder report for admin review.
+    const report = job.checkInMedia
+      ? "Quality review pending (manual)."
+      : "Quality review pending (no check-in media).";
     
     onUpdateJob({ 
       ...job, 
@@ -306,8 +300,8 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
              </div>
         </div>
 
-        {job.status === JobStatus.UPCOMING && job.assigneeId === CURRENT_USER_ID && (<button onClick={() => setActiveStep('checkin')} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg">Start Job (Check In)</button>)}
-        {job.status === JobStatus.IN_PROGRESS && job.assigneeId === CURRENT_USER_ID && (<button onClick={() => setActiveStep('checkout')} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg">Complete Job (Check Out)</button>)}
+        {job.status === JobStatus.UPCOMING && job.assigneeId === currentUserId && (<button onClick={() => setActiveStep('checkin')} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg">Start Job (Check In)</button>)}
+        {job.status === JobStatus.IN_PROGRESS && job.assigneeId === currentUserId && (<button onClick={() => setActiveStep('checkout')} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg">Complete Job (Check Out)</button>)}
       </div>
 
       {showCancelModal && (

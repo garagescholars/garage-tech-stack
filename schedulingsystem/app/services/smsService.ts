@@ -1,6 +1,4 @@
 
-import { generateSmsAlert } from './geminiService';
-
 /**
  * This service handles the "Actual" delivery of messages.
  * For a production app, you would use an API like Twilio here.
@@ -55,7 +53,7 @@ export const broadcastMilestone = async (
     earnings: number,
     recipients: SmsRecipient[]
 ) => {
-    const message = await generateSmsAlert(actorName, milestone, earnings);
+    const message = `🎉 ${actorName} hit ${milestone}% of their goal! $${earnings} earned! 🚀`;
     
     const results = await Promise.all(recipients.map(async (r) => {
         const success = await sendActualSms(r, message);
