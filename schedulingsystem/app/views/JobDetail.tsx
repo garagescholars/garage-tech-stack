@@ -1,7 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Job, JobStatus, JobMedia, Task, User } from '../types';
+import { Job, JobStatus, JobMedia, Task, User, SopDoc } from '../types';
 import CameraCapture from '../components/CameraCapture';
+import { httpsCallable } from 'firebase/functions';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
+import { db, functions, storage } from '../src/firebase';
 import { ArrowLeft, MapPin, CheckCircle, Loader2, CheckSquare, Square, Trash2, Plus, ShieldAlert, Pencil, Calendar, Upload, Clock } from 'lucide-react';
 
 interface JobDetailProps {
@@ -21,10 +25,15 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
   const [newTaskText, setNewTaskText] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const intakeInputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   const [sortOption, setSortOption] = useState<'default' | 'alpha' | 'status'>('default');
+  const [sopData, setSopData] = useState<SopDoc | null>(null);
+  const [sopLoading, setSopLoading] = useState(false);
+  const [sopError, setSopError] = useState<string | null>(null);
+  const [intakeUploads, setIntakeUploads] = useState<{ path: string; url: string }[]>([]);
 
   const getLocalDateTime = (isoString: string) => {
     const date = new Date(isoString);
@@ -51,6 +60,36 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     });
     window.scrollTo(0, 0);
   }, [job]);
+
+  useEffect(() => {
+    if (!db || !job.sopId) {
+      setSopData(null);
+      return;
+    }
+    const sopRef = doc(db, 'sops', job.sopId);
+    const unsubscribe = onSnapshot(sopRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        setSopData(null);
+        return;
+      }
+      const data = snapshot.data() as Omit<SopDoc, 'id'>;
+      setSopData({ id: snapshot.id, ...data });
+    });
+    return () => unsubscribe();
+  }, [job.sopId]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!storage) return;
+      const paths = job.intakeMediaPaths || [];
+      const results = await Promise.all(paths.map(async (path) => {
+        const url = await getDownloadURL(storageRef(storage, path));
+        return { path, url };
+      }));
+      setIntakeUploads(results);
+    };
+    run().catch(() => setIntakeUploads([]));
+  }, [job.intakeMediaPaths]);
 
   const generateTimestamp = () => new Date().toISOString();
 
@@ -136,6 +175,50 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
       if (!cancellationReason.trim()) return;
       onUpdateJob({ ...job, status: JobStatus.CANCELLED, assigneeId: undefined, assigneeName: undefined, cancellationReason: cancellationReason.trim() });
       setShowCancelModal(false);
+  };
+
+  const uploadIntakeMedia = async (files: FileList) => {
+    if (!storage) return;
+    const paths = job.intakeMediaPaths ? [...job.intakeMediaPaths] : [];
+    const availableSlots = Math.max(0, 3 - paths.length);
+    const selected = Array.from(files).slice(0, availableSlots);
+    if (selected.length === 0) return;
+    for (const file of selected) {
+      const safeName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const path = `schedulingsystem/jobs/${job.id}/intake/${safeName}`;
+      const uploadRef = storageRef(storage, path);
+      await uploadBytes(uploadRef, file);
+      paths.push(path);
+    }
+    await onUpdateJob({ ...job, intakeMediaPaths: paths });
+  };
+
+  const handleGenerateSop = async () => {
+    if (!functions) {
+      setSopError('Functions not initialized. Check Firebase config.');
+      return;
+    }
+    setSopError(null);
+    setSopLoading(true);
+    try {
+      const callable = httpsCallable(functions, 'generateSopForJob');
+      const result = await callable({ jobId: job.id });
+      const sopId = (result.data as { sopId?: string })?.sopId || null;
+      if (sopId) {
+        await onUpdateJob({ ...job, sopId, status: JobStatus.SOP_NEEDS_REVIEW });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to generate SOP.';
+      setSopError(message);
+    } finally {
+      setSopLoading(false);
+    }
+  };
+
+  const approveSop = async () => {
+    if (!db || !job.sopId) return;
+    await setDoc(doc(db, 'sops', job.sopId), { qaStatus: 'APPROVED' }, { merge: true });
+    await onUpdateJob({ ...job, status: JobStatus.APPROVED_FOR_POSTING });
   };
 
   const addTask = () => {
@@ -253,11 +336,99 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
             </div>
         )}
 
+        {userRole === 'ADMIN' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm">Intake Media</h3>
+                <p className="text-xs text-slate-500">Attach 1–3 photos for SOP generation.</p>
+              </div>
+              <button
+                onClick={() => intakeInputRef.current?.click()}
+                className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg"
+              >
+                <Upload size={14} className="inline mr-1" />
+                Upload
+              </button>
+              <input
+                ref={intakeInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*"
+                multiple
+                onChange={(e) => e.target.files && uploadIntakeMedia(e.target.files)}
+              />
+            </div>
+            {intakeUploads.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {intakeUploads.map((item) => (
+                  <img key={item.path} src={item.url} alt="Intake" className="h-20 w-full object-cover rounded-lg border" />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex justify-between items-start mb-1"><h2 className={`text-xl font-bold ${job.status === JobStatus.CANCELLED ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{job.clientName}</h2><span className="text-xl font-black text-emerald-600">${job.pay}</span></div>
             <div className="flex items-start text-slate-500 text-sm mb-4"><MapPin size={16} className="mr-1.5 mt-0.5" />{job.address}</div>
             <div className="flex gap-2"><div className="bg-slate-100 rounded-lg px-3 py-2 text-xs font-medium text-slate-600"><Calendar size={14} className="inline mr-1" />{new Date(job.date).toLocaleDateString()}</div><div className="bg-slate-100 rounded-lg px-3 py-2 text-xs font-medium text-slate-600"><Clock size={14} className="inline mr-1" />{new Date(job.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div></div>
         </div>
+
+        {userRole === 'ADMIN' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-sm">SOP Generator</h3>
+              <button
+                onClick={handleGenerateSop}
+                disabled={sopLoading}
+                className={`text-xs font-bold px-3 py-2 rounded-lg ${sopLoading ? 'bg-slate-200 text-slate-500' : 'bg-blue-600 text-white'}`}
+              >
+                {sopLoading ? 'Generating...' : 'Generate SOP (AI)'}
+              </button>
+            </div>
+            {sopError && (
+              <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded p-2">
+                {sopError}
+              </div>
+            )}
+            {sopData && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <span>QA Status: {sopData.qaStatus}</span>
+                  {sopData.qaStatus !== 'APPROVED' && (
+                    <button onClick={approveSop} className="text-xs font-bold text-emerald-600">Approve SOP</button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {sopData.sections.map((section) => (
+                    <div key={section.title} className="border border-slate-100 rounded-lg p-3">
+                      <h4 className="font-semibold text-sm text-slate-800 mb-2">{section.title}</h4>
+                      <ul className="space-y-1 text-xs text-slate-600">
+                        {section.steps.map((step) => (
+                          <li key={step.id} className="flex items-start gap-2">
+                            <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-slate-300" />
+                            <span>{step.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+                {sopData.requiredPhotos.length > 0 && (
+                  <div className="text-xs text-slate-600">
+                    <div className="font-semibold text-slate-700 mb-1">Required Photos</div>
+                    <ul className="list-disc list-inside space-y-1">
+                      {sopData.requiredPhotos.map((photo) => (
+                        <li key={photo.key}>{photo.label} {photo.required ? '(required)' : ''}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Quality Report Section (Admin Only) */}
         {userRole === 'ADMIN' && job.status === JobStatus.COMPLETED && job.qualityReport && (

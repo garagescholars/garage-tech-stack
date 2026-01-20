@@ -4,7 +4,10 @@ export enum JobStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
   REVIEW_PENDING = 'REVIEW_PENDING',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
+  INTAKE_SUBMITTED = 'INTAKE_SUBMITTED',
+  SOP_NEEDS_REVIEW = 'SOP_NEEDS_REVIEW',
+  APPROVED_FOR_POSTING = 'APPROVED_FOR_POSTING'
 }
 
 export interface Task {
@@ -46,6 +49,37 @@ export interface Job {
   assigneeId?: string; // 'user-1' is the current logged in user
   assigneeName?: string;
   cancellationReason?: string;
+  sopId?: string;
+  intakeMediaPaths?: string[];
+}
+
+export interface SopSectionStep {
+  id: string;
+  text: string;
+  requiresApproval?: boolean;
+  requiredPhotoKey?: string;
+}
+
+export interface SopSection {
+  title: string;
+  steps: SopSectionStep[];
+}
+
+export interface SopRequiredPhoto {
+  key: string;
+  label: string;
+  required: boolean;
+}
+
+export interface SopDoc {
+  id: string;
+  jobId: string;
+  qaStatus: 'NEEDS_REVIEW' | 'APPROVED' | 'REJECTED';
+  brandStyleVersion: 'v1';
+  sections: SopSection[];
+  requiredPhotos: SopRequiredPhoto[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface JobMedia {
