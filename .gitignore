@@ -26,3 +26,10 @@ frontend/node_modules/
 
 # build output
 frontend/dist/
+
+# mac junk
+.DS_Store
+**/.DS_Store
+
+# scheduling system artifacts
+schedulingsystem/*.zip
