@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
 import OpenAI from "openai";
 
@@ -8,6 +9,7 @@ initializeApp();
 
 const db = getFirestore();
 const storage = getStorage();
+const adminAuth = getAuth();
 
 type SopSectionStep = {
   id: string;
@@ -92,7 +94,7 @@ export const generateSopForJob = onCall(async (request) => {
 
   const userSnap = await db.collection("users").doc(request.auth.uid).get();
   const userRole = userSnap.exists ? userSnap.data()?.role : null;
-  if (userRole !== "ADMIN") {
+  if (userRole !== "admin") {
     throw new HttpsError("permission-denied", "Admin role required.");
   }
 
@@ -181,4 +183,87 @@ export const generateSopForJob = onCall(async (request) => {
   }, { merge: true });
 
   return { ok: true, sopId: sopRef.id };
+});
+
+const requireAdmin = async (uid: string) => {
+  const userSnap = await db.collection("users").doc(uid).get();
+  const role = userSnap.exists ? userSnap.data()?.role : null;
+  if (role !== "admin") {
+    throw new HttpsError("permission-denied", "Admin role required.");
+  }
+};
+
+export const approveSignup = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+  const { requestId } = request.data as { requestId?: string };
+  if (!requestId) {
+    throw new HttpsError("invalid-argument", "Missing requestId.");
+  }
+
+  await requireAdmin(request.auth.uid);
+
+  const requestRef = db.collection("signupRequests").doc(requestId);
+  const reqSnap = await requestRef.get();
+  if (!reqSnap.exists) {
+    throw new HttpsError("not-found", "Signup request not found.");
+  }
+
+  const userQuery = await db.collection("users").where("requestId", "==", requestId).limit(1).get();
+  if (userQuery.empty) {
+    throw new HttpsError("not-found", "User for request not found.");
+  }
+  const userDoc = userQuery.docs[0];
+
+  await requestRef.set({
+    status: "approved",
+    decidedAt: FieldValue.serverTimestamp(),
+    decidedByUid: request.auth.uid
+  }, { merge: true });
+
+  await userDoc.ref.set({
+    role: "scholar",
+    status: "active",
+    approvedAt: FieldValue.serverTimestamp(),
+    approvedByUid: request.auth.uid
+  }, { merge: true });
+
+  return { ok: true };
+});
+
+export const declineSignup = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+  const { requestId } = request.data as { requestId?: string };
+  if (!requestId) {
+    throw new HttpsError("invalid-argument", "Missing requestId.");
+  }
+
+  await requireAdmin(request.auth.uid);
+
+  const requestRef = db.collection("signupRequests").doc(requestId);
+  const reqSnap = await requestRef.get();
+  if (!reqSnap.exists) {
+    throw new HttpsError("not-found", "Signup request not found.");
+  }
+
+  const userQuery = await db.collection("users").where("requestId", "==", requestId).limit(1).get();
+  const userDoc = userQuery.empty ? null : userQuery.docs[0];
+
+  await requestRef.set({
+    status: "declined",
+    decidedAt: FieldValue.serverTimestamp(),
+    decidedByUid: request.auth.uid
+  }, { merge: true });
+
+  if (userDoc) {
+    await userDoc.ref.set({
+      status: "disabled"
+    }, { merge: true });
+    await adminAuth.deleteUser(userDoc.id).catch(() => null);
+  }
+
+  return { ok: true };
 });

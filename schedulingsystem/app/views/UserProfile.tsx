@@ -4,15 +4,14 @@ import { User as UserType, Job, JobStatus } from '../types';
 
 interface UserProfileProps {
   onBack: () => void;
-  userRole: 'EMPLOYEE' | 'ADMIN';
+  userRole: 'scholar' | 'admin';
   users: UserType[];
   onUpdateUser: (userId: string, updates: Partial<UserType>) => void;
   jobs: Job[];
   currentUserId: string | null;
-  onUpdateUserRole: (role: 'EMPLOYEE' | 'ADMIN') => void;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUpdateUser, jobs, currentUserId, onUpdateUserRole }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUpdateUser, jobs, currentUserId }) => {
   
   const handleGoalChange = (userId: string, newGoal: number) => {
       onUpdateUser(userId, { monthlyGoal: newGoal });
@@ -26,7 +25,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
   const displayUser = currentUser || {
     id: 'unknown',
     name: 'Scholar',
-    role: 'EMPLOYEE',
+    role: 'scholar',
     monthlyGoal: 0,
     avatarInitials: 'GS',
     achievedMilestones: [],
@@ -44,7 +43,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="font-bold text-lg ml-2">{userRole === 'ADMIN' ? 'Admin Profile & Settings' : 'My Profile'}</h1>
+          <h1 className="font-bold text-lg ml-2">{userRole === 'admin' ? 'Admin Profile & Settings' : 'My Profile'}</h1>
         </div>
       </header>
 
@@ -85,7 +84,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
         </div>
 
         {/* Employee Goal & Phone Settings (Admin Only) */}
-        {userRole === 'ADMIN' && (
+        {userRole === 'admin' && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
                 <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -97,7 +96,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
                     </span>
                 </div>
                 <div className="divide-y divide-slate-100">
-                    {users.filter(u => u.role === 'EMPLOYEE').map(user => {
+                    {users.filter(u => u.role === 'scholar').map(user => {
                         // Calculate total revenue for this user based on COMPLETED jobs
                         const userRevenue = jobs
                             .filter(j => j.assigneeId === user.id && j.status === JobStatus.COMPLETED)
@@ -180,25 +179,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
                     <p className="text-slate-800 font-medium">alex.scholar@garagescholars.com</p>
                 </div>
             </div>
-        </div>
-
-        {/* Access Control Simulation */}
-        <div className="bg-slate-800 rounded-xl shadow-lg text-white p-4">
-            <h3 className="font-bold mb-3 flex items-center gap-2">
-                <ShieldCheck size={18} className="text-yellow-400"/> Admin Controls
-            </h3>
-            <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-300">Current View Mode</span>
-                <button 
-                    onClick={() => onUpdateUserRole(userRole === 'ADMIN' ? 'EMPLOYEE' : 'ADMIN')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${userRole === 'ADMIN' ? 'bg-yellow-500 text-black' : 'bg-slate-700 text-white'}`}
-                >
-                    {userRole === 'ADMIN' ? 'Admin Master View' : 'Employee View'}
-                </button>
-            </div>
-            <p className="text-xs text-slate-400 mt-2">
-                Toggle this to see the "Master Schedule" vs "My Jobs".
-            </p>
         </div>
 
         {/* Logout Button */}

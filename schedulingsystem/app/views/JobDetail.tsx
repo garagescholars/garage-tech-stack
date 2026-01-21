@@ -14,11 +14,11 @@ interface JobDetailProps {
   onBack: () => void;
   onUpdateJob: (updatedJob: Job) => void;
   onNotifyAdmin: (message: string, jobId: string) => void;
-  userRole?: 'EMPLOYEE' | 'ADMIN';
+  userRole?: 'scholar' | 'admin';
   currentUserId: string | null;
 }
 
-export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, onUpdateJob, onNotifyAdmin, userRole = 'EMPLOYEE', currentUserId }) => {
+export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, onUpdateJob, onNotifyAdmin, userRole = 'scholar', currentUserId }) => {
   const [activeStep, setActiveStep] = useState<'details' | 'checkin' | 'checkout' | 'report'>('details');
   const [mediaBuffer, setMediaBuffer] = useState<Partial<JobMedia>>({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -223,7 +223,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
 
   const addTask = () => {
       if (!newTaskText.trim()) return;
-      const isApproved = userRole === 'ADMIN';
+      const isApproved = userRole === 'admin';
       const newTask: Task = {
           id: Date.now().toString(),
           text: newTaskText.trim(),
@@ -242,7 +242,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
 
   const toggleTask = (taskId: string) => {
     const task = job.checklist.find(t => t.id === taskId);
-    if (task?.status === 'PENDING' && userRole === 'EMPLOYEE') return;
+    if (task?.status === 'PENDING' && userRole === 'scholar') return;
     const updatedChecklist = job.checklist.map(t => t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t);
     onUpdateJob({ ...job, checklist: updatedChecklist });
   };
@@ -269,7 +269,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
         <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-sm"><CheckCircle className="text-emerald-600 w-10 h-10" /></div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Great Work!</h2>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 w-full max-w-md text-left mb-6">
-          {userRole === 'ADMIN' ? (
+          {userRole === 'admin' ? (
             <>
               <h3 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">Quality Control Review</h3>
               <p className="text-sm text-slate-600 italic border-l-4 border-blue-500 pl-3 py-1">{job.qualityReport}</p>
@@ -316,11 +316,11 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     <div className="min-h-screen bg-slate-50 pb-20 animate-in slide-in-from-right">
       <div className="bg-white border-b sticky top-0 z-10 p-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center"><button onClick={onBack} className="p-2 -ml-2 hover:bg-slate-100 rounded-full mr-2 text-slate-600"><ArrowLeft size={20} /></button><div><h1 className="font-bold text-lg text-slate-800 leading-tight">Job Details</h1><p className="text-xs text-slate-400 font-medium">#{job.id.slice(-6)}</p></div></div>
-        {userRole === 'ADMIN' && (<button onClick={() => setIsEditing(!isEditing)} className={`p-2 rounded-full ${isEditing ? 'bg-blue-100 text-blue-600' : 'hover:bg-slate-100 text-slate-500'}`}><Pencil size={18} /></button>)}
+        {userRole === 'admin' && (<button onClick={() => setIsEditing(!isEditing)} className={`p-2 rounded-full ${isEditing ? 'bg-blue-100 text-blue-600' : 'hover:bg-slate-100 text-slate-500'}`}><Pencil size={18} /></button>)}
       </div>
 
       <div className="max-w-md mx-auto p-4 space-y-6">
-        {userRole === 'ADMIN' && job.status !== JobStatus.CANCELLED && job.status !== JobStatus.COMPLETED && (
+        {userRole === 'admin' && job.status !== JobStatus.CANCELLED && job.status !== JobStatus.COMPLETED && (
             <div className="bg-slate-800 rounded-xl p-4 shadow-lg text-white">
                 <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-slate-200"><ShieldAlert size={14} className="text-blue-400"/> Admin Quick Actions</h3>
                 <div className="space-y-3">
@@ -328,7 +328,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
                         <label className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5">Assign To</label>
                         <select className="w-full bg-transparent text-sm font-semibold text-white outline-none" value={job.assigneeId || ""} onChange={(e) => handleQuickTransfer(e.target.value)}>
                             <option value="" className="text-slate-800">Unassigned</option>
-                            {users.filter(u => u.role === 'EMPLOYEE').map(u => (<option key={u.id} value={u.id} className="text-slate-800">{u.name}</option>))}
+                            {users.filter(u => u.role === 'scholar').map(u => (<option key={u.id} value={u.id} className="text-slate-800">{u.name}</option>))}
                         </select>
                     </div>
                     <div className="flex gap-3"><button onClick={() => setShowCancelModal(true)} className="flex-1 bg-red-500/20 border border-red-500/50 text-red-200 py-2 rounded-lg font-bold text-sm">Cancel Job</button></div>
@@ -336,7 +336,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
             </div>
         )}
 
-        {userRole === 'ADMIN' && (
+        {userRole === 'admin' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
@@ -375,7 +375,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
             <div className="flex gap-2"><div className="bg-slate-100 rounded-lg px-3 py-2 text-xs font-medium text-slate-600"><Calendar size={14} className="inline mr-1" />{new Date(job.date).toLocaleDateString()}</div><div className="bg-slate-100 rounded-lg px-3 py-2 text-xs font-medium text-slate-600"><Clock size={14} className="inline mr-1" />{new Date(job.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div></div>
         </div>
 
-        {userRole === 'ADMIN' && (
+        {userRole === 'admin' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-slate-800 text-sm">SOP Generator</h3>
@@ -431,7 +431,7 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
         )}
 
         {/* Quality Report Section (Admin Only) */}
-        {userRole === 'ADMIN' && job.status === JobStatus.COMPLETED && job.qualityReport && (
+        {userRole === 'admin' && job.status === JobStatus.COMPLETED && job.qualityReport && (
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 shadow-sm animate-in fade-in">
                 <h3 className="text-blue-800 font-bold text-sm mb-2 flex items-center gap-2">
                     <CheckCircle size={16} /> Quality Control Analysis
@@ -455,11 +455,11 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
                              {task.status === 'PENDING' && (
                                  <div className="flex items-center gap-2 mt-1">
                                      <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">WAITING FOR ADMIN</span>
-                                     {userRole === 'ADMIN' && (<button onClick={() => approveTask(task.id)} className="text-[10px] font-bold text-green-600 uppercase">Approve</button>)}
+                                     {userRole === 'admin' && (<button onClick={() => approveTask(task.id)} className="text-[10px] font-bold text-green-600 uppercase">Approve</button>)}
                                  </div>
                              )}
                          </div>
-                         {userRole === 'ADMIN' && (<button onClick={() => deleteTask(task.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16} /></button>)}
+                         {userRole === 'admin' && (<button onClick={() => deleteTask(task.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16} /></button>)}
                      </div>
                  ))}
                  {job.status !== JobStatus.COMPLETED && (

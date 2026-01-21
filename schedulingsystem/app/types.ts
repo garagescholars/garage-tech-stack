@@ -15,14 +15,14 @@ export interface Task {
   text: string;
   isCompleted: boolean;
   status?: 'APPROVED' | 'PENDING'; // Default is APPROVED if undefined
-  addedBy?: string; // 'ADMIN' or 'EMPLOYEE'
+  addedBy?: 'admin' | 'scholar';
   actionTimestamp?: string; // ISO String when admin approved/rejected or employee added
 }
 
 export interface User {
   id: string;
   name: string;
-  role: 'EMPLOYEE' | 'ADMIN';
+  role: 'scholar' | 'admin';
   monthlyGoal: number; // Represents Currency Target (e.g. 3000 for $3000)
   avatarInitials: string;
   achievedMilestones: number[]; // Tracks percentages hit: [80, 90, 100]
@@ -100,10 +100,10 @@ export interface Notification {
 }
 
 export const MOCK_USERS: User[] = [
-  { id: 'user-1', name: 'Alex Scholar', role: 'EMPLOYEE', monthlyGoal: 3000, avatarInitials: 'AS', achievedMilestones: [], phoneNumber: '555-0123' },
-  { id: 'user-2', name: 'Sarah Connor', role: 'EMPLOYEE', monthlyGoal: 4500, avatarInitials: 'SC', achievedMilestones: [], phoneNumber: '555-0198' },
-  { id: 'user-3', name: 'John Matrix', role: 'EMPLOYEE', monthlyGoal: 3500, avatarInitials: 'JM', achievedMilestones: [], phoneNumber: '555-0145' },
-  { id: 'user-4', name: 'Ellen Ripley', role: 'EMPLOYEE', monthlyGoal: 5000, avatarInitials: 'ER', achievedMilestones: [], phoneNumber: '555-0167' },
+  { id: 'user-1', name: 'Alex Scholar', role: 'scholar', monthlyGoal: 3000, avatarInitials: 'AS', achievedMilestones: [], phoneNumber: '555-0123' },
+  { id: 'user-2', name: 'Sarah Connor', role: 'scholar', monthlyGoal: 4500, avatarInitials: 'SC', achievedMilestones: [], phoneNumber: '555-0198' },
+  { id: 'user-3', name: 'John Matrix', role: 'scholar', monthlyGoal: 3500, avatarInitials: 'JM', achievedMilestones: [], phoneNumber: '555-0145' },
+  { id: 'user-4', name: 'Ellen Ripley', role: 'scholar', monthlyGoal: 5000, avatarInitials: 'ER', achievedMilestones: [], phoneNumber: '555-0167' },
 ];
 
 export const MOCK_JOBS: Job[] = [
@@ -123,7 +123,7 @@ export const MOCK_JOBS: Job[] = [
     checklist: [
       { id: 't1', text: 'Clear driveway for staging', isCompleted: false, status: 'APPROVED' },
       { id: 't2', text: 'Assemble 3 metal shelving units', isCompleted: false, status: 'APPROVED' },
-      { id: 't3', text: 'Sort loose tools into labeled bins', isCompleted: false, status: 'PENDING', addedBy: 'EMPLOYEE', actionTimestamp: new Date().toISOString() },
+      { id: 't3', text: 'Sort loose tools into labeled bins', isCompleted: false, status: 'PENDING', addedBy: 'scholar', actionTimestamp: new Date().toISOString() },
       { id: 't4', text: 'Sweep and hose down garage floor', isCompleted: false, status: 'APPROVED' }
     ]
   },
@@ -181,7 +181,7 @@ export const MOCK_JOBS: Job[] = [
     assigneeId: undefined, // Unassigned
     assigneeName: undefined,
     checklist: [
-      { id: 't1', text: 'Remove old workbench', isCompleted: false, status: 'PENDING', addedBy: 'EMPLOYEE', actionTimestamp: new Date().toISOString() },
+      { id: 't1', text: 'Remove old workbench', isCompleted: false, status: 'PENDING', addedBy: 'scholar', actionTimestamp: new Date().toISOString() },
       { id: 't2', text: 'Sweep and mop', isCompleted: false, status: 'APPROVED' }
     ]
   }

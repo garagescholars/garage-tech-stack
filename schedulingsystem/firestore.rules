@@ -10,7 +10,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && userDoc().data.role == 'ADMIN';
+      return isSignedIn() && userDoc().data.role == 'admin';
     }
 
     function isJobParticipant(jobId) {
@@ -22,11 +22,30 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAdmin() || request.auth.uid == userId;
-      allow write: if isAdmin() || request.auth.uid == userId;
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == "scholar"
+        && request.resource.data.status in ["disabled", "pending"];
+      allow update: if isAdmin() || (request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status);
     }
 
     match /jobs/{jobId} {
       allow read, write: if isSignedIn();
+    }
+
+    match /signupRequests/{requestId} {
+      allow create: if isSignedIn()
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == "pending";
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /adminNotifications/{notificationId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if isAdmin();
     }
 
     match /sops/{sopId} {

@@ -6,9 +6,9 @@ import { JobDetail } from './views/JobDetail';
 import UserProfile from './views/UserProfile';
 import PendingApprovals from './views/PendingApprovals';
 import { broadcastMilestone, requestSmsPermissions, SmsRecipient } from './services/smsService';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { collection, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
-import { auth, db, firebaseInitError } from './src/firebase';
+import { db, firebaseInitError } from './src/firebase';
+import { useAuth } from './src/auth/AuthProvider';
 import { 
     Bell, Search, User, X, Check, Calendar as CalendarIcon, List, Timer, 
     ClipboardList, ArrowRight, Users, ChevronLeft, ChevronRight, 
@@ -18,15 +18,7 @@ import {
     CalendarDays, Ban, Smartphone, CheckCircle2, Loader2, SignalHigh,
     ClipboardCheck
 } from 'lucide-react';
-
-const getInitials = (name: string) => (
-  name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(part => part[0]?.toUpperCase())
-    .join('') || 'GS'
-);
+import { Link } from 'react-router-dom';
 
 const stripUndefined = <T,>(data: T): T => (
   Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)) as T
@@ -44,15 +36,12 @@ interface SmsLogEntry {
 const App: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [authReady, setAuthReady] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showPendingView, setShowPendingView] = useState(false);
   
   const [manualNotifications, setManualNotifications] = useState<AppNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [userRole, setUserRole] = useState<'EMPLOYEE' | 'ADMIN'>('EMPLOYEE');
   const [activeTab, setActiveTab] = useState<'MY_JOBS' | 'AVAILABLE'>('MY_JOBS');
   
   const [smsBroadcast, setSmsBroadcast] = useState<string | null>(null);
@@ -83,40 +72,15 @@ const App: React.FC = () => {
       initSms();
   }, []);
 
-  // --- Firebase Auth Bootstrap ---
-  useEffect(() => {
-      if (!auth || !db) return;
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          if (!user) {
-              try {
-                  await signInAnonymously(auth);
-              } catch (error) {
-                  console.error('Anonymous sign-in failed:', error);
-                  setAuthReady(true);
-              }
-              return;
-          }
-          setCurrentUserId(user.uid);
-          const displayName = user.displayName || 'Scholar';
-          const userDoc = {
-              name: displayName,
-              role: 'EMPLOYEE' as const,
-              monthlyGoal: 3000,
-              avatarInitials: getInitials(displayName),
-              achievedMilestones: [],
-              phoneNumber: user.phoneNumber || ''
-          };
-          await setDoc(doc(db, 'users', user.uid), userDoc, { merge: true });
-          setAuthReady(true);
-      });
-
-      return () => unsubscribe();
-  }, []);
+  const { profile, effectiveUid, viewAsUid, setViewAsUid } = useAuth();
+  const userRole = profile?.role || 'scholar';
+  const displayRole = viewAsUid ? 'scholar' : userRole;
+  const currentUserId = effectiveUid;
 
   // --- Firestore Subscriptions ---
   useEffect(() => {
       if (!db) return;
-      if (!authReady) return;
+      if (!db || !profile) return;
 
       const usersRef = collection(db, 'users');
       const usersUnsub = onSnapshot(usersRef, (snapshot) => {
@@ -125,7 +89,7 @@ const App: React.FC = () => {
               return {
                   id: docSnap.id,
                   name: data.name || 'Scholar',
-                  role: data.role || 'EMPLOYEE',
+                  role: data.role || 'scholar',
                   monthlyGoal: data.monthlyGoal || 0,
                   avatarInitials: data.avatarInitials || getInitials(data.name || 'Scholar'),
                   achievedMilestones: data.achievedMilestones || [],
@@ -168,19 +132,13 @@ const App: React.FC = () => {
           usersUnsub();
           jobsUnsub();
       };
-  }, [authReady]);
+  }, [db, profile]);
 
   const totalPendingTasks = jobs.reduce((acc, job) =>
     acc + job.checklist.filter(t => t.status === 'PENDING').length, 0
   );
 
   const currentUser = users.find(u => u.id === currentUserId) || null;
-
-  useEffect(() => {
-    if (currentUser?.role) {
-      setUserRole(currentUser.role);
-    }
-  }, [currentUser?.role]);
 
   const currentEarnings = useMemo(() => {
     if (!currentUserId) return 0;
@@ -200,10 +158,11 @@ const App: React.FC = () => {
     let updatedUsers = [...users];
     let hasUpdates = false;
     let newCelebrations: AppNotification[] = [];
+    if (!db) return;
 
     const processMilestones = async () => {
         const resultUsers = await Promise.all(updatedUsers.map(async (user) => {
-            if (user.role !== 'EMPLOYEE') return user;
+            if (user.role !== 'scholar') return user;
             const earnings = jobs
                 .filter(j => j.assigneeId === user.id && j.status === JobStatus.COMPLETED)
                 .reduce((sum, j) => sum + j.pay, 0);
@@ -259,7 +218,7 @@ const App: React.FC = () => {
       const now = Date.now();
 
       jobs.forEach(job => {
-        if (userRole === 'EMPLOYEE' && job.assigneeId !== currentUserId) return;
+        if (displayRole === 'scholar' && job.assigneeId !== currentUserId) return;
         if (job.status === JobStatus.UPCOMING) {
           const jobTime = new Date(job.date).getTime();
           const diffDays = (jobTime - now) / (1000 * 60 * 60 * 24);
@@ -270,7 +229,7 @@ const App: React.FC = () => {
       });
 
       // CORE SYSTEM: Generate Admin Notification for Pending Tasks
-      if (userRole === 'ADMIN' && totalPendingTasks > 0) {
+      if (displayRole === 'admin' && totalPendingTasks > 0) {
           rawNotifications.push({ 
               id: 'pending-tasks-alert', 
               jobId: 'admin-action', 
@@ -281,7 +240,7 @@ const App: React.FC = () => {
           });
       }
       return rawNotifications;
-  }, [jobs, userRole, totalPendingTasks, currentUserId]);
+  }, [jobs, displayRole, totalPendingTasks, currentUserId]);
 
   const notifications = useMemo(() => {
       const combined = [...manualNotifications, ...generatedNotifications];
@@ -294,20 +253,17 @@ const App: React.FC = () => {
 
   const handleJobUpdate = async (updatedJob: Job) => {
     setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
+    if (!db) return;
     const { id, ...payload } = updatedJob;
     await setDoc(doc(db, 'jobs', id), stripUndefined(payload), { merge: true });
   };
 
   const handleUserUpdate = async (userId: string, updates: Partial<UserType>) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+    if (!db) return;
     await setDoc(doc(db, 'users', userId), stripUndefined(updates), { merge: true });
   };
 
-  const handleUserRoleUpdate = async (role: 'EMPLOYEE' | 'ADMIN') => {
-    if (!currentUserId) return;
-    setUserRole(role);
-    await setDoc(doc(db, 'users', currentUserId), { role }, { merge: true });
-  };
   
   const handleManualNotification = (message: string, jobId: string) => {
       const newNotif: AppNotification = { 
@@ -389,7 +345,7 @@ const App: React.FC = () => {
     );
   }
 
-  if (!authReady) {
+  if (!profile) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex items-center justify-center">
         <div className="text-sm text-slate-500">Loading scheduling system...</div>
@@ -397,13 +353,12 @@ const App: React.FC = () => {
     );
   }
 
-  if (showPendingView && userRole === 'ADMIN') return (<PendingApprovals jobs={jobs} onUpdateJob={handleJobUpdate} onBack={() => setShowPendingView(false)} onTaskAction={handleAdminTaskAction} />);
+  if (showPendingView && displayRole === 'admin') return (<PendingApprovals jobs={jobs} onUpdateJob={handleJobUpdate} onBack={() => setShowPendingView(false)} onTaskAction={handleAdminTaskAction} />);
   if (selectedJob) return (<JobDetail job={selectedJob} users={users} onBack={() => setSelectedJobId(null)} onUpdateJob={handleJobUpdate} onNotifyAdmin={handleManualNotification} userRole={userRole} currentUserId={currentUserId} />);
   if (showProfile) return (
     <UserProfile
       onBack={() => setShowProfile(false)}
-      userRole={userRole}
-      onUpdateUserRole={handleUserRoleUpdate}
+      userRole={displayRole}
       users={users}
       onUpdateUser={handleUserUpdate}
       jobs={jobs}
@@ -414,7 +369,7 @@ const App: React.FC = () => {
   const masterList = [...jobs].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const myJobs = masterList.filter(j => j.assigneeId === currentUserId);
   const availableJobs = masterList.filter(j => !j.assigneeId && j.status !== JobStatus.CANCELLED);
-  const displayedJobs = userRole === 'ADMIN' ? masterList : (activeTab === 'MY_JOBS' ? myJobs : availableJobs);
+  const displayedJobs = displayRole === 'admin' ? masterList : (activeTab === 'MY_JOBS' ? myJobs : availableJobs);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans relative">
@@ -436,7 +391,12 @@ const App: React.FC = () => {
           <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
               <div className="flex items-center gap-2"><div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm"><span className="text-white font-bold text-lg">S</span></div><h1 className="font-bold text-lg tracking-tight">Scholar Hub</h1></div>
               <div className="flex items-center gap-3">
-                  {userRole === 'ADMIN' && (<span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide border border-amber-200">Admin</span>)}
+                  {userRole === 'admin' && (
+                    <>
+                      <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide border border-amber-200">Admin</span>
+                      <Link to="/admin" className="text-xs font-semibold text-blue-600">Admin Panel</Link>
+                    </>
+                  )}
                   <button className="relative p-2" onClick={() => setShowNotifications(!showNotifications)}><Bell size={20} className="text-slate-600" />{unreadCount > 0 && (<span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>)}</button>
                   <button onClick={() => setShowProfile(true)} className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-500"><User size={18} /></button>
               </div>
@@ -452,7 +412,13 @@ const App: React.FC = () => {
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
-        {userRole === 'EMPLOYEE' ? (
+        {viewAsUid && (
+          <div className="bg-amber-100 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-xs flex items-center justify-between">
+            <span>Viewing as {users.find(u => u.id === viewAsUid)?.name || "Scholar"}</span>
+            <button onClick={() => setViewAsUid(null)} className="font-bold text-amber-700">Exit</button>
+          </div>
+        )}
+        {displayRole === 'scholar' ? (
              <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg">
                 <h2 className="text-2xl font-bold mb-4">Hello, {currentUser?.name.split(' ')[0] || 'Scholar'} 👋</h2>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
@@ -530,15 +496,15 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {userRole === 'EMPLOYEE' && (<div className="flex bg-white rounded-xl p-1 shadow-sm border"><button onClick={() => setActiveTab('MY_JOBS')} className={`flex-1 py-3 text-sm font-medium rounded-lg ${activeTab === 'MY_JOBS' ? 'bg-blue-50 text-blue-700' : 'text-slate-500'}`}>My Schedule</button><button onClick={() => setActiveTab('AVAILABLE')} className={`flex-1 py-3 text-sm font-medium rounded-lg ${activeTab === 'AVAILABLE' ? 'bg-orange-50 text-orange-700' : 'text-slate-500'}`}>Job Board 🔥</button></div>)}
+        {displayRole === 'scholar' && (<div className="flex bg-white rounded-xl p-1 shadow-sm border"><button onClick={() => setActiveTab('MY_JOBS')} className={`flex-1 py-3 text-sm font-medium rounded-lg ${activeTab === 'MY_JOBS' ? 'bg-blue-50 text-blue-700' : 'text-slate-500'}`}>My Schedule</button><button onClick={() => setActiveTab('AVAILABLE')} className={`flex-1 py-3 text-sm font-medium rounded-lg ${activeTab === 'AVAILABLE' ? 'bg-orange-50 text-orange-700' : 'text-slate-500'}`}>Job Board 🔥</button></div>)}
 
         <div className="space-y-4">
             <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} /><input type="text" placeholder="Search operations..." className="w-full bg-white border rounded-xl py-3.5 pl-10 pr-4 text-sm" /></div>
-            {displayedJobs.map(job => (<JobCard key={job.id} job={job} onClick={() => setSelectedJobId(job.id)} isAdmin={userRole === 'ADMIN'} onAdminAction={handleAdminActionClick} />))}
+            {displayedJobs.map(job => (<JobCard key={job.id} job={job} onClick={() => setSelectedJobId(job.id)} isAdmin={displayRole === 'admin'} onAdminAction={handleAdminActionClick} />))}
         </div>
       </main>
 
-      {userRole === 'ADMIN' && (<button onClick={() => setShowAddJobModal(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-all"><Plus size={28} /></button>)}
+      {displayRole === 'admin' && (<button onClick={() => setShowAddJobModal(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-all"><Plus size={28} /></button>)}
       
       {adminActionState && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in backdrop-blur-sm">

@@ -25,3 +25,11 @@ npm run build
 cd ..
 firebase deploy --only functions
 ```
+
+## Auth Approval Flow
+
+Admin allowlist is configured in `schedulingsystem/app/src/config.ts`:
+- `tylerzsodia@gmail.com`
+- `zach.harmon25@gmail.com`
+
+New users must request access via `/create-account`. Admins approve in `/admin`.

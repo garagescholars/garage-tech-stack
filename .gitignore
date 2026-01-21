@@ -33,3 +33,4 @@ frontend/dist/
 
 # scheduling system artifacts
 schedulingsystem/*.zip
+schedulingsystem/app/dist/
