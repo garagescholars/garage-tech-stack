@@ -107,7 +107,7 @@ export const generateSopForJob = onCall(async (request) => {
     throw new HttpsError("not-found", "Job not found.");
   }
 
-  const jobData = { id: jobSnap.id, ...jobSnap.data() };
+  const jobData = { id: jobSnap.id, ...jobSnap.data() } as { id: string; intakeMediaPaths?: string[] } & FirebaseFirestore.DocumentData;
   const intakePaths: string[] = Array.isArray(jobData.intakeMediaPaths) ? jobData.intakeMediaPaths : [];
   const bucket = storage.bucket();
   const imageUrls = await Promise.all(intakePaths.map(async (path) => {
@@ -122,6 +122,10 @@ export const generateSopForJob = onCall(async (request) => {
   const prompt = buildPrompt(jobData, imageUrls);
 
   const runCompletion = async () => {
+    const imageParts = imageUrls.map((url) => ({
+      type: "image_url",
+      image_url: { url }
+    })) as any;
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.2,
@@ -131,11 +135,8 @@ export const generateSopForJob = onCall(async (request) => {
           role: "user",
           content: [
             { type: "text", text: prompt.userText },
-            ...imageUrls.map((url) => ({
-              type: "image_url",
-              image_url: { url }
-            }))
-          ]
+            ...imageParts
+          ] as any
         }
       ]
     });
