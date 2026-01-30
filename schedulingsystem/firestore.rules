@@ -13,6 +13,13 @@ service cloud.firestore {
       return isSignedIn() && userDoc().data.role == 'admin';
     }
 
+    function isAdminByEmail() {
+      return isSignedIn() && request.auth.token.email in [
+        'tylerzsodia@gmail.com',
+        'zach.harmon25@gmail.com'
+      ];
+    }
+
     function isJobParticipant(jobId) {
       return isSignedIn() && (
         get(/databases/$(database)/documents/jobs/$(jobId)).data.assigneeId == request.auth.uid ||
@@ -21,13 +28,13 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAdmin() || request.auth.uid == userId;
+      allow read: if isAdminByEmail() || request.auth.uid == userId;
       allow create: if isSignedIn()
         && request.auth.uid == userId
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == "scholar"
         && request.resource.data.status in ["disabled", "pending"];
-      allow update: if isAdmin() || (request.auth.uid == userId
+      allow update: if isAdminByEmail() || (request.auth.uid == userId
         && request.resource.data.role == resource.data.role
         && request.resource.data.status == resource.data.status);
     }
