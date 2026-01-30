@@ -204,9 +204,18 @@ exports.approveSignup = (0, https_1.onCall)(async (request) => {
                 return { ok: true };
             }
         }
-        throw new https_1.HttpsError("not-found", "User for request not found.");
+        // Last resort: debug all users to see what's in the collection
+        console.log("Failed to find user by requestId or email");
+        // Get all users to debug
+        const allUsers = await db.collection("users").limit(10).get();
+        console.log("Total users in collection:", allUsers.size);
+        allUsers.docs.forEach(doc => {
+            console.log("User doc:", doc.id, doc.data());
+        });
+        throw new https_1.HttpsError("not-found", `User for request not found. Checked requestId: ${requestId}, email: ${email || 'none'}`);
     }
     const userDoc = userQuery.docs[0];
+    console.log("Found user document:", userDoc.id, userDoc.data());
     await requestRef.set({
         status: "approved",
         decidedAt: firestore_1.FieldValue.serverTimestamp(),
