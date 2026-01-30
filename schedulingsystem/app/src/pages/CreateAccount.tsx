@@ -69,12 +69,12 @@ const CreateAccount: React.FC = () => {
       });
 
       await signOut(auth);
+      setLoading(false);
       navigate("/pending-approval", { replace: true });
     } catch (err) {
+      setLoading(false);
       const message = err instanceof Error ? err.message : "Failed to submit request.";
       setError(message);
-    } finally {
-      setLoading(false);
     }
   };
 
