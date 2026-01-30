@@ -174,8 +174,36 @@ exports.approveSignup = (0, https_1.onCall)(async (request) => {
     if (!reqSnap.exists) {
         throw new https_1.HttpsError("not-found", "Signup request not found.");
     }
+    console.log("Looking for user with requestId:", requestId);
     const userQuery = await db.collection("users").where("requestId", "==", requestId).limit(1).get();
+    console.log("User query result - empty?", userQuery.empty, "size:", userQuery.size);
     if (userQuery.empty) {
+        // Try to find user by email as fallback
+        const reqData = reqSnap.data();
+        const email = reqData?.email;
+        console.log("User not found by requestId, trying email:", email);
+        if (email) {
+            const emailQuery = await db.collection("users").where("email", "==", email).limit(1).get();
+            console.log("Email query result - empty?", emailQuery.empty, "size:", emailQuery.size);
+            if (!emailQuery.empty) {
+                const userDoc = emailQuery.docs[0];
+                console.log("Found user by email, updating with requestId");
+                // Update the user doc with the requestId and approve
+                await userDoc.ref.set({
+                    requestId,
+                    role: "scholar",
+                    status: "active",
+                    approvedAt: firestore_1.FieldValue.serverTimestamp(),
+                    approvedByUid: request.auth.uid
+                }, { merge: true });
+                await requestRef.set({
+                    status: "approved",
+                    decidedAt: firestore_1.FieldValue.serverTimestamp(),
+                    decidedByUid: request.auth.uid
+                }, { merge: true });
+                return { ok: true };
+            }
+        }
         throw new https_1.HttpsError("not-found", "User for request not found.");
     }
     const userDoc = userQuery.docs[0];
