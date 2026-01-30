@@ -58,18 +58,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const email = (firebaseUser.email || "").toLowerCase();
       const isAdminEmail = ADMIN_EMAILS.includes(email);
       const userRef = doc(db, "users", firebaseUser.uid);
-      const userSnap = await getDoc(userRef);
 
       if (isAdminEmail) {
-        const name = firebaseUser.displayName || email.split("@")[0] || "Admin";
-        await setDoc(userRef, {
+        const name = email.split("@")[0] || "Admin";
+        setProfile({
+          uid: firebaseUser.uid,
+          email,
+          name,
+          role: "admin",
+          status: "active"
+        });
+        localStorage.removeItem("pendingEmail");
+        setLoading(false);
+        void setDoc(userRef, {
           email,
           name,
           role: "admin",
           status: "active",
           createdAt: serverTimestamp()
-        }, { merge: true });
-      } else if (!userSnap.exists()) {
+        }, { merge: true }).catch((err) => {
+          console.warn("Failed to ensure admin user profile:", err);
+        });
+        return;
+      }
+
+      let userSnap;
+      try {
+        userSnap = await getDoc(userRef);
+      } catch (err) {
+        console.warn("Failed to load user profile:", err);
+        setAuthError("Unable to load user profile. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      if (!userSnap.exists()) {
         setPendingEmail(email);
         await signOut(auth);
         setLoading(false);
@@ -87,8 +110,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role?: Role;
           status?: Status;
         };
-        const role = isAdminEmail ? "admin" : (data.role || "scholar");
-        const status = isAdminEmail ? "active" : (data.status || "pending");
+        const role = data.role || "scholar";
+        const status = data.status || "pending";
         setProfile({
           uid: firebaseUser.uid,
           email: data.email || email,
@@ -101,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem("pendingEmail");
         }
 
-        if (!isAdminEmail && status !== "active") {
+        if (status !== "active") {
           setPendingEmail(email);
           await signOut(auth);
         }

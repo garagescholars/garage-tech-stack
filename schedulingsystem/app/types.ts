@@ -10,19 +10,21 @@ export enum JobStatus {
   APPROVED_FOR_POSTING = 'APPROVED_FOR_POSTING'
 }
 
+export type UserRole = 'scholar' | 'admin';
+
 export interface Task {
   id: string;
   text: string;
   isCompleted: boolean;
   status?: 'APPROVED' | 'PENDING'; // Default is APPROVED if undefined
-  addedBy?: 'admin' | 'scholar';
+  addedBy?: UserRole;
   actionTimestamp?: string; // ISO String when admin approved/rejected or employee added
 }
 
 export interface User {
   id: string;
   name: string;
-  role: 'scholar' | 'admin';
+  role: UserRole;
   monthlyGoal: number; // Represents Currency Target (e.g. 3000 for $3000)
   avatarInitials: string;
   achievedMilestones: number[]; // Tracks percentages hit: [80, 90, 100]

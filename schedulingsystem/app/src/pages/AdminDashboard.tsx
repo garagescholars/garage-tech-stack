@@ -33,10 +33,40 @@ const AdminDashboard: React.FC = () => {
   const [scholars, setScholars] = useState<UserRow[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { setViewAsUid } = useAuth();
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [scholarsLoading, setScholarsLoading] = useState(true);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
+  const [scholarsError, setScholarsError] = useState<string | null>(null);
+  const { setViewAsUid, loading, authError } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-500">
+        Loading...
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-rose-600">
+        {authError}
+      </div>
+    );
+  }
 
   useEffect(() => {
-    if (!db) return;
+    if (!db) {
+      setRequestsError("Firestore not initialized.");
+      setNotificationsError("Firestore not initialized.");
+      setScholarsError("Firestore not initialized.");
+      setRequestsLoading(false);
+      setNotificationsLoading(false);
+      setScholarsLoading(false);
+      return;
+    }
     const reqQuery = query(collection(db, "signupRequests"), orderBy("createdAt", "desc"));
     const unsubRequests = onSnapshot(reqQuery, (snap) => {
       const rows = snap.docs.map((docSnap) => ({
@@ -44,6 +74,11 @@ const AdminDashboard: React.FC = () => {
         ...(docSnap.data() as Omit<SignupRequest, "id">)
       }));
       setRequests(rows);
+      setRequestsError(null);
+      setRequestsLoading(false);
+    }, (err) => {
+      setRequestsError(err.message || "Failed to load signup requests.");
+      setRequestsLoading(false);
     });
 
     const notifQuery = query(collection(db, "adminNotifications"), orderBy("createdAt", "desc"));
@@ -53,6 +88,11 @@ const AdminDashboard: React.FC = () => {
         ...(docSnap.data() as Omit<AdminNotification, "id">)
       }));
       setNotifications(rows);
+      setNotificationsError(null);
+      setNotificationsLoading(false);
+    }, (err) => {
+      setNotificationsError(err.message || "Failed to load notifications.");
+      setNotificationsLoading(false);
     });
 
     const usersQuery = query(collection(db, "users"));
@@ -62,6 +102,11 @@ const AdminDashboard: React.FC = () => {
         ...(docSnap.data() as Omit<UserRow, "id">)
       })).filter((user) => user.role === "scholar" && user.status === "active");
       setScholars(rows);
+      setScholarsError(null);
+      setScholarsLoading(false);
+    }, (err) => {
+      setScholarsError(err.message || "Failed to load scholar list.");
+      setScholarsLoading(false);
     });
 
     return () => {
@@ -115,21 +160,33 @@ const AdminDashboard: React.FC = () => {
             <h2 className="font-bold text-slate-800 text-sm">View As Scholar</h2>
             <button onClick={() => setViewAsUid(null)} className="text-xs text-slate-500">Clear</button>
           </div>
-          <select
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
-            onChange={(e) => setViewAsUid(e.target.value || null)}
-            defaultValue=""
-          >
-            <option value="">Select scholar...</option>
-            {scholars.map((scholar) => (
-              <option key={scholar.id} value={scholar.id}>{scholar.name}</option>
-            ))}
-          </select>
+          {scholarsLoading ? (
+            <div className="text-sm text-slate-500">Loading scholars...</div>
+          ) : scholarsError ? (
+            <div className="text-sm text-rose-600">{scholarsError}</div>
+          ) : scholars.length === 0 ? (
+            <div className="text-sm text-slate-500">No active scholars.</div>
+          ) : (
+            <select
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+              onChange={(e) => setViewAsUid(e.target.value || null)}
+              defaultValue=""
+            >
+              <option value="">Select scholar...</option>
+              {scholars.map((scholar) => (
+                <option key={scholar.id} value={scholar.id}>{scholar.name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <h2 className="font-bold text-slate-800 text-sm mb-3">Pending Signup Requests</h2>
-          {requests.filter(r => r.status === "pending").length === 0 ? (
+          {requestsLoading ? (
+            <div className="text-sm text-slate-500">Loading requests...</div>
+          ) : requestsError ? (
+            <div className="text-sm text-rose-600">{requestsError}</div>
+          ) : requests.filter(r => r.status === "pending").length === 0 ? (
             <div className="text-sm text-slate-500">No pending requests.</div>
           ) : (
             <div className="space-y-3">
@@ -163,7 +220,11 @@ const AdminDashboard: React.FC = () => {
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <h2 className="font-bold text-slate-800 text-sm mb-3">Admin Notifications</h2>
-          {notifications.length === 0 ? (
+          {notificationsLoading ? (
+            <div className="text-sm text-slate-500">Loading notifications...</div>
+          ) : notificationsError ? (
+            <div className="text-sm text-rose-600">{notificationsError}</div>
+          ) : notifications.length === 0 ? (
             <div className="text-sm text-slate-500">No notifications.</div>
           ) : (
             <div className="space-y-2">

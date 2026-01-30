@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, User, LogOut, ShieldCheck, Mail, ToggleLeft, ToggleRight, Target, TrendingUp, DollarSign, Phone } from 'lucide-react';
 import { User as UserType, Job, JobStatus } from '../types';
+import { useAuth } from '../src/auth/AuthProvider';
 
 interface UserProfileProps {
   onBack: () => void;
@@ -13,6 +14,8 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUpdateUser, jobs, currentUserId }) => {
   
+  const { user: authUser } = useAuth();
+
   const handleGoalChange = (userId: string, newGoal: number) => {
       onUpdateUser(userId, { monthlyGoal: newGoal });
   };
@@ -31,6 +34,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
     achievedMilestones: [],
     phoneNumber: ''
   };
+  const adminEmail = (authUser?.email || '').toLowerCase();
+  const adminName = adminEmail ? adminEmail.split('@')[0] : 'Admin';
+  const adminInitials = adminName ? adminName.charAt(0).toUpperCase() : 'A';
+  const isAdmin = userRole === 'admin';
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans animate-in slide-in-from-right duration-200">
@@ -51,14 +58,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
         {/* Profile Header */}
         <div className="flex flex-col items-center text-center">
           <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg mb-4 text-white text-3xl font-bold">
-            {displayUser.avatarInitials}
+            {isAdmin ? adminInitials : displayUser.avatarInitials}
           </div>
-          <h2 className="text-2xl font-bold text-slate-800">{displayUser.name}</h2>
-          <div className="flex items-center gap-2 mt-1 text-slate-500">
-            <ShieldCheck size={16} className="text-blue-500" />
-            <span className="font-medium">Verified Specialist</span>
-          </div>
-          {displayUser.phoneNumber && (
+          <h2 className="text-2xl font-bold text-slate-800">{isAdmin ? adminName : displayUser.name}</h2>
+          {!isAdmin && (
+            <div className="flex items-center gap-2 mt-1 text-slate-500">
+              <ShieldCheck size={16} className="text-blue-500" />
+              <span className="font-medium">Verified Specialist</span>
+            </div>
+          )}
+          {!isAdmin && displayUser.phoneNumber && (
              <div className="flex items-center gap-1 mt-1 text-slate-400 text-sm">
                 <Phone size={12} /> {displayUser.phoneNumber}
              </div>
@@ -66,22 +75,24 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
-                <div className="text-2xl font-bold text-slate-800">4.9</div>
-                <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Rating</div>
-            </div>
-            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
-                <div className="text-2xl font-bold text-slate-800">
-                    {jobs.filter(j => j.assigneeId === currentUserId && j.status === 'COMPLETED').length}
-                </div>
-                <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Completed</div>
-            </div>
-            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
-                <div className="text-2xl font-bold text-slate-800">2yr</div>
-                <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Exp</div>
-            </div>
-        </div>
+        {!isAdmin && (
+          <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
+                  <div className="text-2xl font-bold text-slate-800">4.9</div>
+                  <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Rating</div>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
+                  <div className="text-2xl font-bold text-slate-800">
+                      {jobs.filter(j => j.assigneeId === currentUserId && j.status === 'COMPLETED').length}
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Completed</div>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm text-center">
+                  <div className="text-2xl font-bold text-slate-800">2yr</div>
+                  <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Exp</div>
+              </div>
+          </div>
+        )}
 
         {/* Employee Goal & Phone Settings (Admin Only) */}
         {userRole === 'admin' && (
@@ -167,7 +178,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
                 </div>
                 <div>
                     <p className="text-xs text-slate-400 font-medium uppercase">Role</p>
-                    <p className="text-slate-800 font-medium">Senior Organization Specialist</p>
+                    <p className="text-slate-800 font-medium">{isAdmin ? 'Admin' : 'Senior Organization Specialist'}</p>
                 </div>
             </div>
             <div className="p-4 flex items-center gap-4">
@@ -176,7 +187,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
                 </div>
                 <div>
                     <p className="text-xs text-slate-400 font-medium uppercase">Email</p>
-                    <p className="text-slate-800 font-medium">alex.scholar@garagescholars.com</p>
+                    <p className="text-slate-800 font-medium">{isAdmin ? adminEmail || 'admin@garagescholars.com' : 'alex.scholar@garagescholars.com'}</p>
                 </div>
             </div>
         </div>
