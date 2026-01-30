@@ -2,6 +2,9 @@ import React from 'react';
 import { ArrowLeft, User, LogOut, ShieldCheck, Mail, ToggleLeft, ToggleRight, Target, TrendingUp, DollarSign, Phone } from 'lucide-react';
 import { User as UserType, Job, JobStatus } from '../types';
 import { useAuth } from '../src/auth/AuthProvider';
+import { signOut } from 'firebase/auth';
+import { auth } from '../src/firebase';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfileProps {
   onBack: () => void;
@@ -13,8 +16,9 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUpdateUser, jobs, currentUserId }) => {
-  
+
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
 
   const handleGoalChange = (userId: string, newGoal: number) => {
       onUpdateUser(userId, { monthlyGoal: newGoal });
@@ -22,6 +26,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
 
   const handlePhoneChange = (userId: string, newPhone: string) => {
       onUpdateUser(userId, { phoneNumber: newPhone });
+  };
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const currentUser = users.find(u => u.id === currentUserId) || users[0];
@@ -193,7 +207,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
         </div>
 
         {/* Logout Button */}
-        <button className="w-full bg-white border border-slate-200 text-red-600 font-medium py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+        <button
+          onClick={handleLogout}
+          className="w-full bg-white border border-slate-200 text-red-600 font-medium py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+        >
             <LogOut size={18} />
             Log Out
         </button>
