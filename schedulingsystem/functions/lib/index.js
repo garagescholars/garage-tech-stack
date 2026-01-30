@@ -14,6 +14,11 @@ const openai_1 = __importDefault(require("openai"));
 const db = (0, firestore_1.getFirestore)();
 const storage = (0, storage_1.getStorage)();
 const adminAuth = (0, auth_1.getAuth)();
+// Admin emails that have elevated privileges
+const ADMIN_EMAILS = [
+    'tylerzsodia@gmail.com',
+    'zach.harmon25@gmail.com'
+];
 const parseJsonStrict = (raw) => {
     const trimmed = raw.trim();
     const start = trimmed.indexOf("{");
@@ -65,11 +70,7 @@ exports.generateSopForJob = (0, https_1.onCall)(async (request) => {
     if (!jobId) {
         throw new https_1.HttpsError("invalid-argument", "Missing jobId.");
     }
-    const userSnap = await db.collection("users").doc(request.auth.uid).get();
-    const userRole = userSnap.exists ? userSnap.data()?.role : null;
-    if (userRole !== "admin") {
-        throw new https_1.HttpsError("permission-denied", "Admin role required.");
-    }
+    await requireAdmin(request.auth.uid, request.auth.token.email);
     const openaiKey = process.env.OPENAI_API_KEY;
     if (!openaiKey) {
         throw new https_1.HttpsError("failed-precondition", "OPENAI_API_KEY is not configured.");
@@ -147,7 +148,12 @@ exports.generateSopForJob = (0, https_1.onCall)(async (request) => {
     }, { merge: true });
     return { ok: true, sopId: sopRef.id };
 });
-const requireAdmin = async (uid) => {
+const requireAdmin = async (uid, email) => {
+    // Check if user email is in the admin list
+    if (email && ADMIN_EMAILS.includes(email.toLowerCase())) {
+        return;
+    }
+    // Fallback to checking Firestore role (for backward compatibility)
     const userSnap = await db.collection("users").doc(uid).get();
     const role = userSnap.exists ? userSnap.data()?.role : null;
     if (role !== "admin") {
@@ -162,7 +168,7 @@ exports.approveSignup = (0, https_1.onCall)(async (request) => {
     if (!requestId) {
         throw new https_1.HttpsError("invalid-argument", "Missing requestId.");
     }
-    await requireAdmin(request.auth.uid);
+    await requireAdmin(request.auth.uid, request.auth.token.email);
     const requestRef = db.collection("signupRequests").doc(requestId);
     const reqSnap = await requestRef.get();
     if (!reqSnap.exists) {
@@ -194,7 +200,7 @@ exports.declineSignup = (0, https_1.onCall)(async (request) => {
     if (!requestId) {
         throw new https_1.HttpsError("invalid-argument", "Missing requestId.");
     }
-    await requireAdmin(request.auth.uid);
+    await requireAdmin(request.auth.uid, request.auth.token.email);
     const requestRef = db.collection("signupRequests").doc(requestId);
     const reqSnap = await requestRef.get();
     if (!reqSnap.exists) {

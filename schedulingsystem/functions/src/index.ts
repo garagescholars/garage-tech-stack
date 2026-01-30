@@ -11,6 +11,12 @@ const db = getFirestore();
 const storage = getStorage();
 const adminAuth = getAuth();
 
+// Admin emails that have elevated privileges
+const ADMIN_EMAILS = [
+  'tylerzsodia@gmail.com',
+  'zach.harmon25@gmail.com'
+];
+
 type SopSectionStep = {
   id: string;
   text: string;
@@ -92,11 +98,7 @@ export const generateSopForJob = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing jobId.");
   }
 
-  const userSnap = await db.collection("users").doc(request.auth.uid).get();
-  const userRole = userSnap.exists ? userSnap.data()?.role : null;
-  if (userRole !== "admin") {
-    throw new HttpsError("permission-denied", "Admin role required.");
-  }
+  await requireAdmin(request.auth.uid, request.auth.token.email);
 
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
@@ -185,7 +187,13 @@ export const generateSopForJob = onCall(async (request) => {
   return { ok: true, sopId: sopRef.id };
 });
 
-const requireAdmin = async (uid: string) => {
+const requireAdmin = async (uid: string, email?: string) => {
+  // Check if user email is in the admin list
+  if (email && ADMIN_EMAILS.includes(email.toLowerCase())) {
+    return;
+  }
+
+  // Fallback to checking Firestore role (for backward compatibility)
   const userSnap = await db.collection("users").doc(uid).get();
   const role = userSnap.exists ? userSnap.data()?.role : null;
   if (role !== "admin") {
@@ -202,7 +210,7 @@ export const approveSignup = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing requestId.");
   }
 
-  await requireAdmin(request.auth.uid);
+  await requireAdmin(request.auth.uid, request.auth.token.email);
 
   const requestRef = db.collection("signupRequests").doc(requestId);
   const reqSnap = await requestRef.get();
@@ -241,7 +249,7 @@ export const declineSignup = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing requestId.");
   }
 
-  await requireAdmin(request.auth.uid);
+  await requireAdmin(request.auth.uid, request.auth.token.email);
 
   const requestRef = db.collection("signupRequests").doc(requestId);
   const reqSnap = await requestRef.get();
