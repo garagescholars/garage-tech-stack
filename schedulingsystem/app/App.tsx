@@ -24,6 +24,16 @@ const stripUndefined = <T,>(data: T): T => (
   Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)) as T
 );
 
+const getInitials = (name: string): string => {
+  return name
+    .split(' ')
+    .map(part => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+};
+
 interface SmsLogEntry {
     id: string;
     to: string;
@@ -79,7 +89,6 @@ const App: React.FC = () => {
 
   // --- Firestore Subscriptions ---
   useEffect(() => {
-      if (!db) return;
       if (!db || !profile) return;
 
       const usersRef = collection(db, 'users');

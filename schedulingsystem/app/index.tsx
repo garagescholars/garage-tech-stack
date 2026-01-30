@@ -6,6 +6,7 @@ import './src/index.css';
 import { AuthProvider } from './src/auth/AuthProvider';
 import ProtectedRoute from './src/components/ProtectedRoute';
 import AdminRoute from './src/components/AdminRoute';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import Login from './src/pages/Login';
 import CreateAccount from './src/pages/CreateAccount';
 import PendingApproval from './src/pages/PendingApproval';
@@ -19,17 +20,19 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/create-account" element={<CreateAccount />} />
-          <Route path="/pending-approval" element={<PendingApproval />} />
-          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/app" element={<ProtectedRoute><App /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/app" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/create-account" element={<CreateAccount />} />
+            <Route path="/pending-approval" element={<PendingApproval />} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/app" element={<ProtectedRoute><App /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/app" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
