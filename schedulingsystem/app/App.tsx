@@ -6,7 +6,7 @@ import { JobDetail } from './views/JobDetail';
 import UserProfile from './views/UserProfile';
 import PendingApprovals from './views/PendingApprovals';
 import { broadcastMilestone, requestSmsPermissions, SmsRecipient } from './services/smsService';
-import { collection, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, orderBy, query, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, firebaseInitError } from './src/firebase';
 import { useAuth } from './src/auth/AuthProvider';
 import { 
@@ -66,6 +66,9 @@ const App: React.FC = () => {
   const [adminActionState, setAdminActionState] = useState<{ type: 'TRANSFER' | 'RESCHEDULE' | 'CANCEL'; job: Job; } | null>(null);
   const [actionInputValue, setActionInputValue] = useState('');
   const [isConfirmingAction, setIsConfirmingAction] = useState(false);
+
+  const [claimJobState, setClaimJobState] = useState<Job | null>(null);
+  const [isClaimingJob, setIsClaimingJob] = useState(false);
 
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   const [newJobForm, setNewJobForm] = useState({ clientName: '', address: '', date: '', time: '09:00', pay: '', description: '', assigneeId: '' });
@@ -323,6 +326,46 @@ const App: React.FC = () => {
       setAdminActionState({ type: action, job });
   };
 
+  const handleClaimJobClick = (job: Job, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setClaimJobState(job);
+  };
+
+  const confirmClaimJob = async () => {
+    if (!claimJobState || !currentUserId || !currentUser || !db) return;
+
+    setIsClaimingJob(true);
+    try {
+      const jobRef = doc(db, 'jobs', claimJobState.id);
+
+      await setDoc(jobRef, {
+        assigneeId: currentUserId,
+        assigneeName: currentUser.name,
+        status: JobStatus.UPCOMING,
+        claimedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      // Success! Switch to My Schedule tab
+      setActiveTab('MY_JOBS');
+      setClaimJobState(null);
+      setSmsBroadcast(`SUCCESS: Claimed ${claimJobState.clientName} job! Check "My Schedule".`);
+      setTimeout(() => setSmsBroadcast(null), 4000);
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to claim job.';
+      if (message.includes('permission') || message.includes('already')) {
+        setSmsBroadcast(`ERROR: Job already claimed by another scholar.`);
+      } else {
+        setSmsBroadcast(`ERROR: ${message}`);
+      }
+      setTimeout(() => setSmsBroadcast(null), 4000);
+      setClaimJobState(null);
+    } finally {
+      setIsClaimingJob(false);
+    }
+  };
+
   const submitAdminAction = async () => {
       if (!adminActionState) return;
       const { type, job } = adminActionState;
@@ -509,12 +552,55 @@ const App: React.FC = () => {
 
         <div className="space-y-4">
             <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} /><input type="text" placeholder="Search operations..." className="w-full bg-white border rounded-xl py-3.5 pl-10 pr-4 text-sm" /></div>
-            {displayedJobs.map(job => (<JobCard key={job.id} job={job} onClick={() => setSelectedJobId(job.id)} isAdmin={displayRole === 'admin'} onAdminAction={handleAdminActionClick} />))}
+            {displayedJobs.map(job => (
+              <JobCard
+                key={job.id}
+                job={job}
+                onClick={() => setSelectedJobId(job.id)}
+                isAdmin={displayRole === 'admin'}
+                onAdminAction={handleAdminActionClick}
+                onClaimJob={displayRole === 'scholar' && activeTab === 'AVAILABLE' ? handleClaimJobClick : undefined}
+                isAvailableJob={displayRole === 'scholar' && activeTab === 'AVAILABLE' && job.status === JobStatus.APPROVED_FOR_POSTING}
+                showCompetitionMetrics={displayRole === 'scholar' && activeTab === 'AVAILABLE'}
+              />
+            ))}
         </div>
       </main>
 
       {displayRole === 'admin' && (<button onClick={() => setShowAddJobModal(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-all"><Plus size={28} /></button>)}
       
+      {claimJobState && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <h3 className="text-xl font-bold mb-2 text-slate-800">Claim This Job?</h3>
+            <p className="text-sm text-slate-600 mb-4">
+              You're about to claim <span className="font-semibold">{claimJobState.clientName}</span> for <span className="font-bold text-emerald-600">${claimJobState.pay}</span>.
+            </p>
+            <div className="bg-slate-50 rounded-lg p-3 mb-4 text-xs text-slate-600">
+              <p className="font-semibold mb-1">📍 {claimJobState.address}</p>
+              <p>🗓️ {new Date(claimJobState.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(claimJobState.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
+            </div>
+            <p className="text-xs text-slate-500 mb-6">
+              ⚠️ Once claimed, you'll have 2 hours to cancel if needed.
+            </p>
+            <button
+              onClick={confirmClaimJob}
+              disabled={isClaimingJob}
+              className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-2"
+            >
+              {isClaimingJob ? 'Claiming...' : `Confirm - Claim Job`}
+            </button>
+            <button
+              onClick={() => setClaimJobState(null)}
+              disabled={isClaimingJob}
+              className="w-full text-slate-400 text-sm py-2"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {adminActionState && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in backdrop-blur-sm">
               <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">

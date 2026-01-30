@@ -8,9 +8,11 @@ interface JobCardProps {
   showCompetitionMetrics?: boolean;
   isAdmin?: boolean;
   onAdminAction?: (action: 'TRANSFER' | 'RESCHEDULE' | 'CANCEL', job: Job, e: React.MouseEvent) => void;
+  onClaimJob?: (job: Job, e: React.MouseEvent) => void;
+  isAvailableJob?: boolean;
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job, onClick, showCompetitionMetrics = false, isAdmin = false, onAdminAction }) => {
+const JobCard: React.FC<JobCardProps> = ({ job, onClick, showCompetitionMetrics = false, isAdmin = false, onAdminAction, onClaimJob, isAvailableJob = false }) => {
   const getStatusColor = (status: JobStatus) => {
     switch (status) {
       case JobStatus.COMPLETED: return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
@@ -114,22 +116,35 @@ const JobCard: React.FC<JobCardProps> = ({ job, onClick, showCompetitionMetrics 
           </div>
         )}
 
+        {/* Scholar Claim Job Button */}
+        {isAvailableJob && onClaimJob && (
+          <div className="pt-3 mt-3 border-t border-slate-100">
+            <button
+              onClick={(e) => onClaimJob(job, e)}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md active:scale-95"
+            >
+              <Zap size={18} fill="currentColor" />
+              Claim Job - ${job.pay}
+            </button>
+          </div>
+        )}
+
         {/* Admin Quick Actions Footer */}
         {isAdmin && job.status !== JobStatus.COMPLETED && job.status !== JobStatus.CANCELLED && (
             <div className="pt-3 mt-3 border-t border-slate-100 flex gap-2">
-                <button 
+                <button
                     onClick={(e) => onAdminAction?.('TRANSFER', job, e)}
                     className="flex-1 bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-600 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
                     <UserCog size={14} /> Transfer
                 </button>
-                <button 
+                <button
                     onClick={(e) => onAdminAction?.('RESCHEDULE', job, e)}
                     className="flex-1 bg-slate-100 hover:bg-amber-100 hover:text-amber-700 text-slate-600 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
                     <CalendarDays size={14} /> Reschedule
                 </button>
-                <button 
+                <button
                     onClick={(e) => onAdminAction?.('CANCEL', job, e)}
                     className="flex-1 bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-600 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
