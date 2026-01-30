@@ -3,15 +3,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateSopForJob = void 0;
+exports.declineSignup = exports.approveSignup = exports.generateSopForJob = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const app_1 = require("firebase-admin/app");
 const firestore_1 = require("firebase-admin/firestore");
+const auth_1 = require("firebase-admin/auth");
 const storage_1 = require("firebase-admin/storage");
 const openai_1 = __importDefault(require("openai"));
 (0, app_1.initializeApp)();
 const db = (0, firestore_1.getFirestore)();
 const storage = (0, storage_1.getStorage)();
+const adminAuth = (0, auth_1.getAuth)();
 const parseJsonStrict = (raw) => {
     const trimmed = raw.trim();
     const start = trimmed.indexOf("{");
@@ -65,7 +67,7 @@ exports.generateSopForJob = (0, https_1.onCall)(async (request) => {
     }
     const userSnap = await db.collection("users").doc(request.auth.uid).get();
     const userRole = userSnap.exists ? userSnap.data()?.role : null;
-    if (userRole !== "ADMIN") {
+    if (userRole !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Admin role required.");
     }
     const openaiKey = process.env.OPENAI_API_KEY;
@@ -144,4 +146,72 @@ exports.generateSopForJob = (0, https_1.onCall)(async (request) => {
         updatedAt: firestore_1.FieldValue.serverTimestamp()
     }, { merge: true });
     return { ok: true, sopId: sopRef.id };
+});
+const requireAdmin = async (uid) => {
+    const userSnap = await db.collection("users").doc(uid).get();
+    const role = userSnap.exists ? userSnap.data()?.role : null;
+    if (role !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Admin role required.");
+    }
+};
+exports.approveSignup = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Authentication required.");
+    }
+    const { requestId } = request.data;
+    if (!requestId) {
+        throw new https_1.HttpsError("invalid-argument", "Missing requestId.");
+    }
+    await requireAdmin(request.auth.uid);
+    const requestRef = db.collection("signupRequests").doc(requestId);
+    const reqSnap = await requestRef.get();
+    if (!reqSnap.exists) {
+        throw new https_1.HttpsError("not-found", "Signup request not found.");
+    }
+    const userQuery = await db.collection("users").where("requestId", "==", requestId).limit(1).get();
+    if (userQuery.empty) {
+        throw new https_1.HttpsError("not-found", "User for request not found.");
+    }
+    const userDoc = userQuery.docs[0];
+    await requestRef.set({
+        status: "approved",
+        decidedAt: firestore_1.FieldValue.serverTimestamp(),
+        decidedByUid: request.auth.uid
+    }, { merge: true });
+    await userDoc.ref.set({
+        role: "scholar",
+        status: "active",
+        approvedAt: firestore_1.FieldValue.serverTimestamp(),
+        approvedByUid: request.auth.uid
+    }, { merge: true });
+    return { ok: true };
+});
+exports.declineSignup = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Authentication required.");
+    }
+    const { requestId } = request.data;
+    if (!requestId) {
+        throw new https_1.HttpsError("invalid-argument", "Missing requestId.");
+    }
+    await requireAdmin(request.auth.uid);
+    const requestRef = db.collection("signupRequests").doc(requestId);
+    const reqSnap = await requestRef.get();
+    if (!reqSnap.exists) {
+        throw new https_1.HttpsError("not-found", "Signup request not found.");
+    }
+    const userQuery = await db.collection("users").where("requestId", "==", requestId).limit(1).get();
+    const userDoc = userQuery.empty ? null : userQuery.docs[0];
+    await requestRef.set({
+        status: "declined",
+        decidedAt: firestore_1.FieldValue.serverTimestamp(),
+        decidedByUid: request.auth.uid
+    }, { merge: true });
+    if (userDoc) {
+        await userDoc.ref.set({
+            status: "disabled"
+        }, { merge: true });
+        await adminAuth.deleteUser(userDoc.id).catch(() => null);
+    }
+    return { ok: true };
 });

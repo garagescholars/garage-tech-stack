@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { addDoc, collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
+import { ADMIN_EMAILS } from "../config";
 
 const CreateAccount: React.FC = () => {
   const [name, setName] = useState("");
@@ -35,6 +36,10 @@ const CreateAccount: React.FC = () => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    if (ADMIN_EMAILS.includes(normalizedEmail)) {
+      setError("Admins should log in directly.");
+      return;
+    }
     setLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
