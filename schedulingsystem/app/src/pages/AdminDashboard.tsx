@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { collection, onSnapshot, orderBy, query, updateDoc, doc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 import { functions, db } from "../firebase";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -28,6 +29,7 @@ type UserRow = {
 };
 
 const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<SignupRequest[]>([]);
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [scholars, setScholars] = useState<UserRow[]>([]);
@@ -145,8 +147,14 @@ const AdminDashboard: React.FC = () => {
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
-            <p className="text-sm text-slate-500">Approve new account requests.</p>
+            <p className="text-sm text-slate-500">Manage scholars, jobs, and account requests.</p>
           </div>
+          <button
+            onClick={() => navigate("/admin/create-job")}
+            className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            + Create Job
+          </button>
         </header>
 
         {error && (
