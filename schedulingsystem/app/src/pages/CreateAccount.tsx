@@ -42,7 +42,11 @@ const CreateAccount: React.FC = () => {
     }
     setLoading(true);
     try {
+      console.log('Creating user account...');
       const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+      console.log('User created:', cred.user.uid);
+
+      console.log('Creating signup request...');
       const requestRef = await addDoc(collection(db, "signupRequests"), {
         email: normalizedEmail,
         name: name.trim(),
@@ -50,7 +54,9 @@ const CreateAccount: React.FC = () => {
         status: "pending",
         createdAt: serverTimestamp()
       });
+      console.log('Signup request created:', requestRef.id);
 
+      console.log('Creating user document...');
       await setDoc(doc(db, "users", cred.user.uid), {
         email: normalizedEmail,
         name: name.trim(),
@@ -59,7 +65,9 @@ const CreateAccount: React.FC = () => {
         createdAt: serverTimestamp(),
         requestId: requestRef.id
       }, { merge: true });
+      console.log('User document created');
 
+      console.log('Creating admin notification...');
       await addDoc(collection(db, "adminNotifications"), {
         type: "signup_request",
         requestId: requestRef.id,
@@ -67,11 +75,17 @@ const CreateAccount: React.FC = () => {
         createdAt: serverTimestamp(),
         unread: true
       });
+      console.log('Admin notification created');
 
+      console.log('Signing out...');
       await signOut(auth);
+      console.log('Signed out successfully');
+
       setLoading(false);
+      console.log('Navigating to pending approval...');
       navigate("/pending-approval", { replace: true });
     } catch (err) {
+      console.error('Account creation error:', err);
       setLoading(false);
       const message = err instanceof Error ? err.message : "Failed to submit request.";
       setError(message);
