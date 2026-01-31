@@ -111,22 +111,53 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     }
   };
 
-  const submitCheckIn = () => {
+  const submitCheckIn = async () => {
     const saved = job.checkInMedia;
     const photo = mediaBuffer.photoFrontOfHouse || saved?.photoFrontOfHouse;
-    const video = mediaBuffer.videoGarage || saved?.videoGarage;
-    if (!photo || !video) { alert("Please complete both photo and video requirements."); return; }
-    const now = generateTimestamp();
-    const checkInMedia: JobMedia = {
-      photoFrontOfHouse: photo!,
-      videoGarage: video!,
-      timestamp: now,
-      photoTimestamp: mediaBuffer.photoTimestamp || saved?.photoTimestamp || now,
-      videoTimestamp: mediaBuffer.videoTimestamp || saved?.videoTimestamp || now,
-    };
-    onUpdateJob({ ...job, status: JobStatus.IN_PROGRESS, checkInTime: now, checkInMedia });
-    setMediaBuffer({});
-    setActiveStep('details');
+    if (!photo) {
+      alert("Please take a photo of the property exterior.");
+      return;
+    }
+
+    if (!storage) {
+      alert("Storage not initialized.");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // Convert base64 to blob
+      const response = await fetch(photo);
+      const blob = await response.blob();
+
+      // Upload to Firebase Storage
+      const path = `jobs/${job.id}/checkin.jpg`;
+      const uploadRef = storageRef(storage, path);
+      await uploadBytes(uploadRef, blob);
+
+      const now = generateTimestamp();
+
+      // Update job with storage path instead of base64
+      onUpdateJob({
+        ...job,
+        status: JobStatus.IN_PROGRESS,
+        checkInTime: now,
+        checkInMedia: {
+          photoFrontOfHouse: path,
+          videoGarage: '',
+          timestamp: now,
+          photoTimestamp: now
+        }
+      });
+
+      setMediaBuffer({});
+      setActiveStep('details');
+    } catch (error) {
+      console.error('Check-in upload failed:', error);
+      alert('Failed to upload check-in photo. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const processCheckOut = async () => {
@@ -240,11 +271,27 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
       }
   };
 
-  const toggleTask = (taskId: string) => {
+  const toggleTask = async (taskId: string) => {
     const task = job.checklist.find(t => t.id === taskId);
     if (task?.status === 'PENDING' && userRole === 'scholar') return;
-    const updatedChecklist = job.checklist.map(t => t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t);
+
+    const updatedChecklist = job.checklist.map(t =>
+      t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t
+    );
+
+    // Update locally first for immediate UI feedback
     onUpdateJob({ ...job, checklist: updatedChecklist });
+
+    // Update Firestore immediately
+    if (db) {
+      try {
+        await setDoc(doc(db, 'jobs', job.id), {
+          checklist: updatedChecklist
+        }, { merge: true });
+      } catch (error) {
+        console.error('Failed to update checklist in Firestore:', error);
+      }
+    }
   };
 
   const approveTask = (taskId: string) => {
@@ -286,9 +333,28 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     );
   }
 
-  if (activeStep === 'checkin' || activeStep === 'checkout') {
-    const isCheckIn = activeStep === 'checkin';
-    const currentSavedMedia = isCheckIn ? job.checkInMedia : job.checkOutMedia;
+  if (activeStep === 'checkin') {
+    const currentSavedMedia = job.checkInMedia;
+    const hasPhoto = !!mediaBuffer.photoFrontOfHouse || !!currentSavedMedia?.photoFrontOfHouse;
+    const canSubmit = hasPhoto;
+
+    return (
+      <div className="min-h-screen bg-white pb-24 relative">
+        <div className="bg-white border-b sticky top-0 z-10 p-4 flex items-center">
+          <button onClick={() => setActiveStep('details')} className="p-2 hover:bg-slate-100 rounded-full mr-2 text-slate-600"><ArrowLeft size={20} /></button>
+          <h2 className="font-bold text-lg text-slate-800">Check In</h2>
+        </div>
+        <div className="p-4 space-y-6">
+          <CameraCapture mode="photo" label="Take a photo of the property exterior" onCapture={(data, ts) => handleMediaCapture('photoFrontOfHouse', data, ts)} initialData={mediaBuffer.photoFrontOfHouse || currentSavedMedia?.photoFrontOfHouse} />
+          <div className="flex justify-end"><button onClick={() => fileInputRef.current?.click()} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg"><Upload size={14} className="inline mr-1" /> Upload from Gallery</button><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} /></div>
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t pb-8"><button onClick={submitCheckIn} disabled={!canSubmit || isProcessing} className={`w-full font-bold py-4 rounded-xl shadow-lg ${canSubmit && !isProcessing ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}>{isProcessing ? <><Loader2 className="animate-spin inline mr-2" size={20}/>Uploading...</> : 'Submit Check-In'}</button></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeStep === 'checkout') {
+    const currentSavedMedia = job.checkOutMedia;
     const hasPhoto = !!mediaBuffer.photoFrontOfHouse || !!currentSavedMedia?.photoFrontOfHouse;
     const hasVideo = !!mediaBuffer.videoGarage || !!currentSavedMedia?.videoGarage;
     const canSubmit = hasPhoto && hasVideo;
@@ -297,13 +363,13 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
       <div className="min-h-screen bg-white pb-24 relative">
         <div className="bg-white border-b sticky top-0 z-10 p-4 flex items-center">
           <button onClick={() => setActiveStep('details')} className="p-2 hover:bg-slate-100 rounded-full mr-2 text-slate-600"><ArrowLeft size={20} /></button>
-          <h2 className="font-bold text-lg text-slate-800">{isCheckIn ? 'Check In' : 'Check Out'}</h2>
+          <h2 className="font-bold text-lg text-slate-800">Check Out</h2>
         </div>
         <div className="p-4 space-y-6">
           <CameraCapture mode="photo" label="1. Front of House Photo" onCapture={(data, ts) => handleMediaCapture('photoFrontOfHouse', data, ts)} initialData={mediaBuffer.photoFrontOfHouse || currentSavedMedia?.photoFrontOfHouse} />
           <div className="flex justify-end"><button onClick={() => fileInputRef.current?.click()} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg"><Upload size={14} className="inline mr-1" /> Upload Gallery</button><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} /></div>
           <CameraCapture mode="video" label="2. Garage Interior Video" onCapture={(data, ts) => handleMediaCapture('videoGarage', data, ts)} initialData={currentSavedMedia?.videoGarage} />
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t pb-8"><button onClick={isCheckIn ? submitCheckIn : () => setShowConfirmation(true)} disabled={!canSubmit} className={`w-full font-bold py-4 rounded-xl shadow-lg ${canSubmit ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}>{isCheckIn ? 'Submit Check-In' : 'Complete Job'}</button></div>
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t pb-8"><button onClick={() => setShowConfirmation(true)} disabled={!canSubmit} className={`w-full font-bold py-4 rounded-xl shadow-lg ${canSubmit ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}>Complete Job</button></div>
         </div>
         {showConfirmation && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl"><h3 className="text-lg font-bold mb-2">Finish Job?</h3><p className="text-slate-600 mb-6">Submit documentation for quality control review?</p><div className="flex gap-3"><button onClick={() => setShowConfirmation(false)} className="flex-1 py-3 font-bold text-slate-600">Cancel</button><button onClick={processCheckOut} disabled={isProcessing} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">{isProcessing ? <Loader2 className="animate-spin" size={20}/> : 'Confirm'}</button></div></div></div>
@@ -447,8 +513,8 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
              <div className="divide-y divide-slate-100">
                  {sortedChecklist.map(task => (
                      <div key={task.id} className={`p-4 flex items-start gap-3 ${task.isCompleted ? 'bg-slate-50' : 'bg-white'}`}>
-                         <button disabled={job.status === JobStatus.COMPLETED || task.status === 'PENDING'} onClick={() => toggleTask(task.id)} className={`mt-0.5 ${task.status === 'PENDING' ? 'text-orange-300' : task.isCompleted ? 'text-blue-600' : 'text-slate-300'}`}>
-                             {task.status === 'PENDING' ? <Clock size={20} /> : task.isCompleted ? <CheckSquare size={20} /> : <Square size={20} />}
+                         <button disabled={job.status === JobStatus.COMPLETED || task.status === 'PENDING'} onClick={() => void toggleTask(task.id)} className={`mt-0.5 transition-all ${task.status === 'PENDING' ? 'text-orange-300' : task.isCompleted ? 'text-emerald-600' : 'text-slate-300'}`}>
+                             {task.status === 'PENDING' ? <Clock size={20} /> : task.isCompleted ? <CheckSquare size={20} className="animate-in scale-in" /> : <Square size={20} />}
                          </button>
                          <div className="flex-1">
                              <p className={`text-sm font-medium ${task.isCompleted ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{task.text}</p>

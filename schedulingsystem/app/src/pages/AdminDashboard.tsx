@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
-import { collection, onSnapshot, orderBy, query, updateDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query, updateDoc, doc, where, setDoc } from "firebase/firestore";
+import { getDownloadURL, ref as storageRef } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
-import { functions, db } from "../firebase";
+import { functions, db, storage } from "../firebase";
 import { useAuth } from "../auth/AuthProvider";
+import { JobStatus } from "../../types";
 
 type SignupRequest = {
   id: string;
@@ -28,6 +30,19 @@ type UserRow = {
   status: string;
 };
 
+type JobForReview = {
+  id: string;
+  clientName: string;
+  pay: number;
+  assigneeName?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  checkInMedia?: { photoFrontOfHouse: string };
+  checkOutMedia?: { photoFrontOfHouse: string; videoGarage: string };
+  checklist: { id: string; text: string; isCompleted: boolean }[];
+  status: string;
+};
+
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<SignupRequest[]>([]);
@@ -41,6 +56,10 @@ const AdminDashboard: React.FC = () => {
   const [requestsError, setRequestsError] = useState<string | null>(null);
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [scholarsError, setScholarsError] = useState<string | null>(null);
+  const [jobsForReview, setJobsForReview] = useState<JobForReview[]>([]);
+  const [jobsReviewLoading, setJobsReviewLoading] = useState(true);
+  const [jobsReviewError, setJobsReviewError] = useState<string | null>(null);
+  const [reviewModalJob, setReviewModalJob] = useState<JobForReview | null>(null);
   const { setViewAsUid, loading, authError } = useAuth();
 
   if (loading) {
@@ -111,10 +130,25 @@ const AdminDashboard: React.FC = () => {
       setScholarsLoading(false);
     });
 
+    const jobsQuery = query(collection(db, "jobs"), where("status", "==", JobStatus.REVIEW_PENDING));
+    const unsubJobs = onSnapshot(jobsQuery, (snap) => {
+      const rows = snap.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<JobForReview, "id">)
+      }));
+      setJobsForReview(rows);
+      setJobsReviewError(null);
+      setJobsReviewLoading(false);
+    }, (err) => {
+      setJobsReviewError(err.message || "Failed to load jobs for review.");
+      setJobsReviewLoading(false);
+    });
+
     return () => {
       unsubRequests();
       unsubNotifs();
       unsubUsers();
+      unsubJobs();
     };
   }, []);
 
@@ -135,6 +169,63 @@ const AdminDashboard: React.FC = () => {
       await callable({ requestId });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Action failed.";
+      setError(message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleApproveAndPay = async (job: JobForReview) => {
+    if (!db) {
+      setError("Firestore not initialized.");
+      return;
+    }
+    setError(null);
+    setBusyId(job.id);
+    try {
+      // Update job status to COMPLETED
+      await updateDoc(doc(db, "jobs", job.id), {
+        status: JobStatus.COMPLETED,
+        approvedAt: new Date().toISOString()
+      });
+
+      // Create payout record
+      const payoutData = {
+        jobId: job.id,
+        scholarId: job.assigneeName, // Would normally be scholarId
+        amount: job.pay,
+        status: "pending",
+        approvedBy: "admin",
+        createdAt: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, "payouts", job.id), payoutData);
+      setReviewModalJob(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Approval failed.";
+      setError(message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleRequestChanges = async (job: JobForReview, adminNotes: string) => {
+    if (!db) {
+      setError("Firestore not initialized.");
+      return;
+    }
+    setError(null);
+    setBusyId(job.id);
+    try {
+      // Update job status to CHANGES_REQUESTED with admin notes
+      await updateDoc(doc(db, "jobs", job.id), {
+        status: "CHANGES_REQUESTED",
+        adminNotes,
+        changesRequestedAt: new Date().toISOString()
+      });
+      setReviewModalJob(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Request failed.";
       setError(message);
     } finally {
       setBusyId(null);
@@ -185,6 +276,34 @@ const AdminDashboard: React.FC = () => {
                 <option key={scholar.id} value={scholar.id}>{scholar.name}</option>
               ))}
             </select>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <h2 className="font-bold text-slate-800 text-sm mb-3">Jobs Pending Review</h2>
+          {jobsReviewLoading ? (
+            <div className="text-sm text-slate-500">Loading jobs...</div>
+          ) : jobsReviewError ? (
+            <div className="text-sm text-rose-600">{jobsReviewError}</div>
+          ) : jobsForReview.length === 0 ? (
+            <div className="text-sm text-slate-500">No jobs awaiting review.</div>
+          ) : (
+            <div className="space-y-3">
+              {jobsForReview.map((job) => (
+                <div key={job.id} className="border border-slate-100 rounded-lg p-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-800">{job.clientName}</div>
+                    <div className="text-xs text-slate-500">Scholar: {job.assigneeName || "Unknown"} • ${job.pay}</div>
+                  </div>
+                  <button
+                    onClick={() => setReviewModalJob(job)}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 text-white"
+                  >
+                    Review
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
@@ -251,6 +370,150 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {reviewModalJob && (
+          <ReviewModal
+            job={reviewModalJob}
+            onClose={() => setReviewModalJob(null)}
+            onApprove={() => handleApproveAndPay(reviewModalJob)}
+            onRequestChanges={(notes) => handleRequestChanges(reviewModalJob, notes)}
+            busy={busyId === reviewModalJob.id}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ReviewModal: React.FC<{
+  job: JobForReview;
+  onClose: () => void;
+  onApprove: () => void;
+  onRequestChanges: (notes: string) => void;
+  busy: boolean;
+}> = ({ job, onClose, onApprove, onRequestChanges, busy }) => {
+  const [adminNotes, setAdminNotes] = useState("");
+  const [showChangesForm, setShowChangesForm] = useState(false);
+  const [checkInPhotoUrl, setCheckInPhotoUrl] = useState<string | null>(null);
+  const [checkOutPhotoUrl, setCheckOutPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadPhotos = async () => {
+      if (!storage) return;
+      if (job.checkInMedia?.photoFrontOfHouse) {
+        const url = await getDownloadURL(storageRef(storage, job.checkInMedia.photoFrontOfHouse));
+        setCheckInPhotoUrl(url);
+      }
+      if (job.checkOutMedia?.photoFrontOfHouse) {
+        const url = await getDownloadURL(storageRef(storage, job.checkOutMedia.photoFrontOfHouse));
+        setCheckOutPhotoUrl(url);
+      }
+    };
+    loadPhotos().catch(console.error);
+  }, [job]);
+
+  const workDuration = job.checkInTime && job.checkOutTime
+    ? Math.round((new Date(job.checkOutTime).getTime() - new Date(job.checkInTime).getTime()) / (1000 * 60))
+    : null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl p-6 max-w-2xl w-full my-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-slate-800">Review Job: {job.clientName}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Job Info */}
+          <div className="bg-slate-50 rounded-lg p-3">
+            <div className="text-sm text-slate-500">Scholar: <span className="font-semibold text-slate-800">{job.assigneeName}</span></div>
+            <div className="text-sm text-slate-500">Payout: <span className="font-semibold text-emerald-600">${job.pay}</span></div>
+            {workDuration && (
+              <div className="text-sm text-slate-500">Work Duration: <span className="font-semibold text-slate-800">{workDuration} minutes</span></div>
+            )}
+          </div>
+
+          {/* Photos */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-2">Check-In Photo</h3>
+              {checkInPhotoUrl ? (
+                <img src={checkInPhotoUrl} alt="Check-in" className="w-full h-48 object-cover rounded-lg border" />
+              ) : (
+                <div className="w-full h-48 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">Loading...</div>
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-2">Check-Out Photo</h3>
+              {checkOutPhotoUrl ? (
+                <img src={checkOutPhotoUrl} alt="Check-out" className="w-full h-48 object-cover rounded-lg border" />
+              ) : (
+                <div className="w-full h-48 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">Loading...</div>
+              )}
+            </div>
+          </div>
+
+          {/* Checklist */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Checklist</h3>
+            <div className="space-y-2">
+              {job.checklist.map((task) => (
+                <div key={task.id} className="flex items-center gap-2 text-sm">
+                  <span className={task.isCompleted ? "text-emerald-600" : "text-slate-300"}>
+                    {task.isCompleted ? "✓" : "○"}
+                  </span>
+                  <span className={task.isCompleted ? "text-slate-700" : "text-slate-400"}>{task.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions */}
+          {!showChangesForm ? (
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={onApprove}
+                disabled={busy}
+                className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50"
+              >
+                Approve & Pay ${job.pay}
+              </button>
+              <button
+                onClick={() => setShowChangesForm(true)}
+                disabled={busy}
+                className="flex-1 bg-amber-500 text-white font-bold py-3 rounded-xl hover:bg-amber-600 disabled:opacity-50"
+              >
+                Request Changes
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3 pt-4">
+              <textarea
+                placeholder="Describe what needs to be changed..."
+                className="w-full border border-slate-200 rounded-lg p-3 text-sm"
+                rows={3}
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowChangesForm(false)}
+                  className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => onRequestChanges(adminNotes)}
+                  disabled={!adminNotes.trim() || busy}
+                  className="flex-1 bg-amber-500 text-white font-bold py-3 rounded-xl hover:bg-amber-600 disabled:opacity-50"
+                >
+                  Submit Changes Request
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -226,6 +226,7 @@ export const approveSignup = onCall(async (request) => {
     // Try to find user by email as fallback
     const reqData = reqSnap.data();
     const email = reqData?.email;
+    const name = reqData?.name || "Scholar";
     console.log("User not found by requestId, trying email:", email);
 
     if (email) {
@@ -252,10 +253,40 @@ export const approveSignup = onCall(async (request) => {
 
         return { ok: true };
       }
+
+      // User doesn't exist in Firestore at all - find them in Firebase Auth and create the doc
+      console.log("User not found in Firestore, checking Firebase Auth for email:", email);
+      try {
+        const authUser = await adminAuth.getUserByEmail(email);
+        console.log("Found user in Firebase Auth:", authUser.uid);
+
+        // Create the user document
+        await db.collection("users").doc(authUser.uid).set({
+          email,
+          name,
+          role: "scholar",
+          status: "active",
+          requestId,
+          createdAt: FieldValue.serverTimestamp(),
+          approvedAt: FieldValue.serverTimestamp(),
+          approvedByUid: request.auth.uid
+        });
+
+        await requestRef.set({
+          status: "approved",
+          decidedAt: FieldValue.serverTimestamp(),
+          decidedByUid: request.auth.uid
+        }, { merge: true });
+
+        console.log("Created user document and approved");
+        return { ok: true };
+      } catch (authError) {
+        console.error("Firebase Auth lookup failed:", authError);
+      }
     }
 
     // Last resort: debug all users to see what's in the collection
-    console.log("Failed to find user by requestId or email");
+    console.log("Failed to find user by requestId, email, or Firebase Auth");
 
     // Get all users to debug
     const allUsers = await db.collection("users").limit(10).get();

@@ -14,7 +14,7 @@ export default {
           dark: '#8bc4a0',
           light: '#c2e5d3'
         },
-        'brand-dark': {
+        'dark': {
           DEFAULT: '#000000',
           lighter: '#1a1a1a',
           text: '#333333'
