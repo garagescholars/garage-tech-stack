@@ -441,7 +441,7 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-20">
           <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
-              <div className="flex items-center gap-2"><div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm"><span className="text-white font-bold text-lg">S</span></div><h1 className="font-bold text-lg tracking-tight">Scholar Hub</h1></div>
+              <div className="flex items-center gap-2"><div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm"><span className="text-white font-bold text-lg">S</span></div><h1 className="font-bold text-lg tracking-tight">Scholar Hub</h1></div>
               <div className="flex items-center gap-3">
                   {userRole === 'admin' && (
                     <>
@@ -471,7 +471,7 @@ const App: React.FC = () => {
           </div>
         )}
         {displayRole === 'scholar' ? (
-             <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg">
+             <div className="bg-primary rounded-2xl p-6 text-white shadow-lg">
                 <h2 className="text-2xl font-bold mb-4">Hello, {currentUser?.name.split(' ')[0] || 'Scholar'} 👋</h2>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                     <div className="flex justify-between items-end mb-2"><span className="text-xs font-bold text-blue-100 uppercase">Goal Tracker</span><span className="text-sm font-bold">${currentEarnings} / {currentUser?.monthlyGoal || 0}</span></div>
