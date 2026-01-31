@@ -1,10 +1,11 @@
-import React from 'react';
-import { ArrowLeft, User, LogOut, ShieldCheck, Mail, ToggleLeft, ToggleRight, Target, TrendingUp, DollarSign, Phone } from 'lucide-react';
-import { User as UserType, Job, JobStatus } from '../types';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, User, LogOut, ShieldCheck, Mail, ToggleLeft, ToggleRight, Target, TrendingUp, DollarSign, Phone, Download } from 'lucide-react';
+import { User as UserType, Job, JobStatus, Payout } from '../types';
 import { useAuth } from '../src/auth/AuthProvider';
 import { signOut } from 'firebase/auth';
-import { auth } from '../src/firebase';
+import { auth, db } from '../src/firebase';
 import { useNavigate } from 'react-router-dom';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 interface UserProfileProps {
   onBack: () => void;
@@ -19,6 +20,37 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
 
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
+  const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [payoutsLoading, setPayoutsLoading] = useState(true);
+
+  // Load payouts for current scholar
+  useEffect(() => {
+    if (!db || !currentUserId || userRole === 'admin') {
+      setPayoutsLoading(false);
+      return;
+    }
+
+    const payoutsQuery = query(
+      collection(db, 'payouts'),
+      where('scholarId', '==', currentUserId)
+    );
+
+    const unsubscribe = onSnapshot(payoutsQuery, (snapshot) => {
+      const payoutsList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Payout[];
+      setPayouts(payoutsList.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ));
+      setPayoutsLoading(false);
+    }, (error) => {
+      console.error('Error loading payouts:', error);
+      setPayoutsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [currentUserId, userRole]);
 
   const handleGoalChange = (userId: string, newGoal: number) => {
       onUpdateUser(userId, { monthlyGoal: newGoal });
@@ -26,6 +58,34 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
 
   const handlePhoneChange = (userId: string, newPhone: string) => {
       onUpdateUser(userId, { phoneNumber: newPhone });
+  };
+
+  const handleDownload1099Info = () => {
+    const currentYear = new Date().getFullYear();
+    const totalPaid = payouts
+      .filter(p => p.status === 'paid' && new Date(p.paidAt || p.createdAt).getFullYear() === currentYear)
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    if (totalPaid < 600) {
+      alert(`Your total earnings for ${currentYear} ($${totalPaid.toFixed(2)}) are below the $600 1099 threshold.`);
+      return;
+    }
+
+    const csv = [
+      ['Item', 'Value'].join(','),
+      ['Year', currentYear].join(','),
+      ['Scholar Name', displayUser.name].join(','),
+      ['Total Paid', totalPaid.toFixed(2)].join(','),
+      ['Number of Payouts', payouts.filter(p => p.status === 'paid').length].join(','),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `1099-info-${currentYear}-${displayUser.name.replace(/\s+/g, '-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleLogout = async () => {
@@ -105,6 +165,77 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
                   <div className="text-2xl font-bold text-slate-800">2yr</div>
                   <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Exp</div>
               </div>
+          </div>
+        )}
+
+        {/* Earnings Section (Scholar Only) */}
+        {!isAdmin && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b flex justify-between items-center">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <DollarSign size={18} className="text-emerald-600" />
+                Earnings
+              </h3>
+              {!payoutsLoading && payouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0) > 600 && (
+                <button
+                  onClick={handleDownload1099Info}
+                  className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg hover:bg-emerald-200"
+                >
+                  <Download size={12} />
+                  1099 Info
+                </button>
+              )}
+            </div>
+
+            {payoutsLoading ? (
+              <div className="p-6 text-center text-sm text-slate-500">Loading earnings...</div>
+            ) : payouts.length === 0 ? (
+              <div className="p-6 text-center text-sm text-slate-500">No payouts yet. Complete jobs to earn!</div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {/* Summary */}
+                <div className="p-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Pending</div>
+                    <div className="text-xl font-bold text-amber-600">
+                      ${payouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Paid (YTD)</div>
+                    <div className="text-xl font-bold text-emerald-600">
+                      ${payouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payout List */}
+                <div className="max-h-60 overflow-y-auto">
+                  {payouts.slice(0, 10).map((payout) => (
+                    <div key={payout.id} className="p-3 hover:bg-slate-50 flex justify-between items-center">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">${payout.amount.toFixed(2)}</div>
+                        <div className="text-xs text-slate-500">
+                          {new Date(payout.createdAt).toLocaleDateString()}
+                          {payout.status === 'paid' && payout.paymentMethod && (
+                            <span className="ml-2 text-emerald-600">• {payout.paymentMethod}</span>
+                          )}
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-bold px-2 py-1 rounded-full ${
+                          payout.status === 'paid'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {payout.status.toUpperCase()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

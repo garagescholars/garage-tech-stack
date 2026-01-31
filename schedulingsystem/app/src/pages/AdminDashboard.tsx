@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { collection, onSnapshot, orderBy, query, updateDoc, doc, where, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref as storageRef } from "firebase/storage";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { functions, db, storage } from "../firebase";
 import { useAuth } from "../auth/AuthProvider";
 import { JobStatus } from "../../types";
+import { DollarSign } from "lucide-react";
 
 type SignupRequest = {
   id: string;
@@ -240,6 +241,13 @@ const AdminDashboard: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
             <p className="text-sm text-slate-500">Manage scholars, jobs, and account requests.</p>
           </div>
+          <Link
+            to="/admin/payouts"
+            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700"
+          >
+            <DollarSign size={16} />
+            Payouts
+          </Link>
           <button
             onClick={() => navigate("/admin/create-job")}
             className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"

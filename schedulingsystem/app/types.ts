@@ -101,6 +101,21 @@ export interface Notification {
   timestamp: string;
 }
 
+export interface Payout {
+  id: string;
+  jobId: string;
+  scholarId: string;
+  scholarName: string;
+  scholarEmail?: string;
+  amount: number;
+  status: 'pending' | 'paid' | 'failed';
+  createdAt: string;
+  paidAt?: string;
+  paymentMethod?: 'Venmo' | 'Zelle' | 'Cash' | 'Check';
+  transactionNote?: string;
+  approvedBy?: string;
+}
+
 export const MOCK_USERS: User[] = [
   { id: 'user-1', name: 'Alex Scholar', role: 'scholar', monthlyGoal: 3000, avatarInitials: 'AS', achievedMilestones: [], phoneNumber: '555-0123' },
   { id: 'user-2', name: 'Sarah Connor', role: 'scholar', monthlyGoal: 4500, avatarInitials: 'SC', achievedMilestones: [], phoneNumber: '555-0198' },

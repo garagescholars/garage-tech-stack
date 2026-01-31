@@ -12,6 +12,7 @@ import CreateAccount from './src/pages/CreateAccount';
 import PendingApproval from './src/pages/PendingApproval';
 import AdminDashboard from './src/pages/AdminDashboard';
 import AdminCreateJob from './src/pages/AdminCreateJob';
+import AdminPayouts from './src/pages/AdminPayouts';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -30,6 +31,7 @@ root.render(
             <Route path="/pending-approval" element={<PendingApproval />} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/create-job" element={<AdminRoute><AdminCreateJob /></AdminRoute>} />
+            <Route path="/admin/payouts" element={<AdminRoute><AdminPayouts /></AdminRoute>} />
             <Route path="/app" element={<ProtectedRoute><App /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/app" replace />} />
           </Routes>
