@@ -1,5 +1,6 @@
 
 export enum JobStatus {
+  LEAD = 'LEAD',
   UPCOMING = 'UPCOMING',
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
@@ -53,6 +54,16 @@ export interface Job {
   cancellationReason?: string;
   sopId?: string;
   intakeMediaPaths?: string[];
+  // Lead/Quote specific fields
+  clientEmail?: string;
+  clientPhone?: string;
+  zipcode?: string;
+  serviceType?: string;
+  package?: string;
+  garageSize?: string;
+  quoteRequestId?: string; // Reference to original quote request
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export interface SopSectionStep {
@@ -103,7 +114,8 @@ export interface Notification {
 
 export interface Payout {
   id: string;
-  jobId: string;
+  jobId: string; // DEPRECATED: Use serviceJobId instead
+  serviceJobId?: string; // NEW: Reference to serviceJobs/{id}
   scholarId: string;
   scholarName: string;
   scholarEmail?: string;
@@ -114,6 +126,185 @@ export interface Payout {
   paymentMethod?: 'Venmo' | 'Zelle' | 'Cash' | 'Check';
   transactionNote?: string;
   approvedBy?: string;
+}
+
+// ============================================================================
+// PHASE X: NEW DATA MODEL TYPES
+// ============================================================================
+
+/**
+ * Client - Central registry of all Garage Scholars clients
+ */
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  createdAt: any; // Firestore Timestamp
+  source: 'scheduling' | 'resale' | 'both';
+
+  stats: {
+    totalServiceJobs: number;
+    totalPropertiesServiced: number;
+    totalItemsListed: number;
+    totalItemsSold: number;
+    totalRevenue: number;
+  };
+
+  notes?: string;
+  tags?: string[];
+}
+
+/**
+ * Property - Physical locations where service jobs occur
+ */
+export interface Property {
+  id: string;
+  clientId: string; // Reference to clients/{id}
+
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+
+  serviceJobIds: string[];
+  inventoryItemIds: string[];
+
+  createdAt: any; // Firestore Timestamp
+  lastServicedAt?: any; // Firestore Timestamp
+  propertyType?: 'residential' | 'commercial' | 'storage';
+  notes?: string;
+}
+
+/**
+ * ServiceJob - Enhanced Job interface with client/property references
+ * (Replaces Job interface for scheduling app in Phase X)
+ */
+export interface ServiceJob extends Job {
+  // NEW: Structured references
+  clientId?: string; // Reference to clients/{id}
+  propertyId?: string; // Reference to properties/{id}
+
+  // NEW: Inventory extraction tracking
+  inventoryExtracted: boolean;
+  extractedItemIds?: string[]; // References to inventory/{id}
+
+  // Legacy: clientName and address preserved for backward compatibility
+  // Use clientId/propertyId for new code
+}
+
+/**
+ * InventoryItem - Items from Resale Concierge app
+ * (Shared interface for cross-app visibility)
+ */
+export interface InventoryItem {
+  id: string;
+
+  title: string;
+  price: string;
+  description: string;
+  condition?: 'new' | 'used';
+
+  // NEW: Structured source tracking
+  clientId?: string; // Reference to clients/{id}
+  propertyId?: string; // Reference to properties/{id}
+  sourceServiceJobId?: string; // Reference to serviceJobs/{id}
+
+  // Legacy field (DEPRECATED)
+  clientName?: string;
+
+  platform: 'Both' | 'All' | 'Craigslist' | 'FB Marketplace' | 'eBay Only';
+  status: 'Pending' | 'Running' | 'Active' | 'Error';
+
+  imageUrls: string[];
+
+  activeJobId?: string; // Reference to automationJobs/{id}
+  progress?: {
+    craigslist?: 'queued' | 'running' | 'success' | 'error';
+    facebook?: 'queued' | 'running' | 'success' | 'error';
+    ebay?: 'queued' | 'running' | 'success' | 'error';
+  };
+
+  ebay?: {
+    enabled: boolean;
+    status: 'queued' | 'running' | 'ready_to_publish' | 'published' | 'failed';
+    sku?: string;
+    offerId?: string;
+    listingId?: string;
+    inventoryItemId?: string;
+    marketplaceId?: string;
+    merchantLocationKey?: string;
+    paymentPolicyId?: string;
+    fulfillmentPolicyId?: string;
+    returnPolicyId?: string;
+    error?: {
+      message: string;
+      code: string | null;
+      raw: any;
+    };
+    lastRunAt?: any;
+    publishedAt?: any;
+  };
+
+  dateListed: string;
+  lastUpdated: any; // Firestore Timestamp
+  lastError?: {
+    platform: string;
+    message: string;
+    screenshotPath: string;
+  };
+}
+
+/**
+ * AutomationJob - Queue jobs for marketplace listing automation
+ * (Used by Resale Concierge backend)
+ */
+export interface AutomationJob {
+  id: string;
+  inventoryId: string; // Reference to inventory/{id}
+
+  status: 'queued' | 'running' | 'succeeded' | 'failed';
+  attempts: number;
+
+  // Lease system
+  leaseOwner: string | null;
+  leaseExpiresAt: any | null; // Firestore Timestamp
+
+  createdAt: any; // Firestore Timestamp
+  startedAt?: any;
+  finishedAt?: any;
+
+  lastError?: {
+    platform: string;
+    message: string;
+    screenshotPath: string;
+  };
+
+  artifacts: {
+    screenshots: string[];
+  };
+
+  results?: {
+    craigslist?: 'success' | 'error' | 'skipped';
+    facebook?: 'success' | 'error' | 'skipped';
+    ebay?: {
+      ok: boolean;
+      offerId?: string;
+      listingId?: string;
+      error?: any;
+      skipped?: boolean;
+    };
+  };
+}
+
+/**
+ * Enhanced User interface with app access controls
+ */
+export interface EnhancedUser extends User {
+  appAccess?: {
+    scheduling: boolean;
+    resale: boolean;
+  };
 }
 
 export const MOCK_USERS: User[] = [

@@ -43,6 +43,32 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+    // Phase X: New data model collections
+    match /serviceJobs/{jobId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /inventory/{itemId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /clients/{clientId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /properties/{propertyId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /automationJobs/{jobId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /payouts/{payoutId} {
+      allow read: if isSignedIn();
+      allow write: if isAdminByEmail();
+    }
+
     match /signupRequests/{requestId} {
       allow create: if isSignedIn()
         && request.resource.data.email == request.auth.token.email
@@ -58,6 +84,12 @@ service cloud.firestore {
     match /sops/{sopId} {
       allow read: if isAdmin() || (resource.data.qaStatus == 'APPROVED' && isJobParticipant(resource.data.jobId));
       allow write: if isAdmin();
+    }
+
+    // Scholar recruitment applications - allow public submissions
+    match /scholarApplications/{applicationId} {
+      allow create: if true;  // Anyone can submit an application
+      allow read, update, delete: if isAdminByEmail();
     }
   }
 }

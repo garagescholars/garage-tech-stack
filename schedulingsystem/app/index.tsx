@@ -13,6 +13,8 @@ import PendingApproval from './src/pages/PendingApproval';
 import AdminDashboard from './src/pages/AdminDashboard';
 import AdminCreateJob from './src/pages/AdminCreateJob';
 import AdminPayouts from './src/pages/AdminPayouts';
+import AdminLeads from './src/pages/AdminLeads';
+import UnifiedDashboard from './src/pages/UnifiedDashboard';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -32,6 +34,8 @@ root.render(
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/create-job" element={<AdminRoute><AdminCreateJob /></AdminRoute>} />
             <Route path="/admin/payouts" element={<AdminRoute><AdminPayouts /></AdminRoute>} />
+            <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
+            <Route path="/admin/unified" element={<AdminRoute><UnifiedDashboard /></AdminRoute>} />
             <Route path="/app" element={<ProtectedRoute><App /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/app" replace />} />
           </Routes>

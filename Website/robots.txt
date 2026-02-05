@@ -1,0 +1,16 @@
+# =============================================================================
+# robots.txt for https://www.example.com
+# =============================================================================
+
+# Allow every crawler full access for maximum SEO coverage
+User-agent: *
+Disallow:
+
+# (Optional) Explicitly allow everything
+Allow: /
+
+# Point crawlers to your sitemap for efficient indexing
+Sitemap: https://codedesign.ai/sitemap.xml
+
+# (Optional) Specify your preferred canonical host
+Host: codedesign.ai

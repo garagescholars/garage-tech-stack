@@ -17,7 +17,8 @@ const POLL_INTERVAL_MS = 5000;
 
 console.log("🤖 NODE ROBOT ONLINE: Watching for 'Pending' items...");
 
-const jobsCollection = db.collection('jobs');
+// Phase X: Updated to use automationJobs collection
+const jobsCollection = db.collection('automationJobs');
 const inventoryCollection = db.collection('inventory');
 
 async function enqueueJob(inventoryRef) {

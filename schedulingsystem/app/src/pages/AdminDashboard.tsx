@@ -5,8 +5,9 @@ import { getDownloadURL, ref as storageRef } from "firebase/storage";
 import { useNavigate, Link } from "react-router-dom";
 import { functions, db, storage } from "../firebase";
 import { useAuth } from "../auth/AuthProvider";
-import { JobStatus } from "../../types";
-import { DollarSign } from "lucide-react";
+import { JobStatus, ServiceJob } from "../../types";
+import { DollarSign, Package, UserPlus } from "lucide-react";
+import JobToInventoryModal from "../components/JobToInventoryModal";
 
 type SignupRequest = {
   id: string;
@@ -60,7 +61,10 @@ const AdminDashboard: React.FC = () => {
   const [jobsForReview, setJobsForReview] = useState<JobForReview[]>([]);
   const [jobsReviewLoading, setJobsReviewLoading] = useState(true);
   const [jobsReviewError, setJobsReviewError] = useState<string | null>(null);
+  const [completedJobs, setCompletedJobs] = useState<ServiceJob[]>([]);
+  const [completedJobsLoading, setCompletedJobsLoading] = useState(true);
   const [reviewModalJob, setReviewModalJob] = useState<JobForReview | null>(null);
+  const [extractInventoryJob, setExtractInventoryJob] = useState<ServiceJob | null>(null);
   const { setViewAsUid, loading, authError } = useAuth();
 
   if (loading) {
@@ -131,7 +135,8 @@ const AdminDashboard: React.FC = () => {
       setScholarsLoading(false);
     });
 
-    const jobsQuery = query(collection(db, "jobs"), where("status", "==", JobStatus.REVIEW_PENDING));
+    // Phase X: Updated to use serviceJobs collection
+    const jobsQuery = query(collection(db, "serviceJobs"), where("status", "==", JobStatus.REVIEW_PENDING));
     const unsubJobs = onSnapshot(jobsQuery, (snap) => {
       const rows = snap.docs.map((docSnap) => ({
         id: docSnap.id,
@@ -145,11 +150,30 @@ const AdminDashboard: React.FC = () => {
       setJobsReviewLoading(false);
     });
 
+    // Phase X: Query completed jobs for inventory extraction
+    const completedJobsQuery = query(
+      collection(db, "serviceJobs"),
+      where("status", "==", JobStatus.COMPLETED),
+      orderBy("date", "desc")
+    );
+    const unsubCompletedJobs = onSnapshot(completedJobsQuery, (snap) => {
+      const jobs = snap.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<ServiceJob, "id">)
+      })) as ServiceJob[];
+      setCompletedJobs(jobs);
+      setCompletedJobsLoading(false);
+    }, (err) => {
+      console.error("Failed to load completed jobs:", err);
+      setCompletedJobsLoading(false);
+    });
+
     return () => {
       unsubRequests();
       unsubNotifs();
       unsubUsers();
       unsubJobs();
+      unsubCompletedJobs();
     };
   }, []);
 
@@ -185,22 +209,32 @@ const AdminDashboard: React.FC = () => {
     setBusyId(job.id);
     try {
       // Update job status to COMPLETED
-      await updateDoc(doc(db, "jobs", job.id), {
+      await updateDoc(doc(db, "serviceJobs", job.id), {
         status: JobStatus.COMPLETED,
-        approvedAt: new Date().toISOString()
+        approvedAt: new Date().toISOString(),
+        firstPayoutProcessed: true,
+        secondPayoutDue: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
       });
 
-      // Create payout record
+      // Create payout record for FIRST HALF (50%)
+      const firstHalfAmount = job.pay / 2;
       const payoutData = {
-        jobId: job.id,
+        serviceJobId: job.id, // Phase X: Use serviceJobId
+        jobId: job.id, // Legacy field
         scholarId: job.assigneeName, // Would normally be scholarId
-        amount: job.pay,
+        scholarName: job.assigneeName || "Unknown",
+        amount: firstHalfAmount,
         status: "pending",
         approvedBy: "admin",
+        paymentType: "first_half", // Track that this is the first 50%
         createdAt: new Date().toISOString()
       };
 
-      await setDoc(doc(db, "payouts", job.id), payoutData);
+      await setDoc(doc(db, "payouts", `${job.id}_first`), payoutData);
+
+      // TODO: Second half payout ($${job.pay / 2}) will be processed automatically 24 hours after approval
+      // if no client complaints are filed. Implement Cloud Function to handle this.
+
       setReviewModalJob(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Approval failed.";
@@ -219,7 +253,7 @@ const AdminDashboard: React.FC = () => {
     setBusyId(job.id);
     try {
       // Update job status to CHANGES_REQUESTED with admin notes
-      await updateDoc(doc(db, "jobs", job.id), {
+      await updateDoc(doc(db, "serviceJobs", job.id), {
         status: "CHANGES_REQUESTED",
         adminNotes,
         changesRequestedAt: new Date().toISOString()
@@ -241,19 +275,28 @@ const AdminDashboard: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
             <p className="text-sm text-slate-500">Manage scholars, jobs, and account requests.</p>
           </div>
-          <Link
-            to="/admin/payouts"
-            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700"
-          >
-            <DollarSign size={16} />
-            Payouts
-          </Link>
-          <button
-            onClick={() => navigate("/admin/create-job")}
-            className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            + Create Job
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/leads"
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700"
+            >
+              <UserPlus size={16} />
+              Leads
+            </Link>
+            <Link
+              to="/admin/payouts"
+              className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700"
+            >
+              <DollarSign size={16} />
+              Payouts
+            </Link>
+            <button
+              onClick={() => navigate("/admin/create-job")}
+              className="bg-slate-700 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              + Create Job
+            </button>
+          </div>
         </header>
 
         {error && (
@@ -308,6 +351,54 @@ const AdminDashboard: React.FC = () => {
                     className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 text-white"
                   >
                     Review
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Phase X: Completed Jobs - Inventory Extraction */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <Package size={16} className="text-emerald-600" />
+              Completed Jobs - Extract Inventory
+            </h2>
+            <span className="text-xs text-slate-500">
+              {completedJobs.filter(j => !j.inventoryExtracted).length} awaiting extraction
+            </span>
+          </div>
+          {completedJobsLoading ? (
+            <div className="text-sm text-slate-500">Loading completed jobs...</div>
+          ) : completedJobs.length === 0 ? (
+            <div className="text-sm text-slate-500">No completed jobs yet.</div>
+          ) : (
+            <div className="space-y-2">
+              {completedJobs.slice(0, 5).map((job) => (
+                <div key={job.id} className="border border-slate-100 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-slate-800">{job.clientName}</div>
+                    <div className="text-xs text-slate-500">
+                      {job.address} • {new Date(job.date).toLocaleDateString()}
+                    </div>
+                    {job.inventoryExtracted && (
+                      <div className="text-xs text-emerald-600 font-semibold mt-1">
+                        ✓ Inventory extracted ({job.extractedItemIds?.length || 0} items)
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setExtractInventoryJob(job)}
+                    disabled={job.inventoryExtracted}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 ${
+                      job.inventoryExtracted
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    }`}
+                  >
+                    <Package size={14} />
+                    {job.inventoryExtracted ? 'Extracted' : 'Extract Inventory'}
                   </button>
                 </div>
               ))}
@@ -391,6 +482,17 @@ const AdminDashboard: React.FC = () => {
             busy={busyId === reviewModalJob.id}
           />
         )}
+
+        {extractInventoryJob && (
+          <JobToInventoryModal
+            job={extractInventoryJob}
+            onClose={() => setExtractInventoryJob(null)}
+            onSuccess={() => {
+              setExtractInventoryJob(null);
+              // Refresh the jobs list
+            }}
+          />
+        )}
       </div>
     </div>
   );
@@ -407,20 +509,47 @@ const ReviewModal: React.FC<{
   const [showChangesForm, setShowChangesForm] = useState(false);
   const [checkInPhotoUrl, setCheckInPhotoUrl] = useState<string | null>(null);
   const [checkOutPhotoUrl, setCheckOutPhotoUrl] = useState<string | null>(null);
+  const [checkOutVideoUrl, setCheckOutVideoUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadPhotos = async () => {
-      if (!storage) return;
-      if (job.checkInMedia?.photoFrontOfHouse) {
-        const url = await getDownloadURL(storageRef(storage, job.checkInMedia.photoFrontOfHouse));
-        setCheckInPhotoUrl(url);
-      }
-      if (job.checkOutMedia?.photoFrontOfHouse) {
-        const url = await getDownloadURL(storageRef(storage, job.checkOutMedia.photoFrontOfHouse));
-        setCheckOutPhotoUrl(url);
+    const loadMedia = async () => {
+      try {
+        // Helper to get URL (handles both base64 and Storage paths)
+        const getUrl = async (path: string): Promise<string> => {
+          if (!path || path === '') return '';
+          if (path.startsWith('data:')) return path; // Base64
+          if (storage && !path.startsWith('http')) {
+            // Firebase Storage path
+            return await getDownloadURL(storageRef(storage, path));
+          }
+          return path; // Already a URL
+        };
+
+        // Load check-in photo
+        if (job.checkInMedia?.photoFrontOfHouse) {
+          const url = await getUrl(job.checkInMedia.photoFrontOfHouse);
+          if (url) setCheckInPhotoUrl(url);
+        }
+
+        // Load check-out media (if it exists)
+        if (job.checkOutMedia) {
+          const checkOutPhoto = (job.checkOutMedia as any).photoAfter || job.checkOutMedia.photoFrontOfHouse;
+          if (checkOutPhoto) {
+            const url = await getUrl(checkOutPhoto);
+            if (url) setCheckOutPhotoUrl(url);
+          }
+
+          if (job.checkOutMedia.videoGarage) {
+            const url = await getUrl(job.checkOutMedia.videoGarage);
+            if (url) setCheckOutVideoUrl(url);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load media:', err);
       }
     };
-    loadPhotos().catch(console.error);
+
+    loadMedia();
   }, [job]);
 
   const workDuration = job.checkInTime && job.checkOutTime
@@ -439,13 +568,21 @@ const ReviewModal: React.FC<{
           {/* Job Info */}
           <div className="bg-slate-50 rounded-lg p-3">
             <div className="text-sm text-slate-500">Scholar: <span className="font-semibold text-slate-800">{job.assigneeName}</span></div>
-            <div className="text-sm text-slate-500">Payout: <span className="font-semibold text-emerald-600">${job.pay}</span></div>
+            <div className="text-sm text-slate-500">
+              Total Payout: <span className="font-semibold text-emerald-600">${job.pay}</span>
+              <span className="text-xs text-slate-400 ml-2">(${job.pay / 2} now + ${job.pay / 2} after 24h)</span>
+            </div>
             {workDuration && (
               <div className="text-sm text-slate-500">Work Duration: <span className="font-semibold text-slate-800">{workDuration} minutes</span></div>
             )}
           </div>
 
-          {/* Photos */}
+          {/* Payment Info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+            <strong>Payment Policy:</strong> 50% paid immediately upon approval. Remaining 50% automatically released 24 hours after job completion if no client complaints are filed.
+          </div>
+
+          {/* Photos & Video */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h3 className="text-sm font-semibold text-slate-700 mb-2">Check-In Photo</h3>
@@ -463,6 +600,18 @@ const ReviewModal: React.FC<{
                 <div className="w-full h-48 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">Loading...</div>
               )}
             </div>
+          </div>
+
+          {/* Check-Out Video (Required for QA) */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Check-Out Video (Garage Walkthrough)</h3>
+            {checkOutVideoUrl ? (
+              <video src={checkOutVideoUrl} controls className="w-full rounded-lg border" style={{ maxHeight: '400px' }} />
+            ) : (
+              <div className="w-full h-48 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 border-2 border-rose-300">
+                <span className="text-rose-600 font-semibold">⚠️ Video not uploaded - Required for QA</span>
+              </div>
+            )}
           </div>
 
           {/* Checklist */}
@@ -488,7 +637,7 @@ const ReviewModal: React.FC<{
                 disabled={busy}
                 className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50"
               >
-                Approve & Pay ${job.pay}
+                Approve & Pay ${job.pay / 2} (50% now)
               </button>
               <button
                 onClick={() => setShowChangesForm(true)}

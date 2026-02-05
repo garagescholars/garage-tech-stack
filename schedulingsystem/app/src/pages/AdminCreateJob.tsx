@@ -75,7 +75,8 @@ const AdminCreateJob: React.FC = () => {
         { id: "check-out", text: "Take final photos and check out", isCompleted: false, status: "APPROVED" as const }
       ];
 
-      const jobDoc = await addDoc(collection(db, "jobs"), {
+      // Phase X: Updated to use serviceJobs collection
+      const jobDoc = await addDoc(collection(db, "serviceJobs"), {
         clientName: formData.clientName.trim(),
         clientEmail: formData.clientEmail.trim(),
         clientPhone: formData.clientPhone.trim(),
@@ -91,6 +92,7 @@ const AdminCreateJob: React.FC = () => {
         checklist,
         accessConstraints: formData.accessInstructions.trim(),
         sellVsKeepPreference: formData.sellVsKeepPreference,
+        inventoryExtracted: false, // Phase X: Track inventory extraction status
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -148,7 +150,7 @@ const AdminCreateJob: React.FC = () => {
                 name="clientName"
                 value={formData.clientName}
                 onChange={handleChange}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2"
+                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400"
                 placeholder="John Smith"
                 required
               />
@@ -162,7 +164,7 @@ const AdminCreateJob: React.FC = () => {
                   name="clientEmail"
                   value={formData.clientEmail}
                   onChange={handleChange}
-                  className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2"
+                  className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400"
                   placeholder="john@example.com"
                 />
               </div>
@@ -173,7 +175,7 @@ const AdminCreateJob: React.FC = () => {
                   name="clientPhone"
                   value={formData.clientPhone}
                   onChange={handleChange}
-                  className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2"
+                  className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400"
                   placeholder="(555) 123-4567"
                 />
               </div>
@@ -188,7 +190,7 @@ const AdminCreateJob: React.FC = () => {
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2"
+                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400"
                 placeholder="123 Main St, Los Angeles, CA 90001"
                 required
               />
@@ -205,7 +207,7 @@ const AdminCreateJob: React.FC = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 min-h-[100px]"
+                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 min-h-[100px] text-slate-900 placeholder-slate-400"
                 placeholder="Full garage cleanout and organization. Heavy lifting may be required."
                 maxLength={500}
               />
@@ -220,7 +222,7 @@ const AdminCreateJob: React.FC = () => {
                   name="estimatedHours"
                   value={formData.estimatedHours}
                   onChange={handleChange}
-                  className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2"
+                  className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400"
                   min="1"
                   max="12"
                   step="0.5"
@@ -237,7 +239,7 @@ const AdminCreateJob: React.FC = () => {
                     name="scholarPayout"
                     value={formData.scholarPayout}
                     onChange={handleChange}
-                    className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2"
+                    className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-slate-900"
                     min="50"
                     max="1000"
                     step="10"
@@ -256,7 +258,7 @@ const AdminCreateJob: React.FC = () => {
                     name="clientPrice"
                     value={formData.clientPrice}
                     onChange={handleChange}
-                    className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2"
+                    className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-slate-900"
                     min="100"
                     max="3000"
                     step="10"
@@ -275,7 +277,7 @@ const AdminCreateJob: React.FC = () => {
                 name="scheduledDate"
                 value={formData.scheduledDate}
                 onChange={handleChange}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2"
+                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400"
                 required
               />
             </div>
@@ -291,7 +293,7 @@ const AdminCreateJob: React.FC = () => {
                 name="accessInstructions"
                 value={formData.accessInstructions}
                 onChange={handleChange}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 min-h-[80px]"
+                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 min-h-[80px] text-slate-900 placeholder-slate-400"
                 placeholder="Gate code: 1234, Key under mat, Client will be home"
               />
             </div>
@@ -302,7 +304,7 @@ const AdminCreateJob: React.FC = () => {
                 name="sellVsKeepPreference"
                 value={formData.sellVsKeepPreference}
                 onChange={handleChange}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2"
+                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400"
               >
                 <option value="decide">I'll Decide Later</option>
                 <option value="sell">Sell Everything</option>

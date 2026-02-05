@@ -166,32 +166,62 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     const photo = mediaBuffer.photoFrontOfHouse || saved?.photoFrontOfHouse;
     const video = mediaBuffer.videoGarage || saved?.videoGarage;
     if (!photo || !video) return;
+
+    if (!storage) {
+      alert("Storage not initialized.");
+      return;
+    }
+
     setIsProcessing(true);
-    const now = generateTimestamp();
-    const checkOutMedia: JobMedia = {
-      photoFrontOfHouse: photo!,
-      videoGarage: video!,
-      timestamp: now,
-      photoTimestamp: mediaBuffer.photoTimestamp || saved?.photoTimestamp || now,
-      videoTimestamp: mediaBuffer.videoTimestamp || saved?.videoTimestamp || now,
-    };
-    
-    // Stage 3: Gemini disabled. Stub a placeholder report for admin review.
-    const report = job.checkInMedia
-      ? "Quality review pending (manual)."
-      : "Quality review pending (no check-in media).";
-    
-    onUpdateJob({ 
-      ...job, 
-      status: JobStatus.COMPLETED, 
-      checkOutTime: now, 
-      checkOutMedia, 
-      qualityReport: report 
-    });
-    
-    setIsProcessing(false);
-    setMediaBuffer({});
-    setActiveStep('report');
+    try {
+      const now = generateTimestamp();
+
+      // Upload photo to Firebase Storage
+      let photoPath = saved?.photoFrontOfHouse || '';
+      if (mediaBuffer.photoFrontOfHouse) {
+        const photoBlob = await fetch(photo).then(r => r.blob());
+        photoPath = `jobs/${job.id}/checkout.jpg`;
+        await uploadBytes(storageRef(storage, photoPath), photoBlob);
+      }
+
+      // Upload video to Firebase Storage
+      let videoPath = saved?.videoGarage || '';
+      if (mediaBuffer.videoGarage) {
+        const videoBlob = await fetch(video).then(r => r.blob());
+        videoPath = `jobs/${job.id}/checkout.mp4`;
+        await uploadBytes(storageRef(storage, videoPath), videoBlob);
+      }
+
+      // Create media object with Storage paths instead of base64
+      const checkOutMedia: JobMedia = {
+        photoFrontOfHouse: photoPath,
+        videoGarage: videoPath,
+        timestamp: now,
+        photoTimestamp: mediaBuffer.photoTimestamp || saved?.photoTimestamp || now,
+        videoTimestamp: mediaBuffer.videoTimestamp || saved?.videoTimestamp || now,
+      };
+
+      // Stage 3: Gemini disabled. Stub a placeholder report for admin review.
+      const report = job.checkInMedia
+        ? "Quality review pending (manual)."
+        : "Quality review pending (no check-in media).";
+
+      onUpdateJob({
+        ...job,
+        status: JobStatus.REVIEW_PENDING,
+        checkOutTime: now,
+        checkOutMedia,
+        qualityReport: report
+      });
+
+      setMediaBuffer({});
+      setActiveStep('report');
+    } catch (error) {
+      console.error('Check-out upload failed:', error);
+      alert('Failed to upload check-out media. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleQuickTransfer = (newAssigneeId: string) => {
@@ -285,7 +315,8 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     // Update Firestore immediately
     if (db) {
       try {
-        await setDoc(doc(db, 'jobs', job.id), {
+        // Phase X: Updated to use serviceJobs collection
+        await setDoc(doc(db, 'serviceJobs', job.id), {
           checklist: updatedChecklist
         }, { merge: true });
       } catch (error) {
@@ -368,8 +399,15 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
         <div className="p-4 space-y-6">
           <CameraCapture mode="photo" label="1. Front of House Photo" onCapture={(data, ts) => handleMediaCapture('photoFrontOfHouse', data, ts)} initialData={mediaBuffer.photoFrontOfHouse || currentSavedMedia?.photoFrontOfHouse} />
           <div className="flex justify-end"><button onClick={() => fileInputRef.current?.click()} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg"><Upload size={14} className="inline mr-1" /> Upload Gallery</button><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} /></div>
-          <CameraCapture mode="video" label="2. Garage Interior Video" onCapture={(data, ts) => handleMediaCapture('videoGarage', data, ts)} initialData={currentSavedMedia?.videoGarage} />
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t pb-8"><button onClick={() => setShowConfirmation(true)} disabled={!canSubmit} className={`w-full font-bold py-4 rounded-xl shadow-lg ${canSubmit ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}>Complete Job</button></div>
+          <CameraCapture mode="video" label="2. Garage Interior Video (REQUIRED)" onCapture={(data, ts) => handleMediaCapture('videoGarage', data, ts)} initialData={currentSavedMedia?.videoGarage} />
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t pb-8">
+            {!canSubmit && (
+              <p className="text-sm text-rose-600 font-semibold text-center mb-2">
+                ⚠️ Both photo and video are required to complete the job
+              </p>
+            )}
+            <button onClick={() => setShowConfirmation(true)} disabled={!canSubmit} className={`w-full font-bold py-4 rounded-xl shadow-lg ${canSubmit ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}>Complete Job</button>
+          </div>
         </div>
         {showConfirmation && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl"><h3 className="text-lg font-bold mb-2">Finish Job?</h3><p className="text-slate-600 mb-6">Submit documentation for quality control review?</p><div className="flex gap-3"><button onClick={() => setShowConfirmation(false)} className="flex-1 py-3 font-bold text-slate-600">Cancel</button><button onClick={processCheckOut} disabled={isProcessing} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">{isProcessing ? <Loader2 className="animate-spin" size={20}/> : 'Confirm'}</button></div></div></div>

@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
@@ -105,7 +106,8 @@ export const generateSopForJob = onCall(async (request) => {
     throw new HttpsError("failed-precondition", "OPENAI_API_KEY is not configured.");
   }
 
-  const jobRef = db.collection("jobs").doc(jobId);
+  // Phase X: Updated to use serviceJobs collection
+  const jobRef = db.collection("serviceJobs").doc(jobId);
   const jobSnap = await jobRef.get();
   if (!jobSnap.exists) {
     throw new HttpsError("not-found", "Job not found.");
@@ -350,4 +352,504 @@ export const declineSignup = onCall(async (request) => {
   }
 
   return { ok: true };
+});
+
+/**
+ * Send email notification when job status changes to REVIEW_PENDING
+ * Requires Firebase Email Extension to be installed
+ */
+export const sendJobReviewEmail = onDocumentWritten("serviceJobs/{jobId}", async (event) => {
+  const beforeData = event.data?.before?.data();
+  const afterData = event.data?.after?.data();
+
+  // Only trigger when status changes to REVIEW_PENDING
+  if (!afterData || afterData.status !== "REVIEW_PENDING") {
+    return;
+  }
+
+  // Don't send duplicate emails if already REVIEW_PENDING
+  if (beforeData?.status === "REVIEW_PENDING") {
+    return;
+  }
+
+  const jobId = event.params.jobId;
+  console.log(`Job ${jobId} is now pending review. Sending email notification...`);
+
+  try {
+    const bucket = storage.bucket();
+
+    // Get download URLs for media
+    const getDownloadUrl = async (path: string): Promise<string> => {
+      if (!path || path === '') return '';
+      if (path.startsWith('http')) return path; // Already a URL
+      try {
+        const [url] = await bucket.file(path).getSignedUrl({
+          action: "read",
+          expires: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+        return url;
+      } catch (error) {
+        console.error(`Failed to get URL for ${path}:`, error);
+        return '';
+      }
+    };
+
+    const checkInPhotoUrl = afterData.checkInMedia?.photoFrontOfHouse
+      ? await getDownloadUrl(afterData.checkInMedia.photoFrontOfHouse)
+      : '';
+
+    const checkOutPhotoUrl = afterData.checkOutMedia?.photoFrontOfHouse
+      ? await getDownloadUrl(afterData.checkOutMedia.photoFrontOfHouse)
+      : '';
+
+    const checkOutVideoUrl = afterData.checkOutMedia?.videoGarage
+      ? await getDownloadUrl(afterData.checkOutMedia.videoGarage)
+      : '';
+
+    // Calculate work duration
+    let workDuration = 'N/A';
+    if (afterData.checkInTime && afterData.checkOutTime) {
+      const minutes = Math.round(
+        (new Date(afterData.checkOutTime).getTime() - new Date(afterData.checkInTime).getTime()) / (1000 * 60)
+      );
+      workDuration = `${minutes} minutes`;
+    }
+
+    // Generate secure approval token (simple hash of jobId + timestamp)
+    const approvalToken = Buffer.from(`${jobId}-${Date.now()}`).toString('base64');
+
+    // Create email HTML
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Review Required</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #2a5f5f 0%, #1f4a4a 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+    .info-box {
+      background: #f8f9fa;
+      border-left: 4px solid #2a5f5f;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .info-row {
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    .info-label {
+      font-weight: 600;
+      color: #555;
+    }
+    .info-value {
+      color: #333;
+    }
+    .media-section {
+      margin: 30px 0;
+    }
+    .media-section h3 {
+      color: #2a5f5f;
+      margin-bottom: 15px;
+    }
+    .media-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .media-item img {
+      width: 100%;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+    }
+    .media-item p {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      margin: 8px 0 0 0;
+    }
+    .video-link {
+      display: block;
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      text-decoration: none;
+      color: #2a5f5f;
+      font-weight: 600;
+      margin: 15px 0;
+    }
+    .video-link:hover {
+      background: #e0e0e0;
+    }
+    .button-container {
+      text-align: center;
+      margin: 40px 0;
+    }
+    .approve-button {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      padding: 16px 40px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+    }
+    .approve-button:hover {
+      background: #059669;
+    }
+    .dashboard-link {
+      display: inline-block;
+      background: #3b82f6;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-top: 15px;
+    }
+    .payment-info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-size: 13px;
+      color: #1e40af;
+    }
+    .footer {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🏠 Job Review Required</h1>
+    <p style="margin: 10px 0 0 0; opacity: 0.9;">A scholar has completed a service job</p>
+  </div>
+
+  <div class="info-box">
+    <div class="info-row">
+      <span class="info-label">Client:</span>
+      <span class="info-value">${afterData.clientName || 'Unknown'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Address:</span>
+      <span class="info-value">${afterData.address || 'N/A'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Scholar:</span>
+      <span class="info-value">${afterData.assigneeName || 'Unknown'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Total Payout:</span>
+      <span class="info-value" style="font-weight: 700; color: #10b981;">$${afterData.pay || 0}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Work Duration:</span>
+      <span class="info-value">${workDuration}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Job ID:</span>
+      <span class="info-value" style="font-family: monospace; font-size: 12px;">${jobId}</span>
+    </div>
+  </div>
+
+  <div class="payment-info">
+    <strong>💰 Payment Policy:</strong> Approval triggers 50% immediate payment ($${(afterData.pay || 0) / 2}).
+    The remaining 50% is automatically released 24 hours after job completion if no client complaints are filed.
+  </div>
+
+  <div class="media-section">
+    <h3>📸 Quality Assurance Photos</h3>
+    <div class="media-grid">
+      <div class="media-item">
+        ${checkInPhotoUrl ? `<img src="${checkInPhotoUrl}" alt="Check-In Photo" />` : '<p>No check-in photo</p>'}
+        <p>Check-In</p>
+      </div>
+      <div class="media-item">
+        ${checkOutPhotoUrl ? `<img src="${checkOutPhotoUrl}" alt="Check-Out Photo" />` : '<p>No check-out photo</p>'}
+        <p>Check-Out</p>
+      </div>
+    </div>
+
+    ${checkOutVideoUrl ? `
+      <a href="${checkOutVideoUrl}" class="video-link" target="_blank">
+        🎥 View Check-Out Video (Garage Walkthrough)
+      </a>
+    ` : '<p style="color: #dc2626; font-weight: 600;">⚠️ No check-out video available</p>'}
+  </div>
+
+  <div class="button-container">
+    <a href="https://localhost:3000/admin?approve=${approvalToken}" class="approve-button">
+      ✅ Approve & Pay $${(afterData.pay || 0) / 2} (50% now)
+    </a>
+    <br/>
+    <a href="https://localhost:3000/admin" class="dashboard-link">
+      Open Admin Dashboard
+    </a>
+  </div>
+
+  <div class="footer">
+    <p>This is an automated notification from Garage Scholars Scheduling System</p>
+    <p>Job completed at ${new Date(afterData.checkOutTime).toLocaleString()}</p>
+  </div>
+</body>
+</html>
+    `;
+
+    // Write to 'mail' collection (monitored by Firebase Email Extension)
+    await db.collection('mail').add({
+      to: ['garagescholars@gmail.com'], // Centralized review inbox
+      message: {
+        subject: `🔔 Review Required: ${afterData.clientName} - $${afterData.pay}`,
+        html: emailHtml,
+      },
+      jobId: jobId,
+      approvalToken: approvalToken,
+      createdAt: FieldValue.serverTimestamp()
+    });
+
+    console.log(`Email notification queued for job ${jobId}`);
+  } catch (error) {
+    console.error(`Failed to send email for job ${jobId}:`, error);
+  }
+});
+
+// Submit quote request from website
+export const submitQuoteRequest = onCall(
+  { cors: true }, // Enable CORS for all origins
+  async (request) => {
+  const {
+    name,
+    email,
+    phone,
+    zipcode,
+    serviceType,
+    package: packageTier,
+    garageSize,
+    description,
+    photoData // Array of base64 encoded images if present
+  } = request.data;
+
+  // Validate required fields
+  if (!name || !email || !phone || !zipcode || !serviceType || !packageTier) {
+    throw new HttpsError("invalid-argument", "Missing required fields");
+  }
+
+  try {
+    // Create quote request document
+    const quoteRequestRef = await db.collection('quoteRequests').add({
+      name,
+      email,
+      phone,
+      zipcode,
+      serviceType,
+      package: packageTier,
+      garageSize: garageSize || null,
+      description: description || null,
+      status: 'new',
+      createdAt: FieldValue.serverTimestamp(),
+      source: 'website'
+    });
+
+    console.log(`Quote request created: ${quoteRequestRef.id}`);
+
+    // Handle photo uploads if present
+    let photoUrls: string[] = [];
+    if (photoData && Array.isArray(photoData) && photoData.length > 0) {
+      const bucket = storage.bucket();
+
+      for (let i = 0; i < photoData.length; i++) {
+        try {
+          const { base64, filename, mimeType } = photoData[i];
+          const buffer = Buffer.from(base64, 'base64');
+          const fileExtension = filename.split('.').pop() || 'jpg';
+          const storagePath = `quote-photos/${quoteRequestRef.id}/${Date.now()}-${i}.${fileExtension}`;
+
+          const file = bucket.file(storagePath);
+          await file.save(buffer, {
+            metadata: {
+              contentType: mimeType || 'image/jpeg',
+            },
+          });
+
+          // Make the file publicly accessible
+          await file.makePublic();
+          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+          photoUrls.push(publicUrl);
+        } catch (photoError) {
+          console.error(`Error uploading photo ${i}:`, photoError);
+        }
+      }
+
+      // Update quote request with photo URLs
+      if (photoUrls.length > 0) {
+        await quoteRequestRef.update({ photoUrls });
+      }
+    }
+
+    // Send email notification to admin
+    const serviceTypeLabels: { [key: string]: string } = {
+      'get-clean': 'Get Clean',
+      'get-organized': 'Get Organized',
+      'get-strong': 'Get Strong',
+      'resale': 'Resale Concierge'
+    };
+
+    const packageLabels: { [key: string]: string } = {
+      'undergraduate': 'Undergraduate',
+      'graduate': 'Graduate',
+      'doctorate': 'Doctorate'
+    };
+
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #6E9D7B; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
+    .field { margin-bottom: 15px; }
+    .field-label { font-weight: bold; color: #27362e; }
+    .field-value { margin-top: 5px; }
+    .photos { margin-top: 20px; }
+    .photos img { max-width: 200px; margin: 10px; border: 1px solid #ddd; }
+    .footer { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 0 0 8px 8px; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>🏠 New Quote Request</h2>
+    </div>
+
+    <div class="content">
+      <div class="field">
+        <div class="field-label">Contact Information:</div>
+        <div class="field-value">
+          <strong>Name:</strong> ${name}<br>
+          <strong>Email:</strong> ${email}<br>
+          <strong>Phone:</strong> ${phone}<br>
+          <strong>ZIP Code:</strong> ${zipcode}
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Service Details:</div>
+        <div class="field-value">
+          <strong>Service Type:</strong> ${serviceTypeLabels[serviceType] || serviceType}<br>
+          <strong>Package:</strong> ${packageLabels[packageTier] || packageTier}
+          ${garageSize ? `<br><strong>Garage Size:</strong> ${garageSize}` : ''}
+        </div>
+      </div>
+
+      ${description ? `
+      <div class="field">
+        <div class="field-label">Project Description:</div>
+        <div class="field-value">${description}</div>
+      </div>
+      ` : ''}
+
+      ${photoUrls.length > 0 ? `
+      <div class="photos">
+        <div class="field-label">Photos (${photoUrls.length}):</div>
+        ${photoUrls.map(url => `<img src="${url}" alt="Garage photo">`).join('')}
+      </div>
+      ` : ''}
+    </div>
+
+    <div class="footer">
+      <p>Quote Request ID: ${quoteRequestRef.id}</p>
+      <p>Submitted at ${new Date().toLocaleString()}</p>
+      <p><a href="https://console.firebase.google.com/project/${process.env.GCLOUD_PROJECT}/firestore/data/quoteRequests/${quoteRequestRef.id}">View in Firebase Console</a></p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    await db.collection('mail').add({
+      to: ['garagescholars@gmail.com'],
+      message: {
+        subject: `📋 New Quote Request: ${name} - ${serviceTypeLabels[serviceType]} (${packageLabels[packageTier]})`,
+        html: emailHtml,
+      },
+      quoteRequestId: quoteRequestRef.id,
+      createdAt: FieldValue.serverTimestamp()
+    });
+
+    console.log(`Email notification sent for quote request ${quoteRequestRef.id}`);
+
+    // Auto-create a draft job with LEAD status
+    const draftJobRef = await db.collection('serviceJobs').add({
+      clientName: name,
+      clientEmail: email,
+      clientPhone: phone,
+      address: zipcode ? `ZIP: ${zipcode}` : 'Address TBD',
+      zipcode: zipcode,
+      description: description || 'New lead from website quote form',
+      date: new Date().toISOString(), // Placeholder date
+      scheduledEndTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
+      pay: 0, // To be determined
+      clientPrice: 0, // To be determined
+      status: 'LEAD',
+      locationLat: 0,
+      locationLng: 0,
+      checklist: [],
+      serviceType,
+      package: packageTier,
+      garageSize: garageSize || null,
+      intakeMediaPaths: photoUrls,
+      quoteRequestId: quoteRequestRef.id,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+
+    // Link the job back to the quote request
+    await quoteRequestRef.update({ jobId: draftJobRef.id });
+
+    console.log(`Draft job created with LEAD status: ${draftJobRef.id}`);
+
+    return {
+      success: true,
+      quoteRequestId: quoteRequestRef.id,
+      jobId: draftJobRef.id,
+      message: 'Quote request submitted successfully and draft job created'
+    };
+
+  } catch (error) {
+    console.error('Error submitting quote request:', error);
+    throw new HttpsError("internal", "Failed to submit quote request");
+  }
 });

@@ -111,7 +111,8 @@ const App: React.FC = () => {
           setUsers(nextUsers);
       });
 
-      const jobsRef = query(collection(db, 'jobs'), orderBy('date', 'asc'));
+      // Phase X: Updated to use serviceJobs collection
+      const jobsRef = query(collection(db, 'serviceJobs'), orderBy('date', 'asc'));
       const jobsUnsub = onSnapshot(jobsRef, (snapshot) => {
           const nextJobs = snapshot.docs.map((docSnap) => {
               const data = docSnap.data() as Partial<Job>;
@@ -267,7 +268,8 @@ const App: React.FC = () => {
     setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
     if (!db) return;
     const { id, ...payload } = updatedJob;
-    await setDoc(doc(db, 'jobs', id), stripUndefined(payload), { merge: true });
+    // Phase X: Updated to use serviceJobs collection
+    await setDoc(doc(db, 'serviceJobs', id), stripUndefined(payload), { merge: true });
   };
 
   const handleUserUpdate = async (userId: string, updates: Partial<UserType>) => {
@@ -336,7 +338,8 @@ const App: React.FC = () => {
 
     setIsClaimingJob(true);
     try {
-      const jobRef = doc(db, 'jobs', claimJobState.id);
+      // Phase X: Updated to use serviceJobs collection
+      const jobRef = doc(db, 'serviceJobs', claimJobState.id);
 
       await setDoc(jobRef, {
         assigneeId: currentUserId,
