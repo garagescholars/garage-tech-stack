@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "garage-scholars-resale",
     "public": "dist",
     "ignore": [
       "firebase.json",
