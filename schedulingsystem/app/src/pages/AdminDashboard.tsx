@@ -6,7 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { functions, db, storage } from "../firebase";
 import { useAuth } from "../auth/AuthProvider";
 import { JobStatus, ServiceJob } from "../../types";
-import { DollarSign, Package, UserPlus } from "lucide-react";
+import { DollarSign, Package, UserPlus, Settings } from "lucide-react";
 import JobToInventoryModal from "../components/JobToInventoryModal";
 
 type SignupRequest = {
@@ -289,6 +289,13 @@ const AdminDashboard: React.FC = () => {
             >
               <DollarSign size={16} />
               Payouts
+            </Link>
+            <Link
+              to="/admin/settings"
+              className="flex items-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-700"
+            >
+              <Settings size={16} />
+              Settings
             </Link>
             <button
               onClick={() => navigate("/admin/create-job")}

@@ -14,6 +14,7 @@ import AdminDashboard from './src/pages/AdminDashboard';
 import AdminCreateJob from './src/pages/AdminCreateJob';
 import AdminPayouts from './src/pages/AdminPayouts';
 import AdminLeads from './src/pages/AdminLeads';
+import AdminSettings from './src/pages/AdminSettings';
 import UnifiedDashboard from './src/pages/UnifiedDashboard';
 
 const rootElement = document.getElementById('root');
@@ -35,6 +36,7 @@ root.render(
             <Route path="/admin/create-job" element={<AdminRoute><AdminCreateJob /></AdminRoute>} />
             <Route path="/admin/payouts" element={<AdminRoute><AdminPayouts /></AdminRoute>} />
             <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/unified" element={<AdminRoute><UnifiedDashboard /></AdminRoute>} />
             <Route path="/app" element={<ProtectedRoute><App /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/app" replace />} />
