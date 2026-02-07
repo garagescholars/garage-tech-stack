@@ -2633,6 +2633,51 @@
         });
     </script>
 
+    <!-- Hamburger Menu Fix -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.home-e-244');
+            const mobileMenu = document.querySelector('.home-e-237');
+            const closeIcon = document.querySelector('.home-e-242');
+
+            if (hamburger && mobileMenu) {
+                hamburger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    mobileMenu.style.display = 'flex';
+                    mobileMenu.style.flexDirection = 'column';
+                    mobileMenu.style.position = 'fixed';
+                    mobileMenu.style.top = '60px';
+                    mobileMenu.style.right = '0';
+                    mobileMenu.style.left = '0';
+                    mobileMenu.style.backgroundColor = 'rgba(10, 10, 10, 0.98)';
+                    mobileMenu.style.padding = '20px';
+                    mobileMenu.style.zIndex = '999';
+                    mobileMenu.style.gap = '20px';
+                });
+            }
+
+            if (closeIcon && mobileMenu) {
+                closeIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    mobileMenu.style.display = 'none';
+                });
+            }
+
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (mobileMenu && !mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+                    mobileMenu.style.display = 'none';
+                }
+            });
+
+            // Close menu on window resize to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768 && mobileMenu) {
+                    mobileMenu.style.display = '';
+                }
+            });
+        });
+    </script>
 
 </body>
 

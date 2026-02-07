@@ -664,5 +664,168 @@ footer a:hover {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   📱 MOBILE RESPONSIVE DESIGN
+   ═══════════════════════════════════════════════════════════ */
+
+/* Mobile devices (up to 768px) */
+@media screen and (max-width: 768px) {
+    /* Package cards - stack vertically on mobile */
+    .home-e-58 {
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    .home-e-59, .home-e-81, .home-e-71 {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+
+    /* Reduce heading sizes */
+    .home-e-1 h1,
+    .home-e-56 p,
+    h1 {
+        font-size: 1.8em !important;
+        line-height: 1.2 !important;
+    }
+
+    .home-e-57 p,
+    h2 {
+        font-size: 1.2em !important;
+    }
+
+    /* Adjust padding and margins */
+    .home-e-233,
+    .home-e-234 {
+        padding: 10px 15px !important;
+    }
+
+    /* Navigation buttons - stack vertically */
+    .home-e-234 {
+        flex-wrap: wrap !important;
+    }
+
+    .home-e-243 {
+        font-size: 0.9em !important;
+        padding: 10px 15px !important;
+        margin: 5px 0 !important;
+    }
+
+    /* Stats section - stack cards */
+    .home-e-45 {
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    .home-e-46, .home-e-51, .home-e-48 {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Testimonials - single column */
+    .home-e-127 {
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    .home-e-128, .home-e-139, .home-e-134 {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Services section - stack vertically */
+    .home-e-101 {
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    .home-e-116, .home-e-112, .home-e-108 {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Footer - stack columns */
+    .home-e-246 {
+        flex-direction: column !important;
+        gap: 30px !important;
+    }
+
+    .home-e-247, .home-e-260, .home-e-254 {
+        width: 100% !important;
+        text-align: center !important;
+    }
+
+    /* Quote modal - full width on mobile */
+    #quoteModal .modal-content {
+        width: 95% !important;
+        margin: 10px !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+    }
+
+    /* Apply page - mobile optimization */
+    .container {
+        padding: 20px !important;
+        margin: 10px !important;
+    }
+
+    .container h1 {
+        font-size: 1.8em !important;
+    }
+
+    .highlight {
+        font-size: 1.4em !important;
+    }
+
+    .benefits {
+        padding: 15px !important;
+    }
+
+    .benefit-item {
+        font-size: 0.95em !important;
+    }
+}
+
+/* Small mobile devices (up to 480px) */
+@media screen and (max-width: 480px) {
+    /* Even smaller text for tiny screens */
+    .home-e-1 h1,
+    .home-e-56 p {
+        font-size: 1.5em !important;
+    }
+
+    .home-e-57 p {
+        font-size: 1em !important;
+    }
+
+    /* Hide desktop-only elements if needed */
+    .home-e-237 span {
+        font-size: 0.9em !important;
+    }
+
+    /* Buttons full width on small screens */
+    .home-e-243,
+    .submit-btn,
+    button[type="submit"] {
+        width: 100% !important;
+        margin: 10px 0 !important;
+    }
+}
+
+/* Tablet devices (768px to 1024px) */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+    /* Package cards - 2 columns on tablet */
+    .home-e-58 {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+    }
+
+    .home-e-59, .home-e-81, .home-e-71 {
+        width: 45% !important;
+        min-width: 300px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
    🎨 END OF LUXURY ENHANCEMENTS
    ═══════════════════════════════════════════════════════════ */
