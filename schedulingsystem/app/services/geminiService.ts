@@ -2,8 +2,19 @@
 import { GoogleGenAI } from "@google/genai";
 import { JobMedia } from "../types";
 
-// Initialize the Gemini API client with the provided API key from environment variables.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazy initialization to prevent app crash if API key is missing
+let ai: GoogleGenAI | null = null;
+
+const getAI = (): GoogleGenAI => {
+    if (!ai) {
+        const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+        if (!apiKey) {
+            throw new Error("Gemini API key not configured");
+        }
+        ai = new GoogleGenAI({ apiKey });
+    }
+    return ai;
+};
 
 /**
  * Analyzes the check-out media to provide a quality assurance report.
@@ -33,7 +44,7 @@ export const analyzeQuality = async (
     `;
 
     // Use gemini-3-flash-preview for multimodal analysis tasks.
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: {
         parts: [
@@ -73,7 +84,7 @@ export const generateSmsAlert = async (userName: string, milestone: number, earn
         Make it sound encouraging and professional. Use emojis.`;
         
         // Use gemini-3-flash-preview for basic text generation.
-        const response = await ai.models.generateContent({
+        const response = await getAI().models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: prompt,
         });
@@ -86,7 +97,7 @@ export const generateSmsAlert = async (userName: string, milestone: number, earn
 export const generateJobSummary = async (jobDescription: string, address: string): Promise<string> => {
    try {
     // Use gemini-3-flash-preview for basic text summarization.
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Create a very short, motivating 1-sentence summary for a worker going to this job: ${jobDescription} at ${address}.`,
     });
