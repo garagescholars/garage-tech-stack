@@ -1,22 +1,32 @@
-# Garage Scholars - Vercel Deployment Guide
+# Garage Scholars - Hybrid Deployment Guide
 
-This guide explains how to deploy all three frontend applications to Vercel while keeping the Firebase backend operational.
+This guide explains the hybrid deployment architecture using both Vercel and Firebase Hosting.
 
 ## Architecture Overview
 
-### What's Moving to Vercel (Frontend Only)
+### Vercel (Customer-Facing Website)
 - **Website** (Marketing Site) - Static HTML/CSS
-- **Resale Concierge** - React + Vite app
-- **Scheduling System** - React + TypeScript + Vite app
+  - URL: Your custom domain or Vercel URL
+  - Benefits: CDN, edge caching, SEO optimization
+  - Deployed via: GitHub integration
 
-### What Stays on Firebase (Backend)
+### Firebase Hosting (Admin Applications)
+- **Scheduling System** - React + TypeScript + Vite app
+  - URL: https://garage-scholars-scheduling.web.app
+  - Integrated with Firebase Auth/Firestore
+
+- **Resale Concierge** - React + Vite app
+  - URL: https://garage-scholars-resale.web.app
+  - Integrated with Firebase Auth/Firestore
+
+### Firebase Backend (Shared Infrastructure)
 - Firebase Authentication
 - Cloud Firestore Database
 - Cloud Storage
 - Cloud Functions (all 5 functions)
 - Security Rules
 
-**IMPORTANT**: The backend remains 100% on Firebase. Only the frontend hosting is moving to Vercel.
+**Why Hybrid?** Admin apps work perfectly on Firebase and integrate seamlessly with Firebase services. The public website benefits from Vercel's global CDN and performance optimization.
 
 ---
 
@@ -82,85 +92,54 @@ Note the production URL (e.g., `https://garage-scholars-website.vercel.app`)
 
 ---
 
-## Step 3: Deploy Resale Concierge App
+## Step 3: Deploy Admin Applications to Firebase
 
-### 3.1 Import to Vercel
+Both the Resale Concierge and Scheduling System are deployed to Firebase Hosting since they integrate deeply with Firebase services.
 
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import the same `garage-scholars` repository
-3. Configure the project:
-   - **Project Name**: `garage-scholars-resale`
-   - **Root Directory**: `frontend`
-   - **Framework Preset**: Vite
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
+### 3.1 Build and Deploy Scheduling System
 
-### 3.2 Add Environment Variables
-
-```
-VITE_FIREBASE_API_KEY=AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8
-VITE_FIREBASE_AUTH_DOMAIN=garage-scholars-v2.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=garage-scholars-v2
-VITE_FIREBASE_STORAGE_BUCKET=garage-scholars-v2.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=583159785746
-VITE_FIREBASE_APP_ID=1:583159785746:web:87d8ed8f5634ea79c26bcb
+```bash
+cd schedulingsystem/app
+npm install
+npm run build
+cd ..
+firebase deploy --only hosting:scheduling
 ```
 
-### 3.3 Deploy
+**Result**: App deployed to https://garage-scholars-scheduling.web.app
 
-Click "Deploy" and note the production URL.
+### 3.2 Build and Deploy Resale Concierge
+
+```bash
+cd frontend
+npm install
+npm run build
+firebase deploy --only hosting
+```
+
+**Result**: App deployed to https://garage-scholars-resale.web.app
+
+### 3.3 Environment Variables
+
+Both apps use environment variables from their respective `.env` files in development. For production:
+- Firebase hosting serves the built apps with env vars baked in at build time
+- Ensure `.env` files exist in `frontend/` and `schedulingsystem/app/` directories
+- These files should already be configured with your Firebase credentials
 
 ---
 
-## Step 4: Deploy Scheduling System
+## Step 4: Update Firebase Functions Environment Variables
 
-### 4.1 Import to Vercel
+The Firebase Cloud Functions need to know the scheduling app URL for email links.
 
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import the same `garage-scholars` repository
-3. Configure the project:
-   - **Project Name**: `garage-scholars-scheduling`
-   - **Root Directory**: `schedulingsystem/app`
-   - **Framework Preset**: Vite
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-
-### 4.2 Add Environment Variables
-
-```
-VITE_FIREBASE_API_KEY=AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8
-VITE_FIREBASE_AUTH_DOMAIN=garage-scholars-v2.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=garage-scholars-v2
-VITE_FIREBASE_STORAGE_BUCKET=garage-scholars-v2.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=583159785746
-VITE_FIREBASE_APP_ID=1:583159785746:web:87d8ed8f5634ea79c26bcb
-GEMINI_API_KEY=your_gemini_api_key_here
-VITE_SCHEDULING_APP_URL=https://garage-scholars-scheduling.vercel.app
-VITE_RESALE_APP_URL=https://garage-scholars-resale.vercel.app
-```
-
-**Note**: Replace the URL values with your actual Vercel URLs from Steps 2-3.
-
-### 4.3 Deploy
-
-Click "Deploy" and note the production URL.
-
----
-
-## Step 5: Update Firebase Functions Environment Variables
-
-The Firebase Cloud Functions need to know the new Vercel URL for the scheduling app to generate correct email links.
-
-### 5.1 Set Function Environment Variable
+### 4.1 Set Function Environment Variable
 
 ```bash
 cd schedulingsystem
-firebase functions:config:set app.scheduling_url="https://garage-scholars-scheduling.vercel.app"
+firebase functions:config:set app.scheduling_url="https://garage-scholars-scheduling.web.app"
 ```
 
-Replace with your actual Vercel URL.
-
-### 5.2 Redeploy Firebase Functions
+### 4.2 Redeploy Firebase Functions (if needed)
 
 ```bash
 firebase deploy --only functions
@@ -189,34 +168,38 @@ If using custom domains, update CORS settings:
 
 ---
 
-## Step 7: Update Firebase Auth Authorized Domains
+## Step 6: Update Firebase Auth Authorized Domains
 
 1. Go to [Firebase Console](https://console.firebase.google.com)
 2. Select your project: `garage-scholars-v2`
 3. Go to Authentication → Settings → Authorized domains
-4. Add your Vercel URLs:
-   - `garage-scholars-website.vercel.app`
-   - `garage-scholars-resale.vercel.app`
-   - `garage-scholars-scheduling.vercel.app`
-5. Add custom domains if applicable
+4. Add your Vercel URL for the website:
+   - `garage-scholars-website.vercel.app` (or your custom domain)
+5. Firebase app URLs should already be authorized:
+   - `garage-scholars-scheduling.web.app`
+   - `garage-scholars-resale.web.app`
 
 ---
 
-## Step 8: Test All Applications
+## Step 7: Test All Applications
 
-### 8.1 Website
-- Visit your Website URL
+### 7.1 Website (Vercel)
+- Visit: Your Vercel URL or custom domain
 - Test the quote modal
-- Verify Firebase Functions are called correctly
+- Verify form submissions work
+- Check that luxury enhancements are visible
 
-### 8.2 Resale Concierge
-- Visit your Resale app URL
-- Test authentication
+### 7.2 Resale Concierge (Firebase)
+- Visit: https://garage-scholars-resale.web.app
+- Test authentication (login/logout)
 - Test file uploads to Firebase Storage
+- Verify all CRUD operations work
 
-### 8.3 Scheduling System
-- Visit your Scheduling app URL
+### 7.3 Scheduling System (Firebase)
+- Visit: https://garage-scholars-scheduling.web.app
 - Test admin login
+- Test scholar management
+- Verify Gemini AI features work
 - Test job creation and updates
 - Verify Firestore reads/writes
 - Test the admin dashboard links
