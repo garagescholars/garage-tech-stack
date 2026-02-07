@@ -3,15 +3,14 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage"; // <--- NEW: Import Storage
 
-// Your web app's Firebase configuration
+// Firebase configuration from environment variables
 const firebaseConfig = {
-  // PASTE YOUR KEYS HERE IF THEY ARENT ALREADY HERE
-  apiKey: "AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8",
-  authDomain: "garage-scholars-v2.firebaseapp.com",
-  projectId: "garage-scholars-v2",
-  storageBucket: "garage-scholars-v2.firebasestorage.app",
-  messagingSenderId: "583159785746",
-  appId: "1:583159785746:web:87d8ed8f5634ea79c26bcb"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);

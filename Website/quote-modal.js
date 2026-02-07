@@ -1,14 +1,6 @@
-// Initialize Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8",
-    authDomain: "garage-scholars-v2.firebaseapp.com",
-    projectId: "garage-scholars-v2",
-    storageBucket: "garage-scholars-v2.firebasestorage.app",
-    messagingSenderId: "583159785746",
-    appId: "1:583159785746:web:87d8ed8f5634ea79c26bcb"
-};
-
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase with config loaded from firebase-config.js
+// Note: firebase-config.js must be loaded before this script
+firebase.initializeApp(window.firebaseConfig);
 const functions = firebase.functions();
 
 // For development/testing, uncomment to use local emulator:

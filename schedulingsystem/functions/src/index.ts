@@ -609,11 +609,11 @@ export const sendJobReviewEmail = onDocumentWritten("serviceJobs/{jobId}", async
   </div>
 
   <div class="button-container">
-    <a href="https://localhost:3000/admin?approve=${approvalToken}" class="approve-button">
+    <a href="${process.env.SCHEDULING_APP_URL || 'https://your-scheduling-app.vercel.app'}/admin?approve=${approvalToken}" class="approve-button">
       ✅ Approve & Pay $${(afterData.pay || 0) / 2} (50% now)
     </a>
     <br/>
-    <a href="https://localhost:3000/admin" class="dashboard-link">
+    <a href="${process.env.SCHEDULING_APP_URL || 'https://your-scheduling-app.vercel.app'}/admin" class="dashboard-link">
       Open Admin Dashboard
     </a>
   </div>

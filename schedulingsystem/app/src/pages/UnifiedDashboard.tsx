@@ -157,7 +157,7 @@ const UnifiedDashboard: React.FC = () => {
           </div>
           <div className="flex gap-2">
             <a
-              href="https://garage-scholars-scheduling.web.app/app"
+              href={import.meta.env.VITE_SCHEDULING_APP_URL || "https://your-scheduling-app.vercel.app"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700"
@@ -167,7 +167,7 @@ const UnifiedDashboard: React.FC = () => {
               <ExternalLink size={14} />
             </a>
             <a
-              href="https://garage-scholars-v2.web.app"
+              href={import.meta.env.VITE_RESALE_APP_URL || "https://your-resale-app.vercel.app"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700"

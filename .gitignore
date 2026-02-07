@@ -39,3 +39,7 @@ schedulingsystem/app/dist/
 copy-of-*/
 website-backup/
 *.zip
+
+# firebase cache
+.firebase/
+**/.firebase/

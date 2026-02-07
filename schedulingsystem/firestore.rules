@@ -29,11 +29,13 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAdminByEmail() || request.auth.uid == userId;
-      allow create: if isSignedIn()
+      allow create: if isAdminByEmail() || (
+        isSignedIn()
         && request.auth.uid == userId
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == "scholar"
-        && request.resource.data.status in ["disabled", "pending"];
+        && request.resource.data.status in ["disabled", "pending"]
+      );
       allow update: if isAdminByEmail() || (request.auth.uid == userId
         && request.resource.data.role == resource.data.role
         && request.resource.data.status == resource.data.status);

@@ -513,13 +513,13 @@
                         <p>What you get:</p>
                     </span>
                     <div class="home-e-64"> <i class="fa-solid fa-check home-e-65"></i><span class="home-e-66">
-                            <p>Trash Removal, Sweep, Dust, and Wipe</p>
+                            <p>Sort into keep/donate/trash</p>
                         </span></div>
                     <div class="home-e-67"> <i class="fa-solid fa-check home-e-68"></i><span class="home-e-69">
-                            <p>Clearing walkways/parking paths</p>
+                            <p>One storage zone installed</p>
                         </span></div>
                     <div class="home-e-210"> <i class="fa-solid fa-check home-e-211"></i><span class="home-e-212">
-                            <p>Light re-stacking of totes/boxes</p>
+                            <p>Sweep and blow out</p>
                         </span></div><button class="home-e-70" onclick="openQuoteModal('undergraduate')">
                         <p>Get Started</p>
                     </button>
@@ -530,18 +530,17 @@
                         <p>Most Popular</p>
                     </span><span class="home-e-83">
                         <p>Leveling Up Your Space</p>
+                    </span><span class="home-e-214">
+                        <p>What you get:</p>
                     </span>
-                    <div class="home-e-84"> <span class="home-e-214">
-                            <p>What you get:</p>
-                        </span></div>
                     <div class="home-e-85"> <i class="fa-solid fa-check home-e-86"></i><span class="home-e-87">
                             <p>Everything in The Undergraduate, plus:</p>
                         </span></div>
                     <div class="home-e-215"> <i class="fa-solid fa-check home-e-216"></i><span class="home-e-217">
-                            <p>The "Scholar Dot" Organization System</p>
+                            <p>Detailed categorization + Haul away + Storage upgrades</p>
                         </span></div>
                     <div class="home-e-218"> <i class="fa-solid fa-check home-e-219"></i><span class="home-e-220">
-                            <p>Shelving Installation</p>
+                            <p>Deep cleaning + 30-day clutter-free guarantee</p>
                         </span></div><button class="home-e-88" onclick="openQuoteModal('graduate')">
                         <p>Get Started</p>
                     </button>
@@ -557,16 +556,13 @@
                             <p>Everything in The Graduate, plus:</p>
                         </span></div>
                     <div class="home-e-228"> <i class="fa-solid fa-check home-e-229"></i><span class="home-e-230">
-                            <p>Haul-Away</p>
+                            <p>Third premium storage zone + 16 premium bins</p>
                         </span></div>
                     <div class="home-e-225"> <i class="fa-solid fa-check home-e-226"></i><span class="home-e-227">
-                            <p>Donation Drop</p>
+                            <p>Floor power wash + Double haul away</p>
                         </span></div>
                     <div class="home-e-222"> <i class="fa-solid fa-check home-e-223"></i><span class="home-e-224">
-                            <p>Seasonal Gear Swap Setup</p>
-                        </span></div>
-                    <div class="home-e-77"> <i class="fa-solid fa-check home-e-78"></i><span class="home-e-79">
-                            <p>Two Storage Installations</p>
+                            <p>Seasonal swap service with return visit</p>
                         </span></div><button class="home-e-80" onclick="openQuoteModal('doctorate')">
                         <p>Get Started</p>
                     </button>
@@ -2483,21 +2479,15 @@
         </div>
     </div>
 
+    <!-- Firebase Configuration -->
+    <script src="/firebase-config.js"></script>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
     <script>
-        // Initialize Firebase (replace with your config)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8",
-            authDomain: "garage-scholars-v2.firebaseapp.com",
-            projectId: "garage-scholars-v2",
-            storageBucket: "garage-scholars-v2.firebasestorage.app",
-            messagingSenderId: "583159785746",
-            appId: "1:583159785746:web:87d8ed8f5634ea79c26bcb"
-        };
-
-        firebase.initializeApp(firebaseConfig);
+        // Initialize Firebase with config loaded from firebase-config.js
+        firebase.initializeApp(window.firebaseConfig);
         const functions = firebase.functions();
 
         // For development/testing, uncomment to use local emulator:
