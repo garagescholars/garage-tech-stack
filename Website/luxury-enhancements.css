@@ -1,0 +1,579 @@
+/*
+╔══════════════════════════════════════════════════════════════╗
+║  GARAGE SCHOLARS - LUXURY ENHANCEMENTS                       ║
+║  Premium design overlay for sophisticated brand experience   ║
+╚══════════════════════════════════════════════════════════════╝
+*/
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 LUXURY COLOR PALETTE
+   ═══════════════════════════════════════════════════════════ */
+:root {
+    /* Enhanced Primary Colors - Richer, Deeper Tones */
+    --luxury-primary: #5A8266;          /* Refined sage green */
+    --luxury-primary-dark: #1F2E24;     /* Deep forest green */
+    --luxury-primary-light: #7FB591;    /* Light sage */
+
+    /* Gold Accent System - Premium Touches */
+    --luxury-gold: #D4AF37;             /* Classic gold */
+    --luxury-gold-light: #E8C97A;       /* Light gold */
+    --luxury-gold-dark: #B8941F;        /* Deep gold */
+
+    /* Sophisticated Neutrals */
+    --luxury-black: #0A0A0A;            /* Rich black */
+    --luxury-white: #FAFAFA;            /* Soft white */
+    --luxury-gray-100: #F5F5F5;
+    --luxury-gray-200: #E8E8E8;
+    --luxury-gray-800: #2A2A2A;
+
+    /* Gradients */
+    --luxury-gradient-primary: linear-gradient(135deg, #5A8266 0%, #3C5543 100%);
+    --luxury-gradient-gold: linear-gradient(135deg, #D4AF37 0%, #B8941F 100%);
+    --luxury-gradient-dark: linear-gradient(180deg, #0A0A0A 0%, #1F2E24 100%);
+
+    /* Glass Morphism */
+    --glass-background: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+
+    /* Shadows - Layered for Depth */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+    --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.24);
+    --shadow-gold: 0 8px 32px rgba(212, 175, 55, 0.3);
+
+    /* Transitions */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ✨ GLOBAL ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Premium Body Styling */
+body {
+    background: var(--luxury-gradient-dark);
+    position: relative;
+}
+
+/* Elegant Background Pattern */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(90, 130, 102, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎯 TYPOGRAPHY REFINEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Headings - Add Elegance */
+h1, h2, h3, h4, h5, h6,
+[class*="e-"] h1,
+[class*="e-"] h2,
+[class*="e-"] h3 {
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+/* Large Headlines - Premium Feel */
+h1, [style*="font-size: 5"],
+[style*="font-size: 6"],
+[style*="font-size: 7"] {
+    background: linear-gradient(135deg, #FAFAFA 0%, #E8E8E8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Body Text - Enhanced Readability */
+p {
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 NAVIGATION - Glass Morphism
+   ═══════════════════════════════════════════════════════════ */
+
+/* Header/Nav Container */
+.home-e-233,
+[class*="-e-233"] {
+    background: rgba(10, 10, 10, 0.85) !important;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: var(--transition-smooth);
+}
+
+.home-e-233:hover {
+    background: rgba(10, 10, 10, 0.95) !important;
+    border-bottom-color: rgba(212, 175, 55, 0.2);
+}
+
+/* Logo - Add Glow Effect */
+.home-e-236,
+[class*="-e-236"] {
+    text-shadow: 0 0 20px rgba(90, 130, 102, 0.5);
+    transition: var(--transition-smooth);
+}
+
+.home-e-236:hover {
+    text-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
+    transform: scale(1.02);
+}
+
+/* Navigation Links - Elegant Hover */
+.home-e-238,
+.home-e-239,
+.home-e-240,
+.home-e-241,
+[class*="-e-238"],
+[class*="-e-239"],
+[class*="-e-240"],
+[class*="-e-241"] {
+    position: relative;
+    transition: var(--transition-smooth);
+    padding: 15px 20px !important;
+}
+
+.home-e-238::after,
+.home-e-239::after,
+.home-e-240::after,
+.home-e-241::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: var(--luxury-gradient-gold);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.home-e-238:hover::after,
+.home-e-239:hover::after,
+.home-e-240:hover::after,
+.home-e-241:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+.home-e-238:hover,
+.home-e-239:hover,
+.home-e-240:hover,
+.home-e-241:hover {
+    color: var(--luxury-gold) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎯 BUTTONS - Premium Styling
+   ═══════════════════════════════════════════════════════════ */
+
+/* Primary CTA Buttons */
+[class*="button"],
+button,
+.home-e-258,
+[class*="-e-258"],
+a[class*="cta"],
+[style*="background"][style*="6E9D7B"] {
+    position: relative;
+    overflow: hidden;
+    background: var(--luxury-gradient-primary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition-smooth);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+[class*="button"]::before,
+button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s;
+}
+
+[class*="button"]:hover::before,
+button:hover::before {
+    left: 100%;
+}
+
+[class*="button"]:hover,
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--luxury-gold);
+}
+
+[class*="button"]:active,
+button:active {
+    transform: translateY(0);
+}
+
+/* Gold Accent Buttons */
+.luxury-gold-button,
+[class*="quote"][class*="button"] {
+    background: var(--luxury-gradient-gold) !important;
+    color: var(--luxury-black) !important;
+    box-shadow: var(--shadow-gold);
+    font-weight: 700;
+}
+
+.luxury-gold-button:hover {
+    box-shadow: 0 12px 48px rgba(212, 175, 55, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 CARDS & SECTIONS - Elevated Design
+   ═══════════════════════════════════════════════════════════ */
+
+/* Service/Package Cards */
+[class*="card"],
+[class*="service"],
+[class*="package"] {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    transition: var(--transition-smooth);
+    box-shadow: var(--shadow-md);
+}
+
+[class*="card"]:hover,
+[class*="service"]:hover,
+[class*="package"]:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-8px);
+}
+
+/* Add Shimmer Effect on Hover */
+[class*="card"]::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    bottom: -50%;
+    left: -50%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+    transform: rotate(45deg);
+    transition: var(--transition-smooth);
+    opacity: 0;
+}
+
+[class*="card"]:hover::before {
+    animation: shimmer 2s infinite;
+    opacity: 1;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ✨ HERO SECTION - Premium Presentation
+   ═══════════════════════════════════════════════════════════ */
+
+/* Hero Container - Add Depth */
+[class*="hero"],
+.home-e-1,
+[class*="-e-1"] {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hero Background Overlay */
+[class*="hero"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(90, 130, 102, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Hero Content - Elevate */
+[class*="hero"] > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎯 IMAGES - Professional Polish
+   ═══════════════════════════════════════════════════════════ */
+
+/* All Images - Subtle Enhancement */
+img {
+    transition: var(--transition-smooth);
+    filter: brightness(0.98) contrast(1.02);
+}
+
+img:hover {
+    filter: brightness(1) contrast(1.05);
+    transform: scale(1.02);
+}
+
+/* Images in Cards */
+[class*="card"] img,
+[class*="service"] img {
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   💫 ANIMATIONS & MICRO-INTERACTIONS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Floating Animation for Decorative Elements */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.luxury-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Pulse Glow for Important Elements */
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(212, 175, 55, 0.6); }
+}
+
+.luxury-pulse {
+    animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Fade In On Scroll - Enhanced */
+[data-cdhs] {
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 FORMS - Refined Input Fields
+   ═══════════════════════════════════════════════════════════ */
+
+input,
+textarea,
+select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px;
+    padding: 14px 18px !important;
+    color: var(--luxury-white) !important;
+    transition: var(--transition-smooth);
+    font-family: Inter, sans-serif;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--luxury-gold) !important;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎯 FOOTER - Elegant Closure
+   ═══════════════════════════════════════════════════════════ */
+
+footer,
+[class*="footer"] {
+    background: rgba(10, 10, 10, 0.95) !important;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    backdrop-filter: blur(20px);
+    position: relative;
+}
+
+footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--luxury-gradient-gold);
+    opacity: 0.5;
+}
+
+/* Footer Links */
+footer a {
+    transition: var(--transition-smooth);
+    position: relative;
+}
+
+footer a:hover {
+    color: var(--luxury-gold) !important;
+    padding-left: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 PRICING SECTION - Premium Tiers
+   ═══════════════════════════════════════════════════════════ */
+
+/* Pricing Cards - Distinct Tiers */
+[class*="undergraduate"] {
+    border-color: rgba(90, 130, 102, 0.3) !important;
+}
+
+[class*="graduate"] {
+    border-color: rgba(212, 175, 55, 0.5) !important;
+    background: rgba(212, 175, 55, 0.03) !important;
+    position: relative;
+}
+
+/* Featured Badge for Graduate Tier */
+[class*="graduate"]::after {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: var(--luxury-gradient-gold);
+    color: var(--luxury-black);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    box-shadow: var(--shadow-gold);
+}
+
+[class*="doctorate"] {
+    border-color: rgba(212, 175, 55, 0.3) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ✨ UTILITY CLASSES - Luxury Helpers
+   ═══════════════════════════════════════════════════════════ */
+
+.luxury-gradient-text {
+    background: var(--luxury-gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.luxury-glass {
+    background: var(--glass-background);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+}
+
+.luxury-shadow-glow {
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
+}
+
+.luxury-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--luxury-gold), transparent);
+    margin: 60px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📱 RESPONSIVE REFINEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    /* Maintain Luxury on Mobile */
+    .home-e-233 {
+        backdrop-filter: blur(15px);
+    }
+
+    [class*="card"]:hover {
+        transform: translateY(-4px);
+    }
+
+    /* Adjust Typography */
+    h1 {
+        font-size: clamp(32px, 8vw, 64px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* Respect User Preferences */
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎯 SCROLL ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Custom Scrollbar - Luxury Style */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--luxury-black);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--luxury-gradient-primary);
+    border-radius: 6px;
+    border: 2px solid var(--luxury-black);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--luxury-gradient-gold);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ✨ SELECTION STYLING
+   ═══════════════════════════════════════════════════════════ */
+
+::selection {
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--luxury-white);
+}
+
+::-moz-selection {
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--luxury-white);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 END OF LUXURY ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════ */
