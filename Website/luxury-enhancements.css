@@ -671,18 +671,23 @@ footer a:hover {
 @media screen and (max-width: 768px) {
     /* Hero Section - Fix visibility on mobile */
     .home-e-1 {
-        min-height: 500px !important;
+        min-height: 70vh !important;
+        max-height: 800px !important;
+        height: auto !important;
         display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
         position: relative !important;
+        padding-top: 80px !important;
+        overflow: visible !important;
     }
 
     .home-e-203 {
         width: 100% !important;
-        padding: 40px 20px !important;
+        padding: 30px 20px !important;
         position: relative !important;
         z-index: 2 !important;
+        display: block !important;
     }
 
     .home-e-204 {
@@ -690,56 +695,88 @@ footer a:hover {
         flex-direction: column !important;
         align-items: center !important;
         text-align: center !important;
-        gap: 20px !important;
+        gap: 15px !important;
+        width: 100% !important;
     }
 
     .home-e-205 {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
         gap: 15px !important;
+        width: 100% !important;
+        max-width: 90% !important;
+        margin: 0 auto !important;
     }
 
     /* Hero logo - ensure visibility */
     .home-e-231 {
         display: block !important;
         width: 100% !important;
-        max-width: 250px !important;
-        margin: 0 auto 20px !important;
+        max-width: 200px !important;
+        margin: 0 auto 15px !important;
+        order: 1 !important;
     }
 
     .home-e-231 img {
         width: 100% !important;
         height: auto !important;
         display: block !important;
-        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3)) !important;
+        margin: 0 auto !important;
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5)) !important;
     }
 
     /* Hero text - ensure visibility with shadows and proper sizing */
+    .home-e-209 {
+        order: 2 !important;
+        width: 100% !important;
+        display: block !important;
+        margin: 15px 0 !important;
+    }
+
     .home-e-209,
     .home-e-209 p,
-    .home-e-206,
-    .home-e-206 p {
+    .home-e-209 strong {
         color: #FFFFFF !important;
         text-align: center !important;
-        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8),
-                     0 0 20px rgba(0, 0, 0, 0.6) !important;
-        font-weight: 700 !important;
-        line-height: 1.3 !important;
-        margin: 10px 0 !important;
+        text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.9),
+                     0 0 30px rgba(0, 0, 0, 0.7),
+                     0 0 40px rgba(0, 0, 0, 0.5) !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+        font-size: 1.3em !important;
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
         position: relative !important;
         z-index: 10 !important;
+        padding: 0 10px !important;
     }
 
-    .home-e-209 p {
-        font-size: 1.5em !important;
+    .home-e-206 {
+        order: 3 !important;
+        width: 100% !important;
+        display: block !important;
+        margin: 10px 0 !important;
     }
 
-    .home-e-206 p {
-        font-size: 1.1em !important;
+    .home-e-206,
+    .home-e-206 p,
+    .home-e-206 strong {
+        color: #FFFFFF !important;
+        text-align: center !important;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9),
+                     0 0 20px rgba(0, 0, 0, 0.7) !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        font-size: 1.05em !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 10 !important;
+        padding: 0 10px !important;
     }
 
     /* Add dark overlay to hero for better text visibility */
@@ -750,7 +787,7 @@ footer a:hover {
         left: 0 !important;
         right: 0 !important;
         bottom: 0 !important;
-        background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 100%) !important;
+        background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 100%) !important;
         z-index: 1 !important;
     }
 
