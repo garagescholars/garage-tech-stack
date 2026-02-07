@@ -605,12 +605,59 @@ footer a:hover {
     transition: border-color 0.3s ease !important;
 }
 
+/* Input text color - ALWAYS BLACK for visibility */
+#quoteModal input[type="text"],
+#quoteModal input[type="email"],
+#quoteModal input[type="tel"],
+#quoteModal select,
+#quoteModal textarea {
+    color: #000000 !important;
+    background-color: #FFFFFF !important;
+}
+
 /* Focus state for form inputs */
 #quoteModal input[type="text"]:focus,
 #quoteModal input[type="email"]:focus,
 #quoteModal input[type="tel"]:focus,
 #quoteModal select:focus,
 #quoteModal textarea:focus {
+    border-color: var(--luxury-primary) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(90, 130, 102, 0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📋 APPLY PAGE - SCHOLAR RECRUITMENT IMPROVEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Fix blurry heading */
+.container h1 {
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+    font-weight: 700 !important;
+}
+
+/* Add borders to all apply page inputs */
+.container input[type="text"],
+.container input[type="tel"],
+.container input[type="email"],
+.container input[type="file"],
+.container select,
+.container textarea {
+    border: 2px solid var(--luxury-gray-200) !important;
+    border-radius: 8px !important;
+    color: #000000 !important;
+    background-color: #FFFFFF !important;
+    transition: border-color 0.3s ease !important;
+}
+
+/* Focus state for apply page inputs */
+.container input[type="text"]:focus,
+.container input[type="tel"]:focus,
+.container input[type="email"]:focus,
+.container select:focus,
+.container textarea:focus {
     border-color: var(--luxury-primary) !important;
     outline: none !important;
     box-shadow: 0 0 0 3px rgba(90, 130, 102, 0.1) !important;
