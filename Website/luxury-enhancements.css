@@ -575,5 +575,47 @@ footer a:hover {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   📦 PACKAGE CARDS - BOTTOM-ALIGNED BUTTONS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Make package cards flexbox containers */
+.home-e-59, .home-e-81, .home-e-71 {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+}
+
+/* Push buttons to bottom of cards */
+.home-e-70, .home-e-88, .home-e-80 {
+    margin-top: auto !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📝 QUOTE FORM - INPUT BORDERS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Add borders to all form inputs in quote modal */
+#quoteModal input[type="text"],
+#quoteModal input[type="email"],
+#quoteModal input[type="tel"],
+#quoteModal select,
+#quoteModal textarea {
+    border: 2px solid var(--luxury-gray-200) !important;
+    border-radius: 8px !important;
+    transition: border-color 0.3s ease !important;
+}
+
+/* Focus state for form inputs */
+#quoteModal input[type="text"]:focus,
+#quoteModal input[type="email"]:focus,
+#quoteModal input[type="tel"]:focus,
+#quoteModal select:focus,
+#quoteModal textarea:focus {
+    border-color: var(--luxury-primary) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(90, 130, 102, 0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
    🎨 END OF LUXURY ENHANCEMENTS
    ═══════════════════════════════════════════════════════════ */
