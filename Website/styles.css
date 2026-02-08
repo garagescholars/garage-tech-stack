@@ -322,7 +322,8 @@ ul, ol {
     width: 220px;
     height: auto;
     margin-bottom: 24px;
-    filter: brightness(0) invert(1);
+    filter: invert(1);
+    mix-blend-mode: screen;
 }
 
 .hero-headline {
