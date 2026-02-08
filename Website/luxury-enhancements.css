@@ -725,8 +725,8 @@ footer a:hover {
     .home-e-231 {
         display: block !important;
         width: 100% !important;
-        max-width: 250px !important;
-        margin: 0 auto 35px !important;
+        max-width: 220px !important;
+        margin: 0 auto 30px !important;
         order: 1 !important;
     }
 
@@ -742,11 +742,11 @@ footer a:hover {
     .home-e-209 {
         order: 2 !important;
         width: 100% !important;
-        max-width: 85% !important;
+        max-width: 90% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        margin: 0 auto 20px !important;
+        margin: 0 auto 18px !important;
     }
 
     .home-e-209,
@@ -759,7 +759,7 @@ footer a:hover {
                      0 0 50px rgba(0, 0, 0, 0.6) !important;
         font-weight: 800 !important;
         line-height: 1.3 !important;
-        font-size: 1.75em !important;
+        font-size: 1.3em !important;
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
@@ -775,7 +775,7 @@ footer a:hover {
     .home-e-206 {
         order: 3 !important;
         width: 100% !important;
-        max-width: 90% !important;
+        max-width: 92% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -791,7 +791,7 @@ footer a:hover {
                      0 0 25px rgba(0, 0, 0, 0.8) !important;
         font-weight: 700 !important;
         line-height: 1.4 !important;
-        font-size: 1.15em !important;
+        font-size: 1.08em !important;
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
