@@ -43,3 +43,4 @@ website-backup/
 # firebase cache
 .firebase/
 **/.firebase/
+.vercel

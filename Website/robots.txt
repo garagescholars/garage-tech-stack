@@ -1,16 +1,10 @@
-# =============================================================================
-# robots.txt for https://www.example.com
-# =============================================================================
+# robots.txt for https://garagescholars.com
 
-# Allow every crawler full access for maximum SEO coverage
 User-agent: *
 Disallow:
 
-# (Optional) Explicitly allow everything
 Allow: /
 
-# Point crawlers to your sitemap for efficient indexing
-Sitemap: https://codedesign.ai/sitemap.xml
+Sitemap: https://garagescholars.com/sitemap.xml
 
-# (Optional) Specify your preferred canonical host
-Host: codedesign.ai
+Host: garagescholars.com

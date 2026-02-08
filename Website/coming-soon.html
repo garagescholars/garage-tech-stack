@@ -4,181 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coming Soon - Garage Visualizer | Garage Scholars Denver</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <meta name="description" content="Visualize your dream garage in AR. Coming soon from Garage Scholars Denver.">
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #2a5f5f 0%, #1f4a4a 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            color: white;
-        }
-
-        .container {
-            text-align: center;
-            max-width: 600px;
-            animation: fadeIn 1s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .logo {
-            font-size: 4em;
-            margin-bottom: 20px;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-        }
-
-        h1 {
-            font-size: 3em;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            font-size: 1.3em;
-            margin-bottom: 30px;
-            opacity: 0.9;
-        }
-
-        .description {
-            font-size: 1.1em;
-            line-height: 1.6;
-            margin-bottom: 40px;
-            opacity: 0.85;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 15px 30px;
-            font-size: 1.1em;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: white;
-            color: #2a5f5f;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .features {
-            margin-top: 50px;
-            text-align: left;
-        }
-
-        .feature {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            font-size: 1.1em;
-        }
-
-        .feature::before {
-            content: "✓";
-            background: #6E9D7B;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2em;
-            }
-
-            .subtitle {
-                font-size: 1.1em;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="logo">🏗️</div>
-        <h1>Coming Soon!</h1>
-        <div class="subtitle">Visualize Your Dream Garage in AR</div>
 
-        <div class="description">
-            We're building an augmented reality experience that will let you see your transformed garage before we even start. Point your camera, visualize the possibilities, and watch your space come to life.
-        </div>
+    <div class="coming-soon-page">
+        <div class="coming-soon-content">
+            <div class="coming-soon-icon">
+                <i class="fa-solid fa-cubes-stacked"></i>
+            </div>
+            <h1>Coming Soon!</h1>
+            <p class="subtitle">Visualize Your Dream Garage in AR</p>
+            <p class="description">We're building an augmented reality experience that will let you see your transformed garage before we even start. Point your camera, visualize the possibilities, and watch your space come to life.</p>
 
-        <div class="features">
-            <div class="feature">Preview different organization systems in real-time</div>
-            <div class="feature">See gym equipment layouts before installation</div>
-            <div class="feature">Visualize storage solutions in your actual space</div>
-            <div class="feature">Get accurate measurements and planning</div>
-        </div>
+            <div class="feature-list">
+                <div class="feature-item">Preview different organization systems in real-time</div>
+                <div class="feature-item">See gym equipment layouts before installation</div>
+                <div class="feature-item">Visualize storage solutions in your actual space</div>
+                <div class="feature-item">Get accurate measurements and planning</div>
+            </div>
 
-        <div class="button-group">
-            <a href="index.html" class="btn btn-primary">Back to Home</a>
-            <a href="index.html#service" class="btn btn-secondary">View Services</a>
+            <div class="coming-soon-buttons">
+                <a href="index.html" class="btn btn-white btn-lg">Back to Home</a>
+                <a href="index.html#services" class="btn btn-outline btn-lg">View Services</a>
+            </div>
         </div>
     </div>
+
 </body>
 </html>

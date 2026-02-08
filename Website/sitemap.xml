@@ -1,51 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    
-        <url>
-            <loc>https://codedesign.ai/404</loc>
-            <lastmod>2026-02-03</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.7</priority>
-        </url>
-    
-
-        <url>
-            <loc>https://codedesign.ai/</loc>
-            <lastmod>2026-02-03</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>1.0</priority>
-        </url>
-    
-
-        <url>
-            <loc>https://codedesign.ai/about</loc>
-            <lastmod>2026-02-03</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.7</priority>
-        </url>
-    
-
-        <url>
-            <loc>https://codedesign.ai/contact</loc>
-            <lastmod>2026-02-03</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.7</priority>
-        </url>
-    
-
-        <url>
-            <loc>https://codedesign.ai/privacypolicy</loc>
-            <lastmod>2026-02-03</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.7</priority>
-        </url>
-    
-
-        <url>
-            <loc>https://codedesign.ai/termsofuse</loc>
-            <lastmod>2026-02-03</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.7</priority>
-        </url>
-    
+    <url>
+        <loc>https://garagescholars.com/</loc>
+        <lastmod>2026-02-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://garagescholars.com/about.html</loc>
+        <lastmod>2026-02-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://garagescholars.com/contact.html</loc>
+        <lastmod>2026-02-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>https://garagescholars.com/apply.html</loc>
+        <lastmod>2026-02-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://garagescholars.com/privacypolicy.html</loc>
+        <lastmod>2026-02-08</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.3</priority>
+    </url>
+    <url>
+        <loc>https://garagescholars.com/termsofuse.html</loc>
+        <lastmod>2026-02-08</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.3</priority>
+    </url>
 </urlset>
