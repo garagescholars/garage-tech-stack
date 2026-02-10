@@ -54,6 +54,13 @@ export interface Job {
   cancellationReason?: string;
   sopId?: string;
   intakeMediaPaths?: string[];
+  // SOP generation fields
+  generatedSOP?: string;        // Final approved SOP text (markdown)
+  sopApprovedBy?: string;       // UID of admin who approved
+  sopApprovedAt?: string;       // ISO timestamp
+  packageTier?: string;         // 'undergraduate' | 'graduate' | 'doctorate'
+  shelvingSelections?: string;  // Shelving choices description
+  addOns?: string;              // Comma-separated add-on list
   // Lead/Quote specific fields
   clientEmail?: string;
   clientPhone?: string;

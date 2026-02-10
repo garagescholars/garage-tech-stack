@@ -135,7 +135,16 @@ const App: React.FC = () => {
                   checkInMedia: data.checkInMedia,
                   checkOutMedia: data.checkOutMedia,
                   qualityReport: data.qualityReport,
-                  cancellationReason: data.cancellationReason
+                  cancellationReason: data.cancellationReason,
+                  generatedSOP: data.generatedSOP,
+                  sopApprovedBy: data.sopApprovedBy,
+                  sopApprovedAt: data.sopApprovedAt,
+                  packageTier: data.packageTier,
+                  shelvingSelections: data.shelvingSelections,
+                  addOns: data.addOns,
+                  package: (data as any).package,
+                  intakeMediaPaths: data.intakeMediaPaths,
+                  sopId: data.sopId
               };
           });
           setJobs(nextJobs);
@@ -423,7 +432,7 @@ const App: React.FC = () => {
 
   const masterList = [...jobs].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const myJobs = masterList.filter(j => j.assigneeId === currentUserId);
-  const availableJobs = masterList.filter(j => !j.assigneeId && j.status !== JobStatus.CANCELLED);
+  const availableJobs = masterList.filter(j => !j.assigneeId && j.status === JobStatus.APPROVED_FOR_POSTING);
   const displayedJobs = displayRole === 'admin' ? masterList : (activeTab === 'MY_JOBS' ? myJobs : availableJobs);
 
   return (

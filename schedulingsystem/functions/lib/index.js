@@ -10,7 +10,7 @@ const app_1 = require("firebase-admin/app");
 const firestore_2 = require("firebase-admin/firestore");
 const auth_1 = require("firebase-admin/auth");
 const storage_1 = require("firebase-admin/storage");
-const openai_1 = __importDefault(require("openai"));
+const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 (0, app_1.initializeApp)();
 const db = (0, firestore_2.getFirestore)();
 const storage = (0, storage_1.getStorage)();
@@ -20,63 +20,78 @@ const ADMIN_EMAILS = [
     'tylerzsodia@gmail.com',
     'zach.harmon25@gmail.com'
 ];
-const parseJsonStrict = (raw) => {
-    const trimmed = raw.trim();
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
-    if (start === -1 || end === -1) {
-        throw new Error("No JSON object found in response.");
-    }
-    const slice = trimmed.slice(start, end + 1);
-    const parsed = JSON.parse(slice);
-    if (!parsed.sections || !Array.isArray(parsed.sections)) {
-        throw new Error("Invalid SOP: missing sections array.");
-    }
-    if (!parsed.requiredPhotos || !Array.isArray(parsed.requiredPhotos)) {
-        throw new Error("Invalid SOP: missing requiredPhotos array.");
-    }
-    return parsed;
+// ── Package tier descriptions for SOP prompt ──
+const PACKAGE_DATA = {
+    undergraduate: "The Undergrad ($1,197) — Surface Reset & De-Clutter. 2 Scholars, 4-5 hours. Up to 1 truck bed haul-away included. Broad sorting (Keep/Donate/Trash). 1 zone / 1 shelf included. Sweep & blow clean. Standard Clean guarantee.",
+    graduate: "The Graduate ($2,197) — Full Organization Logic & Install. 2 Scholars, 6-8 hours. Up to 1 truck bed haul-away included. Micro-sorting (Sports/Tools/Holiday). $300 credit towards storage & shelving (Bold Series catalog). 8 standard bins included. Deep degrease & wipe down / floor powerwash. 30-Day Clutter-Free Guarantee.",
+    doctorate: "The Doctorate ($3,797) — White-Glove Detail. 3 Scholars, 1 full day. Up to 2 truck bed haul-away included. $500 credit towards storage & shelving (Bold Series catalog). 16 premium bins included. Deep degrease & wipe down / floor powerwash. Seasonal swap (1 return visit included). Heavy-duty surcharge waived."
 };
-const buildPrompt = (job, imageUrls) => {
-    return {
-        system: [
-            "You are an SOP generator for Garage Scholars.",
-            "Return JSON only, with no markdown and no extra text.",
-            "Schema must match:",
-            "{ jobId, qaStatus, brandStyleVersion, sections: [{ title, steps: [{ id, text, requiresApproval?, requiredPhotoKey? }] }], requiredPhotos: [{ key, label, required }] }",
-            "Rules:",
-            "- qaStatus must be 'NEEDS_REVIEW'",
-            "- brandStyleVersion must be 'v1'",
-            "- steps must be dummy-proof, safety-first, and zone-by-zone",
-            "- include before/after photo requirements and QC checks",
-            "- include at least 3 requiredPhotos",
-            "- keep text concise and operational"
-        ].join("\n"),
-        userText: [
-            `Job ID: ${job.id}`,
-            `Client: ${job.clientName || "Unknown"}`,
-            `Address: ${job.address || "Unknown"}`,
-            `Description: ${job.description || ""}`,
-            `Access Constraints: ${job.accessConstraints || ""}`,
-            `Sell vs Keep: ${job.sellVsKeepPreference || ""}`,
-            `Intake images provided: ${imageUrls.length}`
-        ].join("\n")
-    };
+const SOP_SYSTEM_PROMPT = `You are a Garage Scholars production specialist creating job-specific Standard Operating Procedures for student crews.
+
+SOPs must be:
+- Actionable and sequenced (numbered steps)
+- Specific to the package tier and selected products
+- Grounded in observable garage conditions from photos
+
+CRITICAL image analysis rules:
+- Describe spatial zones (left wall, back corner, center floor) not item inventories
+- Use condition language: "moderate clutter", "clear wall space", "items stacked to approximately 4 feet"
+- Never count or name specific items you see
+- If unclear, write "assess on arrival" — never guess
+
+OUTPUT FORMAT — always exactly these 6 sections, no more:
+
+## 1. PRE-JOB LOADOUT
+[What to load in the vehicle based on package + shelving + add-ons]
+
+## 2. SITE ASSESSMENT (First 10 Minutes)
+[Zone-based observations from images + what to confirm on arrival]
+
+## 3. PHASE SEQUENCE
+[Numbered work phases in order — this section gets auto-converted to checklist items, so each phase must be one clear action sentence]
+
+## 4. INSTALLATION SPECIFICATIONS
+[Shelving unit placement, mounting specs, add-on installation notes]
+
+## 5. GARAGE SCHOLARS QUALITY STANDARD
+[Non-negotiable finish criteria for this package tier]
+
+## 6. CLIENT HANDOFF CHECKLIST
+[Walkthrough items, documentation, photos required at completion]`;
+const buildSopUserMessage = (job, hasImages, adminNotes) => {
+    const tier = job.packageTier || job.package || "graduate";
+    const packageDesc = PACKAGE_DATA[tier] || PACKAGE_DATA.graduate;
+    const parts = [
+        `Package: ${tier.toUpperCase()} — ${packageDesc}`,
+        `Shelving: ${job.shelvingSelections || "None specified"}`,
+        `Add-Ons: ${job.addOns || "None selected"}`,
+        `Address: ${job.address || "Unknown"}`,
+        `Description: ${job.description || ""}`,
+        `Access: ${job.accessConstraints || "None"}`,
+        `Sell vs Keep: ${job.sellVsKeepPreference || "decide on arrival"}`
+    ];
+    if (!hasImages) {
+        parts.push("\nNo intake photos provided — Section 2 should open with 'No intake photos provided — complete full site assessment on arrival'.");
+    }
+    if (adminNotes) {
+        parts.push(`\nAdmin notes: ${adminNotes}`);
+    }
+    parts.push("\nGenerate the job SOP.");
+    return parts.join("\n");
 };
-exports.generateSopForJob = (0, https_1.onCall)(async (request) => {
+exports.generateSopForJob = (0, https_1.onCall)({ timeoutSeconds: 120 }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Authentication required.");
     }
-    const { jobId } = request.data;
+    const { jobId, adminNotes } = request.data;
     if (!jobId) {
         throw new https_1.HttpsError("invalid-argument", "Missing jobId.");
     }
     await requireAdmin(request.auth.uid, request.auth.token.email);
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (!openaiKey) {
-        throw new https_1.HttpsError("failed-precondition", "OPENAI_API_KEY is not configured.");
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (!anthropicKey) {
+        throw new https_1.HttpsError("failed-precondition", "ANTHROPIC_API_KEY is not configured. Run: firebase functions:secrets:set ANTHROPIC_API_KEY");
     }
-    // Phase X: Updated to use serviceJobs collection
     const jobRef = db.collection("serviceJobs").doc(jobId);
     const jobSnap = await jobRef.get();
     if (!jobSnap.exists) {
@@ -84,71 +99,60 @@ exports.generateSopForJob = (0, https_1.onCall)(async (request) => {
     }
     const jobData = { id: jobSnap.id, ...jobSnap.data() };
     const intakePaths = Array.isArray(jobData.intakeMediaPaths) ? jobData.intakeMediaPaths : [];
+    // Download images as base64 for Claude vision
     const bucket = storage.bucket();
-    const imageUrls = await Promise.all(intakePaths.map(async (path) => {
-        const [url] = await bucket.file(path).getSignedUrl({
-            action: "read",
-            expires: Date.now() + 60 * 60 * 1000
-        });
-        return url;
-    }));
-    const openai = new openai_1.default({ apiKey: openaiKey });
-    const prompt = buildPrompt(jobData, imageUrls);
-    const runCompletion = async () => {
-        const imageParts = imageUrls.map((url) => ({
-            type: "image_url",
-            image_url: { url }
-        }));
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            temperature: 0.2,
-            messages: [
-                { role: "system", content: prompt.system },
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: prompt.userText },
-                        ...imageParts
-                    ]
-                }
-            ]
-        });
-        return response.choices[0]?.message?.content || "";
-    };
-    let parsed = null;
-    let lastError = null;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    const imageBlocks = [];
+    for (const path of intakePaths.slice(0, 3)) {
         try {
-            const raw = await runCompletion();
-            parsed = parseJsonStrict(raw);
-            break;
+            const [buffer] = await bucket.file(path).download();
+            const ext = path.split(".").pop()?.toLowerCase() || "jpeg";
+            const mediaType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+            imageBlocks.push({
+                type: "image",
+                source: { type: "base64", media_type: mediaType, data: buffer.toString("base64") }
+            });
+        }
+        catch (err) {
+            console.warn(`Failed to download intake image: ${path}`, err);
+        }
+    }
+    const anthropic = new sdk_1.default({ apiKey: anthropicKey });
+    const userText = buildSopUserMessage(jobData, imageBlocks.length > 0, adminNotes);
+    const userContent = [
+        ...imageBlocks,
+        { type: "text", text: userText }
+    ];
+    let generatedSOP = "";
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            const response = await anthropic.messages.create({
+                model: "claude-sonnet-4-5-20250929",
+                max_tokens: 4096,
+                system: SOP_SYSTEM_PROMPT,
+                messages: [{ role: "user", content: userContent }]
+            });
+            const textBlock = response.content.find((b) => b.type === "text");
+            generatedSOP = textBlock ? textBlock.text : "";
+            if (generatedSOP && generatedSOP.includes("## 1.")) {
+                break;
+            }
         }
         catch (error) {
             lastError = error;
+            console.error(`SOP generation attempt ${attempt + 1} failed:`, error);
         }
     }
-    if (!parsed) {
-        throw new https_1.HttpsError("internal", `Failed to parse SOP JSON: ${lastError?.message || "unknown"}`);
+    if (!generatedSOP) {
+        throw new https_1.HttpsError("internal", `Failed to generate SOP: ${lastError?.message || "empty response"}`);
     }
-    const sopRef = db.collection("sops").doc();
-    const sopDoc = {
-        jobId,
-        qaStatus: "NEEDS_REVIEW",
-        brandStyleVersion: "v1",
-        sections: parsed.sections,
-        requiredPhotos: parsed.requiredPhotos
-    };
-    await sopRef.set({
-        ...sopDoc,
-        createdAt: firestore_2.FieldValue.serverTimestamp(),
-        updatedAt: firestore_2.FieldValue.serverTimestamp()
-    });
+    // Save generated SOP directly on the job document
     await jobRef.set({
-        sopId: sopRef.id,
+        generatedSOP,
         status: "SOP_NEEDS_REVIEW",
         updatedAt: firestore_2.FieldValue.serverTimestamp()
     }, { merge: true });
-    return { ok: true, sopId: sopRef.id };
+    return { ok: true, generatedSOP };
 });
 const requireAdmin = async (uid, email) => {
     // Check if user email is in the admin list
@@ -533,11 +537,11 @@ exports.sendJobReviewEmail = (0, firestore_1.onDocumentWritten)("serviceJobs/{jo
   </div>
 
   <div class="button-container">
-    <a href="https://localhost:3000/admin?approve=${approvalToken}" class="approve-button">
+    <a href="${process.env.SCHEDULING_APP_URL || 'https://your-scheduling-app.vercel.app'}/admin?approve=${approvalToken}" class="approve-button">
       ✅ Approve & Pay $${(afterData.pay || 0) / 2} (50% now)
     </a>
     <br/>
-    <a href="https://localhost:3000/admin" class="dashboard-link">
+    <a href="${process.env.SCHEDULING_APP_URL || 'https://your-scheduling-app.vercel.app'}/admin" class="dashboard-link">
       Open Admin Dashboard
     </a>
   </div>

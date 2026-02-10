@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Job, JobStatus, JobMedia, Task, User, SopDoc } from '../types';
+import { Job, JobStatus, JobMedia, Task, User, UserRole } from '../types';
 import CameraCapture from '../components/CameraCapture';
-import { httpsCallable } from 'firebase/functions';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
-import { db, functions, storage } from '../src/firebase';
-import { ArrowLeft, MapPin, CheckCircle, Loader2, CheckSquare, Square, Trash2, Plus, ShieldAlert, Pencil, Calendar, Upload, Clock } from 'lucide-react';
+import { db, storage } from '../src/firebase';
+import { ArrowLeft, MapPin, CheckCircle, Loader2, CheckSquare, Square, Trash2, Plus, ShieldAlert, Pencil, Calendar, Upload, Clock, AlertTriangle, ChevronDown, ChevronUp, Flag } from 'lucide-react';
 
 interface JobDetailProps {
   job: Job;
@@ -14,11 +13,11 @@ interface JobDetailProps {
   onBack: () => void;
   onUpdateJob: (updatedJob: Job) => void;
   onNotifyAdmin: (message: string, jobId: string) => void;
-  userRole?: 'scholar' | 'admin';
+  userRole?: UserRole;
   currentUserId: string | null;
 }
 
-export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, onUpdateJob, onNotifyAdmin, userRole = 'scholar', currentUserId }) => {
+export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, onUpdateJob, onNotifyAdmin, userRole = 'scholar' as UserRole, currentUserId }) => {
   const [activeStep, setActiveStep] = useState<'details' | 'checkin' | 'checkout' | 'report'>('details');
   const [mediaBuffer, setMediaBuffer] = useState<Partial<JobMedia>>({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -30,10 +29,8 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   const [sortOption, setSortOption] = useState<'default' | 'alpha' | 'status'>('default');
-  const [sopData, setSopData] = useState<SopDoc | null>(null);
-  const [sopLoading, setSopLoading] = useState(false);
-  const [sopError, setSopError] = useState<string | null>(null);
   const [intakeUploads, setIntakeUploads] = useState<{ path: string; url: string }[]>([]);
+  const [sopExpanded, setSopExpanded] = useState<Set<number>>(new Set([0, 1, 2, 3, 4, 5]));
 
   const getLocalDateTime = (isoString: string) => {
     const date = new Date(isoString);
@@ -60,23 +57,6 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     });
     window.scrollTo(0, 0);
   }, [job]);
-
-  useEffect(() => {
-    if (!db || !job.sopId) {
-      setSopData(null);
-      return;
-    }
-    const sopRef = doc(db, 'sops', job.sopId);
-    const unsubscribe = onSnapshot(sopRef, (snapshot) => {
-      if (!snapshot.exists()) {
-        setSopData(null);
-        return;
-      }
-      const data = snapshot.data() as Omit<SopDoc, 'id'>;
-      setSopData({ id: snapshot.id, ...data });
-    });
-    return () => unsubscribe();
-  }, [job.sopId]);
 
   useEffect(() => {
     const run = async () => {
@@ -254,32 +234,26 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     await onUpdateJob({ ...job, intakeMediaPaths: paths });
   };
 
-  const handleGenerateSop = async () => {
-    if (!functions) {
-      setSopError('Functions not initialized. Check Firebase config.');
-      return;
+  // Parse SOP markdown into sections for display
+  const parseSopSections = (text: string): { title: string; body: string }[] => {
+    const parts = text.split(/^(## \d+\..+)$/m);
+    const sections: { title: string; body: string }[] = [];
+    for (let i = 1; i < parts.length; i += 2) {
+      sections.push({
+        title: parts[i].replace(/^## /, '').trim(),
+        body: (parts[i + 1] || '').trim()
+      });
     }
-    setSopError(null);
-    setSopLoading(true);
-    try {
-      const callable = httpsCallable(functions, 'generateSopForJob');
-      const result = await callable({ jobId: job.id });
-      const sopId = (result.data as { sopId?: string })?.sopId || null;
-      if (sopId) {
-        await onUpdateJob({ ...job, sopId, status: JobStatus.SOP_NEEDS_REVIEW });
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to generate SOP.';
-      setSopError(message);
-    } finally {
-      setSopLoading(false);
-    }
+    return sections;
   };
 
-  const approveSop = async () => {
-    if (!db || !job.sopId) return;
-    await setDoc(doc(db, 'sops', job.sopId), { qaStatus: 'APPROVED' }, { merge: true });
-    await onUpdateJob({ ...job, status: JobStatus.APPROVED_FOR_POSTING });
+  const toggleSopSection = (idx: number) => {
+    setSopExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
   };
 
   const addTask = () => {
@@ -440,38 +414,37 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
             </div>
         )}
 
-        {userRole === 'admin' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-800 text-sm">Intake Media</h3>
-                <p className="text-xs text-slate-500">Attach 1–3 photos for SOP generation.</p>
-              </div>
-              <button
-                onClick={() => intakeInputRef.current?.click()}
-                className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg"
-              >
-                <Upload size={14} className="inline mr-1" />
-                Upload
-              </button>
-              <input
-                ref={intakeInputRef}
-                type="file"
-                className="hidden"
-                accept="image/*"
-                multiple
-                onChange={(e) => e.target.files && uploadIntakeMedia(e.target.files)}
-              />
+        {/* Intake Media — visible to all roles for QA/documentation */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-slate-800 text-sm">Intake Media</h3>
+              <p className="text-xs text-slate-500">Photos for QA & documentation.</p>
             </div>
-            {intakeUploads.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {intakeUploads.map((item) => (
-                  <img key={item.path} src={item.url} alt="Intake" className="h-20 w-full object-cover rounded-lg border" />
-                ))}
-              </div>
-            )}
+            <button
+              onClick={() => intakeInputRef.current?.click()}
+              className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg"
+            >
+              <Upload size={14} className="inline mr-1" />
+              Upload
+            </button>
+            <input
+              ref={intakeInputRef}
+              type="file"
+              className="hidden"
+              accept="image/*"
+              multiple
+              onChange={(e) => e.target.files && uploadIntakeMedia(e.target.files)}
+            />
           </div>
-        )}
+          {intakeUploads.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {intakeUploads.map((item) => (
+                <img key={item.path} src={item.url} alt="Intake" className="h-20 w-full object-cover rounded-lg border" />
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex justify-between items-start mb-1"><h2 className={`text-xl font-bold ${job.status === JobStatus.CANCELLED ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{job.clientName}</h2><span className="text-xl font-black text-emerald-600">${job.pay}</span></div>
@@ -479,59 +452,55 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
             <div className="flex gap-2"><div className="bg-slate-100 rounded-lg px-3 py-2 text-xs font-medium text-slate-600"><Calendar size={14} className="inline mr-1" />{new Date(job.date).toLocaleDateString()}</div><div className="bg-slate-100 rounded-lg px-3 py-2 text-xs font-medium text-slate-600"><Clock size={14} className="inline mr-1" />{new Date(job.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div></div>
         </div>
 
-        {userRole === 'admin' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-sm">SOP Generator</h3>
-              <button
-                onClick={handleGenerateSop}
-                disabled={sopLoading}
-                className={`text-xs font-bold px-3 py-2 rounded-lg ${sopLoading ? 'bg-slate-200 text-slate-500' : 'bg-blue-600 text-white'}`}
-              >
-                {sopLoading ? 'Generating...' : 'Generate SOP (AI)'}
-              </button>
+        {/* Approved SOP — visible to all roles */}
+        {job.generatedSOP ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <CheckCircle size={16} className="text-emerald-600" />
+                Standard Operating Procedure
+              </h3>
             </div>
-            {sopError && (
-              <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded p-2">
-                {sopError}
-              </div>
-            )}
-            {sopData && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>QA Status: {sopData.qaStatus}</span>
-                  {sopData.qaStatus !== 'APPROVED' && (
-                    <button onClick={approveSop} className="text-xs font-bold text-emerald-600">Approve SOP</button>
+            <div className="p-4 space-y-2">
+              {parseSopSections(job.generatedSOP).map((section, idx) => (
+                <div key={idx} className="border border-slate-100 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => toggleSopSection(idx)}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 text-left"
+                  >
+                    <span className="font-semibold text-xs text-slate-800">{section.title}</span>
+                    {sopExpanded.has(idx) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                  {sopExpanded.has(idx) && (
+                    <div className="p-3 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                      {section.body}
+                    </div>
                   )}
                 </div>
-                <div className="space-y-2">
-                  {sopData.sections.map((section) => (
-                    <div key={section.title} className="border border-slate-100 rounded-lg p-3">
-                      <h4 className="font-semibold text-sm text-slate-800 mb-2">{section.title}</h4>
-                      <ul className="space-y-1 text-xs text-slate-600">
-                        {section.steps.map((step) => (
-                          <li key={step.id} className="flex items-start gap-2">
-                            <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-slate-300" />
-                            <span>{step.text}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-                {sopData.requiredPhotos.length > 0 && (
-                  <div className="text-xs text-slate-600">
-                    <div className="font-semibold text-slate-700 mb-1">Required Photos</div>
-                    <ul className="list-disc list-inside space-y-1">
-                      {sopData.requiredPhotos.map((photo) => (
-                        <li key={photo.key}>{photo.label} {photo.required ? '(required)' : ''}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
+              ))}
+              {parseSopSections(job.generatedSOP).length === 0 && (
+                <div className="text-xs text-slate-700 whitespace-pre-wrap">{job.generatedSOP}</div>
+              )}
+            </div>
           </div>
+        ) : (
+          // Edge case: published job with missing SOP
+          [JobStatus.APPROVED_FOR_POSTING, JobStatus.UPCOMING, JobStatus.IN_PROGRESS].includes(job.status) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+              <AlertTriangle size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-800">SOP unavailable</p>
+                <p className="text-xs text-amber-700 mt-1">Contact your admin for the Standard Operating Procedure for this job.</p>
+              </div>
+              <button
+                onClick={() => onNotifyAdmin(`SOP missing for job ${job.clientName} (#${job.id.slice(-6)})`, job.id)}
+                className="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-2 rounded-lg flex items-center gap-1 flex-shrink-0"
+              >
+                <Flag size={12} />
+                Flag
+              </button>
+            </div>
+          )
         )}
 
         {/* Quality Report Section (Admin Only) */}
