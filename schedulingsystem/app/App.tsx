@@ -441,23 +441,44 @@ const App: React.FC = () => {
           </div>
       )}
 
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-20">
-          <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
-              <div className="flex items-center gap-2"><div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm"><span className="text-white font-bold text-lg">S</span></div><h1 className="font-bold text-lg tracking-tight">Scholar Hub</h1></div>
-              <div className="flex items-center gap-3">
-                  {userRole === 'admin' && (
-                    <>
-                      <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide border border-amber-200">Admin</span>
-                      <Link to="/admin" className="text-xs font-semibold text-blue-600">Admin Panel</Link>
-                    </>
-                  )}
-                  <button className="relative p-2" onClick={() => setShowNotifications(!showNotifications)}><Bell size={20} className="text-slate-600" />{unreadCount > 0 && (<span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>)}</button>
-                  <button onClick={() => setShowProfile(true)} className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-500"><User size={18} /></button>
+      {/* Header Banner */}
+      <header className="sticky top-0 z-20 bg-gradient-to-b from-[#0f1b2d] to-[#162340] text-white">
+          <div className="max-w-md mx-auto px-5 pt-5 pb-5">
+              {/* ScholarHub branding */}
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3 block">ScholarHub</span>
+              {/* Top row: Name + actions */}
+              <div className="flex items-start justify-between mb-4">
+                  <div>
+                      <h1 className="text-2xl font-bold text-white leading-tight">{currentUser?.name || profile?.name || 'Scholar'}</h1>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400 mt-0.5">{displayRole === 'admin' ? 'Administrator' : 'Field Specialist'}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                      {userRole === 'admin' && (
+                        <Link to="/admin" className="text-[10px] font-bold text-amber-400 uppercase tracking-wide hover:text-amber-300">Admin Panel</Link>
+                      )}
+                      <button className="relative p-2 -mr-2" onClick={() => setShowNotifications(!showNotifications)}>
+                          <Bell size={18} className="text-slate-400" />
+                          {unreadCount > 0 && (<span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-[#162340]"></span>)}
+                      </button>
+                      <button onClick={() => setShowProfile(true)} className="w-9 h-9 bg-[#1e3050] rounded-xl flex items-center justify-center">
+                          <Trophy size={18} className="text-amber-400" />
+                      </button>
+                  </div>
+              </div>
+              {/* Target Progress Card */}
+              <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+                  <div className="flex justify-between items-center mb-2.5">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Target Progress</span>
+                      <span className="text-sm font-bold text-white">${currentEarnings} / ${currentUser?.monthlyGoal || 500}</span>
+                  </div>
+                  <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-1000 ${progressPercent >= 100 ? 'bg-emerald-400' : 'bg-slate-400'}`} style={{ width: `${Math.min(progressPercent, 100)}%` }}></div>
+                  </div>
+                  <p className="text-xs text-slate-500 italic text-center mt-3">Fuel your monthly payout. Complete more jobs to hit 75%.</p>
               </div>
           </div>
           {showNotifications && (
-            <div className="absolute top-16 right-0 left-0 bg-white border-b shadow-lg z-30 animate-in slide-in-from-top-2">
+            <div className="absolute top-full right-0 left-0 bg-white border-b shadow-lg z-30 animate-in slide-in-from-top-2">
                 <div className="max-w-md mx-auto">
                     <div className="p-3 bg-slate-50 border-b flex justify-between items-center"><span className="text-xs font-semibold text-slate-500 uppercase">Notifications</span><button onClick={handleMarkAllRead} className="text-xs font-medium text-blue-600">Mark all read</button></div>
                     <div className="max-h-[60vh] overflow-y-auto">{notifications.length === 0 ? (<div className="p-8 text-center text-slate-500 text-sm">No new alerts</div>) : (notifications.map(n => (<div key={n.id} onClick={() => handleNotificationClick(n.jobId, n.id)} className={`p-4 border-b flex gap-3 cursor-pointer ${n.isRead ? 'bg-white opacity-70' : 'bg-blue-50/40'}`}><div className={`w-2 h-2 mt-2 rounded-full flex-shrink-0 ${n.type === 'CELEBRATION' ? 'bg-amber-500' : 'bg-blue-500'}`} /><div className="flex-grow pr-6"><p className="text-sm text-slate-800">{n.type === 'CELEBRATION' && <Trophy size={14} className="inline mr-1 text-amber-600"/>}{n.message}</p></div></div>)))}</div>
@@ -473,15 +494,7 @@ const App: React.FC = () => {
             <button onClick={() => setViewAsUid(null)} className="font-bold text-amber-700">Exit</button>
           </div>
         )}
-        {displayRole === 'scholar' ? (
-             <div className="bg-primary rounded-2xl p-6 text-white shadow-lg">
-                <h2 className="text-2xl font-bold mb-4">Hello, {currentUser?.name.split(' ')[0] || 'Scholar'} 👋</h2>
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                    <div className="flex justify-between items-end mb-2"><span className="text-xs font-bold text-blue-100 uppercase">Goal Tracker</span><span className="text-sm font-bold">${currentEarnings} / {currentUser?.monthlyGoal || 0}</span></div>
-                    <div className="w-full bg-black/20 rounded-full h-2.5 overflow-hidden"><div className={`h-full rounded-full transition-all duration-1000 ${progressPercent >= 100 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${progressPercent}%` }}></div></div>
-                </div>
-             </div>
-        ) : (
+        {displayRole === 'scholar' ? null : (
             <div className="space-y-4">
                 {/* Admin Pending Task Alert Card */}
                 {totalPendingTasks > 0 && (

@@ -6,7 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { functions, db, storage } from "../firebase";
 import { useAuth } from "../auth/AuthProvider";
 import { JobStatus, ServiceJob } from "../../types";
-import { DollarSign, Package, UserPlus, Settings } from "lucide-react";
+import { DollarSign, Package, UserPlus, Settings, Trophy } from "lucide-react";
 import JobToInventoryModal from "../components/JobToInventoryModal";
 
 type SignupRequest = {
@@ -65,7 +65,7 @@ const AdminDashboard: React.FC = () => {
   const [completedJobsLoading, setCompletedJobsLoading] = useState(true);
   const [reviewModalJob, setReviewModalJob] = useState<JobForReview | null>(null);
   const [extractInventoryJob, setExtractInventoryJob] = useState<ServiceJob | null>(null);
-  const { setViewAsUid, loading, authError } = useAuth();
+  const { setViewAsUid, loading, authError, profile } = useAuth();
 
   if (loading) {
     return (
@@ -268,43 +268,45 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
-            <p className="text-sm text-slate-500">Manage scholars, jobs, and account requests.</p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header Banner */}
+      <header className="bg-gradient-to-b from-[#0f1b2d] to-[#162340] text-white">
+        <div className="max-w-3xl mx-auto px-6 pt-6 pb-6">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3 block">ScholarHub</span>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white leading-tight">{profile?.name || 'Admin'}</h1>
+              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400 mt-0.5">Administrator</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link to="/app" className="text-[10px] font-bold text-amber-400 uppercase tracking-wide hover:text-amber-300">Scholar View</Link>
+              <div className="w-9 h-9 bg-[#1e3050] rounded-xl flex items-center justify-center">
+                <Trophy size={18} className="text-amber-400" />
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              to="/admin/leads"
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700"
-            >
-              <UserPlus size={16} />
-              Leads
-            </Link>
-            <Link
-              to="/admin/payouts"
-              className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700"
-            >
-              <DollarSign size={16} />
-              Payouts
-            </Link>
-            <Link
-              to="/admin/settings"
-              className="flex items-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-700"
-            >
-              <Settings size={16} />
-              Settings
-            </Link>
-            <button
-              onClick={() => navigate("/admin/create-job")}
-              className="bg-slate-700 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors"
-            >
-              + Create Job
-            </button>
+          <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+            <p className="text-sm text-slate-400">Manage scholars, jobs, and account requests.</p>
           </div>
-        </header>
+        </div>
+      </header>
+
+      <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
+        {/* Admin Navigation */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <Link to="/admin/leads" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
+            <UserPlus size={16} /> Leads
+          </Link>
+          <Link to="/admin/payouts" className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+            <DollarSign size={16} /> Payouts
+          </Link>
+          <Link to="/admin/settings" className="flex items-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-700">
+            <Settings size={16} /> Settings
+          </Link>
+          <button onClick={() => navigate("/admin/create-job")} className="bg-slate-700 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+            + Create Job
+          </button>
+        </div>
 
         {error && (
           <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-3">
