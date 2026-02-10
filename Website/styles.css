@@ -319,12 +319,10 @@ ul, ol {
 }
 
 .hero-logo {
-    width: 440px;
+    width: 320px;
     height: auto;
     margin: 0 auto 24px;
     display: block;
-    filter: invert(1);
-    mix-blend-mode: screen;
 }
 
 .hero-headline {
@@ -373,7 +371,7 @@ ul, ol {
     }
 
     .hero-logo {
-        width: 300px;
+        width: 220px;
     }
 
     .hero-headline {
