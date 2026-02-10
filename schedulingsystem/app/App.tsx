@@ -442,7 +442,7 @@ const App: React.FC = () => {
       )}
 
       {/* Header Banner */}
-      <header className="sticky top-0 z-20 bg-gradient-to-b from-[#0f1b2d] to-[#162340] text-white">
+      <header className="sticky top-0 z-20 text-white" style={{ background: 'linear-gradient(to bottom, #0f1b2d, #162340)' }}>
           <div className="max-w-md mx-auto px-5 pt-5 pb-5">
               {/* ScholarHub branding */}
               <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3 block">ScholarHub</span>
@@ -458,9 +458,9 @@ const App: React.FC = () => {
                       )}
                       <button className="relative p-2 -mr-2" onClick={() => setShowNotifications(!showNotifications)}>
                           <Bell size={18} className="text-slate-400" />
-                          {unreadCount > 0 && (<span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-[#162340]"></span>)}
+                          {unreadCount > 0 && (<span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2" style={{ borderColor: '#162340' }}></span>)}
                       </button>
-                      <button onClick={() => setShowProfile(true)} className="w-9 h-9 bg-[#1e3050] rounded-xl flex items-center justify-center">
+                      <button onClick={() => setShowProfile(true)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#1e3050' }}>
                           <Trophy size={18} className="text-amber-400" />
                       </button>
                   </div>

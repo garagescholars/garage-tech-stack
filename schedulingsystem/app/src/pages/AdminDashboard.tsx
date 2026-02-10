@@ -270,7 +270,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header Banner */}
-      <header className="bg-gradient-to-b from-[#0f1b2d] to-[#162340] text-white">
+      <header className="text-white" style={{ background: 'linear-gradient(to bottom, #0f1b2d, #162340)' }}>
         <div className="max-w-3xl mx-auto px-6 pt-6 pb-6">
           <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3 block">ScholarHub</span>
           <div className="flex items-start justify-between mb-4">
@@ -280,7 +280,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <Link to="/app" className="text-[10px] font-bold text-amber-400 uppercase tracking-wide hover:text-amber-300">Scholar View</Link>
-              <div className="w-9 h-9 bg-[#1e3050] rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#1e3050' }}>
                 <Trophy size={18} className="text-amber-400" />
               </div>
             </div>
