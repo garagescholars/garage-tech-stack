@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { db, functions } from "../firebase";
 import { Job, JobStatus, Task } from "../../types";
 import { useAuth } from "../auth/AuthProvider";
-import { ArrowLeft, Phone, Mail, MapPin, Loader2, AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronUp, Edit3, RotateCcw } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Loader2, AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronUp, Edit3, RotateCcw, Plus, Minus } from "lucide-react";
 
 // ── Package tier descriptions (from pricing spreadsheet) ──
 const PACKAGE_DESCRIPTIONS: { [key: string]: string } = {
@@ -14,10 +14,119 @@ const PACKAGE_DESCRIPTIONS: { [key: string]: string } = {
   doctorate: "The Doctorate ($3,797) — White-Glove Detail. 3 Scholars, 1 full day. Up to 2 truck bed haul-away. $500 credit towards storage & shelving. 16 premium bins included. Deep degrease & floor powerwash. Seasonal swap (1 return visit)."
 };
 
+// ── Product Catalog (from garage_scholars_pricing_v2.xlsx) ──
+
+const BOLD_SERIES_SETS = [
+  { id: "bold-3pc-wall", name: "3-Pc Wall Cabinets", dims: '96"W x 20"H x 12"D', model: "50653", retail: 380 },
+  { id: "bold-6pc-wall", name: "6-Pc Wall Cabinets", dims: '192"W x 19.58"H x 12"D', model: "50659", retail: 600 },
+  { id: "bold-2pc-system", name: "2-Piece System", dims: '104"W x 77"H x 18"D', model: "50500", retail: 1400 },
+  { id: "bold-3pc-system", name: "3-Piece System", dims: '108"W x 76.75"H x 18"D', model: "50670", retail: 1280 },
+  { id: "bold-4pc-bamboo", name: "4-Pc Bamboo Top", dims: '92"W x 76.75"H x 18"D', model: "73501", retail: 1340 },
+  { id: "bold-4pc-stainless", name: "4-Pc Stainless Top", dims: '92"W x 76.75"H x 18"D', model: "73505", retail: 1430 },
+  { id: "bold-5pc-bamboo", name: "5-Pc Bamboo Top", dims: '120"W x 76.75"H x 18"D', model: "73509", retail: 1987 },
+  { id: "bold-5pc-stainless", name: "5-Pc Stainless Top", dims: '120"W x 76.75"H x 18"D', model: "73513", retail: 2140 },
+  { id: "bold-6pc-system", name: "6-Piece System", dims: '144"W x 76.75"H x 18"D', model: "50502", retail: 2150 },
+  { id: "bold-7pc-system", name: "7-Piece System", dims: '108"W x 76.75"H x 18"D', model: "50421", retail: 1680 },
+  { id: "bold-7pc-extended", name: "7-Piece Extended", dims: '174"W x 77"H x 18"D', model: "50506", retail: 2530 },
+  { id: "bold-8pc-system-a", name: "8-Piece System (A)", dims: '132"W x 77"H x 18"D', model: "50405", retail: 1850 },
+  { id: "bold-8pc-system-b", name: "8-Piece System (B)", dims: '132"W x 76.75"H x 18"D', model: "50462", retail: 2200 },
+  { id: "bold-9pc-system", name: "9-Piece System", dims: '132"W x 77"H x 18"D', model: "50408", retail: 1950 },
+  { id: "bold-9pc-platinum", name: "9-Piece Platinum", dims: '132"W x 76.75"H x 18"D', model: "54992", retail: 1950 },
+];
+
+const STANDARD_SHELVING = [
+  { id: "shelf-5tier-48w", name: '5-Tier Metal Shelving', dims: '72"H x 48"W x 24"D', cost: 122 },
+  { id: "shelf-4tier-60w", name: '4-Tier Metal Shelving', dims: '72"H x 60"W x 18"D', cost: 175 },
+];
+
+const OVERHEAD_STORAGE = [
+  { id: "overhead-32d", name: 'Overhead Rack — 32"D', dims: '97.5"W x 43.75"H x 32"D', cost: 169 },
+  { id: "overhead-48d", name: 'Overhead Rack — 48"D', dims: '97.5"W x 43.75"H x 48"D', cost: 219 },
+  { id: "overhead-bin-rack", name: "Six Bin Rack (Ceiling Mounted)", dims: '3"W x 2"H x 26"D', cost: 168 },
+];
+
+const FLOORING_OPTIONS = [
+  { id: "none", name: "None", price: 0 },
+  { id: "click-in-1car", name: "Click-In Plate Flooring — 1-Car (~200 sq ft)", price: 1497 },
+  { id: "click-in-2car", name: "Click-In Plate Flooring — 2-Car (~400 sq ft)", price: 2897 },
+  { id: "click-in-3car", name: "Click-In Plate Flooring — 3-Car (~600 sq ft)", price: 4297 },
+  { id: "polyaspartic-1car", name: "Polyaspartic Floor Coating — 1-Car (~200 sq ft)", price: 0 },
+  { id: "polyaspartic-2car", name: "Polyaspartic Floor Coating — 2-Car (~400 sq ft)", price: 0 },
+  { id: "polyaspartic-3car", name: "Polyaspartic Floor Coating — 3-Car (~600 sq ft)", price: 0 },
+];
+
+interface ProductSelections {
+  boldSeriesId: string;
+  standardShelving: { id: string; qty: number }[];
+  overheadStorage: { id: string; qty: number }[];
+  extraHaulAways: number;
+  flooringId: string;
+  extraBinPacks: number;
+  notes: string;
+}
+
+const emptySelections: ProductSelections = {
+  boldSeriesId: "",
+  standardShelving: [],
+  overheadStorage: [],
+  extraHaulAways: 0,
+  flooringId: "none",
+  extraBinPacks: 0,
+  notes: "",
+};
+
+/** Serialize structured selections into readable strings for Firestore / SOP prompt */
+const serializeSelections = (sel: ProductSelections, packageTier: string) => {
+  const parts: string[] = [];
+
+  // Bold Series
+  const bold = BOLD_SERIES_SETS.find((b) => b.id === sel.boldSeriesId);
+  if (bold) {
+    const credit = packageTier === "doctorate" ? 500 : packageTier === "graduate" ? 300 : 0;
+    const clientPays = Math.max(0, bold.retail - credit);
+    parts.push(`Bold Series ${bold.name} (${bold.dims}) — Retail $${bold.retail}${credit > 0 ? `, client pays $${clientPays} after $${credit} credit` : ""}`);
+  }
+
+  // Standard shelving
+  sel.standardShelving.forEach((s) => {
+    const item = STANDARD_SHELVING.find((x) => x.id === s.id);
+    if (item) parts.push(`${s.qty}x ${item.name} (${item.dims})`);
+  });
+
+  // Overhead
+  sel.overheadStorage.forEach((s) => {
+    const item = OVERHEAD_STORAGE.find((x) => x.id === s.id);
+    if (item) parts.push(`${s.qty}x ${item.name} (${item.dims})`);
+  });
+
+  const shelvingSelections = parts.length > 0 ? parts.join(" | ") : "None selected";
+
+  // Add-ons
+  const addOnParts: string[] = [];
+  if (sel.extraHaulAways > 0) addOnParts.push(`${sel.extraHaulAways}x Extra Haul-Away ($${sel.extraHaulAways * 300})`);
+  const flooring = FLOORING_OPTIONS.find((f) => f.id === sel.flooringId);
+  if (flooring && flooring.id !== "none") {
+    addOnParts.push(flooring.price > 0 ? `${flooring.name} ($${flooring.price})` : `${flooring.name} (Price TBD)`);
+  }
+  if (sel.extraBinPacks > 0) addOnParts.push(`${sel.extraBinPacks}x Extra Bin Pack (8 bins each)`);
+  if (sel.notes.trim()) addOnParts.push(`Notes: ${sel.notes.trim()}`);
+
+  const addOns = addOnParts.length > 0 ? addOnParts.join(" | ") : "None selected";
+
+  return { shelvingSelections, addOns };
+};
+
 const packageLabels: { [key: string]: string } = {
   undergraduate: "Undergraduate",
   graduate: "Graduate",
   doctorate: "Doctorate"
+};
+
+// ── Package defaults from pricing spreadsheet ──
+const PACKAGE_DEFAULTS: { [key: string]: { clientPrice: number; scholarPayout: number; estimatedHours: number } } = {
+  undergraduate: { clientPrice: 1197, scholarPayout: 350, estimatedHours: 5 },
+  graduate:      { clientPrice: 2197, scholarPayout: 600, estimatedHours: 7 },
+  doctorate:     { clientPrice: 3797, scholarPayout: 875, estimatedHours: 8 },
 };
 
 const serviceTypeLabels: { [key: string]: string } = {
@@ -57,15 +166,16 @@ const AdminLeads: React.FC = () => {
     clientPhone: "",
     address: "",
     description: "",
-    estimatedHours: 3,
-    scholarPayout: 0,
-    clientPrice: 0,
+    selectedPackage: "graduate" as string,
+    estimatedHours: 7,
+    scholarPayout: 600,
+    clientPrice: 2197,
     scheduledDate: "",
     accessInstructions: "",
-    sellVsKeepPreference: "decide" as "sell" | "keep" | "decide",
-    shelvingSelections: "",
-    addOns: ""
+    resaleConcierge: "no" as "yes" | "no",
+    donationOptIn: "no" as "yes" | "no",
   });
+  const [productSelections, setProductSelections] = useState<ProductSelections>({ ...emptySelections });
 
   // SOP generation state
   const [sopGenerating, setSopGenerating] = useState(false);
@@ -125,28 +235,26 @@ const AdminLeads: React.FC = () => {
   // ── Handlers ──
 
   const handlePublishToScholars = (lead: Job) => {
-    // Validate package tier
-    if (!lead.package) {
-      setError("Set package tier before publishing. This lead has no package selected.");
-      return;
-    }
     setError(null);
     setConvertingLead(lead);
+    const pkg = lead.package || "graduate";
+    const defaults = PACKAGE_DEFAULTS[pkg] || PACKAGE_DEFAULTS.graduate;
     setConvertFormData({
       clientName: lead.clientName || "",
       clientEmail: lead.clientEmail || "",
       clientPhone: lead.clientPhone || "",
       address: lead.address || lead.zipcode || "",
       description: lead.description || "",
-      estimatedHours: 3,
-      scholarPayout: 0,
-      clientPrice: 0,
+      selectedPackage: pkg,
+      estimatedHours: defaults.estimatedHours,
+      scholarPayout: defaults.scholarPayout,
+      clientPrice: defaults.clientPrice,
       scheduledDate: "",
       accessInstructions: "",
-      sellVsKeepPreference: "decide",
-      shelvingSelections: "",
-      addOns: ""
+      resaleConcierge: "no",
+      donationOptIn: "no",
     });
+    setProductSelections({ ...emptySelections });
   };
 
   const handleConvertFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -169,12 +277,12 @@ const AdminLeads: React.FC = () => {
       setError("Client name and address are required.");
       return;
     }
-    if (convertFormData.scholarPayout < 50 || convertFormData.scholarPayout > 1000) {
-      setError("Scholar payout must be between $50 and $1000.");
+    if (!convertFormData.clientPrice || convertFormData.clientPrice <= 0) {
+      setError("Client price is required.");
       return;
     }
-    if (convertFormData.clientPrice < 100 || convertFormData.clientPrice > 5000) {
-      setError("Client price must be between $100 and $5000.");
+    if (!convertFormData.scholarPayout || convertFormData.scholarPayout <= 0) {
+      setError("Scholar payout is required.");
       return;
     }
     if (!convertFormData.scheduledDate) {
@@ -188,6 +296,9 @@ const AdminLeads: React.FC = () => {
     try {
       const scheduledDateTime = new Date(convertFormData.scheduledDate);
       const endDateTime = new Date(scheduledDateTime.getTime() + convertFormData.estimatedHours * 60 * 60 * 1000);
+
+      // Serialize structured product selections
+      const { shelvingSelections, addOns } = serializeSelections(productSelections, convertFormData.selectedPackage);
 
       // Step 1: Update job document with form data + set status to SOP_NEEDS_REVIEW
       await updateDoc(doc(db, "serviceJobs", convertingLead.id), {
@@ -204,10 +315,13 @@ const AdminLeads: React.FC = () => {
         locationLat: 0,
         locationLng: 0,
         accessConstraints: convertFormData.accessInstructions.trim(),
-        sellVsKeepPreference: convertFormData.sellVsKeepPreference,
-        shelvingSelections: convertFormData.shelvingSelections.trim(),
-        addOns: convertFormData.addOns.trim(),
-        packageTier: convertingLead.package || "",
+        resaleConcierge: convertFormData.resaleConcierge === "yes",
+        donationOptIn: convertFormData.donationOptIn === "yes",
+        shelvingSelections,
+        addOns,
+        productSelections: productSelections,
+        package: convertFormData.selectedPackage,
+        packageTier: convertFormData.selectedPackage,
         inventoryExtracted: false,
         updatedAt: serverTimestamp()
       });
@@ -228,7 +342,7 @@ const AdminLeads: React.FC = () => {
         sopText: data.generatedSOP,
         clientName: convertFormData.clientName.trim(),
         address: convertFormData.address.trim(),
-        packageTier: convertingLead.package || "",
+        packageTier: convertFormData.selectedPackage,
         date: scheduledDateTime.toISOString(),
         intakeImageUrls: intakeUrls
       });
@@ -626,11 +740,6 @@ const AdminLeads: React.FC = () => {
                   <p className="text-sm text-slate-500 mt-1">
                     Complete job details, then SOP will be auto-generated for your review
                   </p>
-                  {convertingLead.package && (
-                    <span className="inline-block mt-2 text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                      {packageLabels[convertingLead.package] || convertingLead.package} Package
-                    </span>
-                  )}
                 </div>
                 <button onClick={() => { setConvertingLead(null); setSopError(null); }} className="text-slate-400 hover:text-slate-600">
                   ✕
@@ -653,6 +762,37 @@ const AdminLeads: React.FC = () => {
                 </div>
               )}
 
+              {/* Package Tier */}
+              <div className="space-y-4">
+                <h3 className="font-bold text-slate-800 text-lg border-b pb-2">Package Tier</h3>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Selected Package <span className="text-rose-500">*</span></label>
+                  <select
+                    name="selectedPackage"
+                    value={convertFormData.selectedPackage}
+                    onChange={(e) => {
+                      const pkg = e.target.value;
+                      const defaults = PACKAGE_DEFAULTS[pkg] || PACKAGE_DEFAULTS.graduate;
+                      setConvertFormData((prev) => ({
+                        ...prev,
+                        selectedPackage: pkg,
+                        clientPrice: defaults.clientPrice,
+                        scholarPayout: defaults.scholarPayout,
+                        estimatedHours: defaults.estimatedHours,
+                      }));
+                    }}
+                    className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900"
+                  >
+                    <option value="undergraduate">Undergraduate — $1,197</option>
+                    <option value="graduate">Graduate — $2,197</option>
+                    <option value="doctorate">Doctorate — $3,797</option>
+                  </select>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {PACKAGE_DESCRIPTIONS[convertFormData.selectedPackage]?.split("—")[1]?.trim() || ""}
+                  </p>
+                </div>
+              </div>
+
               {/* Client Information */}
               <div className="space-y-4">
                 <h3 className="font-bold text-slate-800 text-lg border-b pb-2">Client Information</h3>
@@ -672,7 +812,7 @@ const AdminLeads: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-600">Property Address <span className="text-rose-500">*</span></label>
-                  <input type="text" name="address" value={convertFormData.address} onChange={handleConvertFormChange} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900" placeholder="123 Main St, Los Angeles, CA 90001" required />
+                  <input type="text" name="address" value={convertFormData.address} onChange={handleConvertFormChange} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900" placeholder="123 Main St, Denver, CO 80202" required />
                 </div>
               </div>
 
@@ -693,14 +833,14 @@ const AdminLeads: React.FC = () => {
                     <label className="text-sm font-medium text-slate-600">Scholar Payout <span className="text-rose-500">*</span></label>
                     <div className="relative mt-1">
                       <span className="absolute left-3 top-2 text-slate-500">$</span>
-                      <input type="number" name="scholarPayout" value={convertFormData.scholarPayout || ""} onChange={handleConvertFormChange} className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-slate-900" min="50" max="1000" step="10" required />
+                      <input type="number" name="scholarPayout" value={convertFormData.scholarPayout || ""} onChange={handleConvertFormChange} className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-slate-900" step="10" required />
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-slate-600">Client Price <span className="text-rose-500">*</span></label>
                     <div className="relative mt-1">
                       <span className="absolute left-3 top-2 text-slate-500">$</span>
-                      <input type="number" name="clientPrice" value={convertFormData.clientPrice || ""} onChange={handleConvertFormChange} className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-slate-900" min="100" max="5000" step="10" required />
+                      <input type="number" name="clientPrice" value={convertFormData.clientPrice || ""} onChange={handleConvertFormChange} className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-slate-900" step="10" required />
                     </div>
                   </div>
                 </div>
@@ -710,16 +850,195 @@ const AdminLeads: React.FC = () => {
                 </div>
               </div>
 
-              {/* Shelving & Add-ons */}
-              <div className="space-y-4">
-                <h3 className="font-bold text-slate-800 text-lg border-b pb-2">Shelving & Add-Ons</h3>
+              {/* Shelving & Storage */}
+              <div className="space-y-5">
+                <h3 className="font-bold text-slate-800 text-lg border-b pb-2">Shelving & Storage</h3>
+
+                {/* Bold Series Cabinet System */}
                 <div>
-                  <label className="text-sm font-medium text-slate-600">Shelving Selections</label>
-                  <textarea name="shelvingSelections" value={convertFormData.shelvingSelections} onChange={handleConvertFormChange} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 min-h-[60px] text-slate-900" placeholder="e.g. 5-Pc Bold Series Bamboo Top (120&quot;W), 2x overhead racks 48&quot;D" />
+                  <label className="text-sm font-medium text-slate-600">Bold Series Cabinet System</label>
+                  <select
+                    value={productSelections.boldSeriesId}
+                    onChange={(e) => setProductSelections((prev) => ({ ...prev, boldSeriesId: e.target.value }))}
+                    className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900"
+                  >
+                    <option value="">None</option>
+                    {BOLD_SERIES_SETS.map((b) => {
+                      const credit = convertingLead?.package === "doctorate" ? 500 : convertingLead?.package === "graduate" ? 300 : 0;
+                      const clientPays = Math.max(0, b.retail - credit);
+                      return (
+                        <option key={b.id} value={b.id}>
+                          {b.name} ({b.dims}) — ${b.retail}{credit > 0 ? ` → $${clientPays} after credit` : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
+
+                {/* Standard Shelving */}
                 <div>
-                  <label className="text-sm font-medium text-slate-600">Add-Ons</label>
-                  <textarea name="addOns" value={convertFormData.addOns} onChange={handleConvertFormChange} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 min-h-[60px] text-slate-900" placeholder="e.g. Extra haul-away, click-in flooring 400 sq ft" />
+                  <label className="text-sm font-medium text-slate-600">Standard Shelving</label>
+                  {STANDARD_SHELVING.map((shelf) => {
+                    const existing = productSelections.standardShelving.find((s) => s.id === shelf.id);
+                    const qty = existing?.qty || 0;
+                    return (
+                      <div key={shelf.id} className="flex items-center justify-between mt-2 bg-slate-50 rounded-lg px-3 py-2">
+                        <div>
+                          <span className="text-sm text-slate-800 font-medium">{shelf.name}</span>
+                          <span className="text-xs text-slate-500 ml-2">({shelf.dims})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setProductSelections((prev) => {
+                              const updated = prev.standardShelving.filter((s) => s.id !== shelf.id);
+                              if (qty > 1) updated.push({ id: shelf.id, qty: qty - 1 });
+                              return { ...prev, standardShelving: updated };
+                            })}
+                            className="w-7 h-7 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="w-6 text-center text-sm font-bold text-slate-800">{qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => setProductSelections((prev) => {
+                              const updated = prev.standardShelving.filter((s) => s.id !== shelf.id);
+                              updated.push({ id: shelf.id, qty: qty + 1 });
+                              return { ...prev, standardShelving: updated };
+                            })}
+                            className="w-7 h-7 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center text-blue-700"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Overhead Storage */}
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Overhead Storage</label>
+                  {OVERHEAD_STORAGE.map((item) => {
+                    const existing = productSelections.overheadStorage.find((s) => s.id === item.id);
+                    const qty = existing?.qty || 0;
+                    return (
+                      <div key={item.id} className="flex items-center justify-between mt-2 bg-slate-50 rounded-lg px-3 py-2">
+                        <div>
+                          <span className="text-sm text-slate-800 font-medium">{item.name}</span>
+                          <span className="text-xs text-slate-500 ml-2">({item.dims})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setProductSelections((prev) => {
+                              const updated = prev.overheadStorage.filter((s) => s.id !== item.id);
+                              if (qty > 1) updated.push({ id: item.id, qty: qty - 1 });
+                              return { ...prev, overheadStorage: updated };
+                            })}
+                            className="w-7 h-7 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="w-6 text-center text-sm font-bold text-slate-800">{qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => setProductSelections((prev) => {
+                              const updated = prev.overheadStorage.filter((s) => s.id !== item.id);
+                              updated.push({ id: item.id, qty: qty + 1 });
+                              return { ...prev, overheadStorage: updated };
+                            })}
+                            className="w-7 h-7 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center text-blue-700"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Add-Ons */}
+              <div className="space-y-5">
+                <h3 className="font-bold text-slate-800 text-lg border-b pb-2">Add-Ons</h3>
+
+                {/* Extra Haul-Aways */}
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Extra Haul-Aways</label>
+                  <p className="text-xs text-slate-400 mb-1">$300 per additional truck bed</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setProductSelections((prev) => ({ ...prev, extraHaulAways: Math.max(0, prev.extraHaulAways - 1) }))}
+                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="w-8 text-center text-lg font-bold text-slate-800">{productSelections.extraHaulAways}</span>
+                    <button
+                      type="button"
+                      onClick={() => setProductSelections((prev) => ({ ...prev, extraHaulAways: prev.extraHaulAways + 1 }))}
+                      className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center text-blue-700"
+                    >
+                      <Plus size={14} />
+                    </button>
+                    {productSelections.extraHaulAways > 0 && (
+                      <span className="text-sm text-slate-500 ml-2">= ${productSelections.extraHaulAways * 300}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Flooring */}
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Flooring</label>
+                  <select
+                    value={productSelections.flooringId}
+                    onChange={(e) => setProductSelections((prev) => ({ ...prev, flooringId: e.target.value }))}
+                    className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900"
+                  >
+                    {FLOORING_OPTIONS.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}{f.price > 0 ? ` — $${f.price}` : f.id !== "none" ? " — Price TBD" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Extra Bin Packs */}
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Extra Bin Packs</label>
+                  <p className="text-xs text-slate-400 mb-1">Greenmade 27-Gallon 8-Pack</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setProductSelections((prev) => ({ ...prev, extraBinPacks: Math.max(0, prev.extraBinPacks - 1) }))}
+                      className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="w-8 text-center text-lg font-bold text-slate-800">{productSelections.extraBinPacks}</span>
+                    <button
+                      type="button"
+                      onClick={() => setProductSelections((prev) => ({ ...prev, extraBinPacks: prev.extraBinPacks + 1 }))}
+                      className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center text-blue-700"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Additional Notes */}
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Additional Notes</label>
+                  <textarea
+                    value={productSelections.notes}
+                    onChange={(e) => setProductSelections((prev) => ({ ...prev, notes: e.target.value }))}
+                    className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 min-h-[60px] text-slate-900"
+                    placeholder="Any extra details about products or install preferences..."
+                    maxLength={300}
+                  />
                 </div>
               </div>
 
@@ -730,13 +1049,23 @@ const AdminLeads: React.FC = () => {
                   <label className="text-sm font-medium text-slate-600">Access Instructions</label>
                   <textarea name="accessInstructions" value={convertFormData.accessInstructions} onChange={handleConvertFormChange} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 min-h-[80px] text-slate-900" placeholder="Gate code: 1234, Key under mat, Client will be home" />
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-slate-600">Sell vs Keep Preference</label>
-                  <select name="sellVsKeepPreference" value={convertFormData.sellVsKeepPreference} onChange={handleConvertFormChange} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
-                    <option value="decide">I'll Decide Later</option>
-                    <option value="sell">Sell Everything</option>
-                    <option value="keep">Keep Everything</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Does the client want resale concierge?</label>
+                    <select name="resaleConcierge" value={convertFormData.resaleConcierge} onChange={handleConvertFormChange} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
+                    </select>
+                    <p className="text-xs text-slate-400 mt-1">50/50 split + listing management — included in all tiers</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Does the client have donation items?</label>
+                    <select name="donationOptIn" value={convertFormData.donationOptIn} onChange={handleConvertFormChange} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
+                    </select>
+                    <p className="text-xs text-slate-400 mt-1">Drop-off at donation center — no extra charge</p>
+                  </div>
                 </div>
               </div>
 

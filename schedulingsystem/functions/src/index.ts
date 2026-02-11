@@ -84,7 +84,7 @@ const buildSopUserMessage = (job: FirebaseFirestore.DocumentData, hasImages: boo
   return parts.join("\n");
 };
 
-export const generateSopForJob = onCall({ timeoutSeconds: 120 }, async (request) => {
+export const generateSopForJob = onCall({ timeoutSeconds: 120, secrets: ["ANTHROPIC_API_KEY"] }, async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Authentication required.");
   }
