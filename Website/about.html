@@ -235,6 +235,27 @@
         firebase.initializeApp(window.firebaseConfig);
         const functions = firebase.functions();
 
+        // Resize an image file to max dimension and return compressed base64
+        function resizePhoto(file, maxDim, quality) {
+            return new Promise(function(resolve, reject) {
+                var img = new Image();
+                img.onload = function() {
+                    var w = img.width, h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+                        else { w = Math.round(w * maxDim / h); h = maxDim; }
+                    }
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    var dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(dataUrl.split(',')[1]);
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
         function openQuoteModal(packageType) {
             document.getElementById('quoteModal').classList.add('open');
             document.body.style.overflow = 'hidden';
@@ -259,7 +280,7 @@
                 const photos = fd.getAll('photos').filter(f => f.size > 0);
                 if (!photos || photos.length < 3) { msg.textContent = 'Please upload at least 3 photos of your garage.'; msg.className = 'form-message error'; btn.disabled = false; btn.textContent = 'Submit Quote Request'; return; }
                 msg.textContent = 'Processing photos...'; msg.className = 'form-message'; msg.style.display = 'block';
-                for (const file of photos) { const base64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(file); }); data.photoData.push({ base64, filename: file.name, mimeType: file.type }); }
+                for (const file of photos) { var base64 = await resizePhoto(file, 1200, 0.7); data.photoData.push({ base64: base64, filename: file.name, mimeType: 'image/jpeg' }); }
                 msg.textContent = 'Submitting your request...';
                 const submitQuoteRequest = functions.httpsCallable('submitQuoteRequest');
                 await submitQuoteRequest(data);

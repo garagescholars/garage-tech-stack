@@ -327,7 +327,7 @@ const AdminLeads: React.FC = () => {
       });
 
       // Step 2: Call Cloud Function to generate SOP
-      const callable = httpsCallable(functions, "generateSopForJob");
+      const callable = httpsCallable(functions, "generateSopForJob", { timeout: 300000 });
       const result = await callable({ jobId: convertingLead.id });
       const data = result.data as { ok?: boolean; generatedSOP?: string };
 
@@ -401,7 +401,7 @@ const AdminLeads: React.FC = () => {
     setSopRegenerating(true);
 
     try {
-      const callable = httpsCallable(functions, "generateSopForJob");
+      const callable = httpsCallable(functions, "generateSopForJob", { timeout: 300000 });
       const result = await callable({
         jobId: sopReviewData.jobId,
         adminNotes: sopRegenerateNotes || undefined

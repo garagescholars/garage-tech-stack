@@ -5,6 +5,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
 import Anthropic from "@anthropic-ai/sdk";
+import sharp from "sharp";
 
 initializeApp();
 
@@ -84,7 +85,7 @@ const buildSopUserMessage = (job: FirebaseFirestore.DocumentData, hasImages: boo
   return parts.join("\n");
 };
 
-export const generateSopForJob = onCall({ timeoutSeconds: 120, secrets: ["ANTHROPIC_API_KEY"] }, async (request) => {
+export const generateSopForJob = onCall({ timeoutSeconds: 300, memory: "1GiB", secrets: ["ANTHROPIC_API_KEY"] }, async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Authentication required.");
   }
@@ -114,19 +115,42 @@ export const generateSopForJob = onCall({ timeoutSeconds: 120, secrets: ["ANTHRO
   const bucket = storage.bucket();
   const imageBlocks: Array<{ type: "image"; source: { type: "base64"; media_type: string; data: string } }> = [];
 
-  for (const path of intakePaths.slice(0, 3)) {
+  for (const rawPath of intakePaths.slice(0, 3)) {
     try {
-      const [buffer] = await bucket.file(path).download();
-      const ext = path.split(".").pop()?.toLowerCase() || "jpeg";
-      const mediaType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+      // Strip full URL prefix if intakeMediaPaths stores public URLs
+      let storagePath = rawPath;
+      const bucketName = bucket.name; // e.g. "garage-scholars-v2.firebasestorage.app"
+      const prefix = `https://storage.googleapis.com/${bucketName}/`;
+      if (storagePath.startsWith(prefix)) {
+        storagePath = storagePath.slice(prefix.length);
+      }
+      // Also handle firebasestorage.googleapis.com format
+      const altPrefix = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/`;
+      if (storagePath.startsWith(altPrefix)) {
+        storagePath = decodeURIComponent(storagePath.slice(altPrefix.length).split("?")[0]);
+      }
+
+      console.log(`Downloading image: ${storagePath}`);
+      const [rawBuffer] = await bucket.file(storagePath).download();
+
+      // Resize to max 1600px longest side + JPEG quality 80 to stay under Claude's 5MB limit
+      const resized = await sharp(rawBuffer)
+        .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+
+      console.log(`Resized image: ${rawBuffer.length} → ${resized.length} bytes`);
       imageBlocks.push({
         type: "image",
-        source: { type: "base64", media_type: mediaType, data: buffer.toString("base64") }
+        source: { type: "base64", media_type: "image/jpeg", data: resized.toString("base64") }
       });
+      console.log(`Successfully downloaded image: ${storagePath}`);
     } catch (err) {
-      console.warn(`Failed to download intake image: ${path}`, err);
+      console.warn(`Failed to download intake image: ${rawPath}`, err);
     }
   }
+
+  console.log(`Calling Claude API with ${imageBlocks.length} images for job ${jobId}`);
 
   const anthropic = new Anthropic({ apiKey: anthropicKey });
   const userText = buildSopUserMessage(jobData, imageBlocks.length > 0, adminNotes);
@@ -137,40 +161,38 @@ export const generateSopForJob = onCall({ timeoutSeconds: 120, secrets: ["ANTHRO
   ];
 
   let generatedSOP = "";
-  let lastError: Error | null = null;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-5-20250929",
-        max_tokens: 4096,
-        system: SOP_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userContent }]
-      });
+  try {
+    console.log(`SOP generation starting...`);
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 4096,
+      system: SOP_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userContent }]
+    });
 
-      const textBlock = response.content.find((b: any) => b.type === "text");
-      generatedSOP = textBlock ? (textBlock as any).text : "";
-
-      if (generatedSOP && generatedSOP.includes("## 1.")) {
-        break;
-      }
-    } catch (error) {
-      lastError = error as Error;
-      console.error(`SOP generation attempt ${attempt + 1} failed:`, error);
-    }
+    const textBlock = response.content.find((b: any) => b.type === "text");
+    generatedSOP = textBlock ? (textBlock as any).text : "";
+    console.log(`Got ${generatedSOP.length} chars, has sections: ${generatedSOP.includes("## 1.")}`);
+  } catch (error) {
+    console.error(`SOP generation failed:`, (error as Error).message);
+    throw new HttpsError("internal", `Failed to generate SOP: ${(error as Error).message}`);
   }
 
   if (!generatedSOP) {
-    throw new HttpsError("internal", `Failed to generate SOP: ${lastError?.message || "empty response"}`);
+    console.error(`SOP generation returned empty response for job ${jobId}`);
+    throw new HttpsError("internal", "SOP generation returned empty response");
   }
 
   // Save generated SOP directly on the job document
+  console.log(`Saving SOP (${generatedSOP.length} chars) to job ${jobId}`);
   await jobRef.set({
     generatedSOP,
     status: "SOP_NEEDS_REVIEW",
     updatedAt: FieldValue.serverTimestamp()
   }, { merge: true });
 
+  console.log(`SOP successfully saved for job ${jobId}`);
   return { ok: true, generatedSOP };
 });
 
@@ -631,7 +653,7 @@ export const sendJobReviewEmail = onDocumentWritten("serviceJobs/{jobId}", async
 
 // Submit quote request from website
 export const submitQuoteRequest = onCall(
-  { cors: true }, // Enable CORS for all origins
+  { cors: true, timeoutSeconds: 120, memory: "512MiB" },
   async (request) => {
   const {
     name,
@@ -645,10 +667,12 @@ export const submitQuoteRequest = onCall(
     photoData // Array of base64 encoded images if present
   } = request.data;
 
-  // Validate required fields
-  if (!name || !email || !phone || !zipcode || !serviceType || !packageTier) {
-    throw new HttpsError("invalid-argument", "Missing required fields");
+  // Validate required fields (package is optional — HTML form doesn't require it)
+  if (!name || !email || !phone || !zipcode || !serviceType) {
+    throw new HttpsError("invalid-argument", "Missing required fields: name, email, phone, zipcode, and serviceType are required.");
   }
+
+  console.log(`submitQuoteRequest called: name=${name}, email=${email}, serviceType=${serviceType}, package=${packageTier || 'none'}`);
 
   try {
     // Create quote request document
@@ -658,7 +682,7 @@ export const submitQuoteRequest = onCall(
       phone,
       zipcode,
       serviceType,
-      package: packageTier,
+      package: packageTier || null,
       garageSize: garageSize || null,
       description: description || null,
       status: 'new',
@@ -671,12 +695,14 @@ export const submitQuoteRequest = onCall(
     // Handle photo uploads if present
     let photoUrls: string[] = [];
     if (photoData && Array.isArray(photoData) && photoData.length > 0) {
+      console.log(`Uploading ${photoData.length} photos...`);
       const bucket = storage.bucket();
 
       for (let i = 0; i < photoData.length; i++) {
         try {
           const { base64, filename, mimeType } = photoData[i];
           const buffer = Buffer.from(base64, 'base64');
+          console.log(`Photo ${i}: ${filename}, ${buffer.length} bytes`);
           const fileExtension = filename.split('.').pop() || 'jpg';
           const storagePath = `quote-photos/${quoteRequestRef.id}/${Date.now()}-${i}.${fileExtension}`;
 
@@ -691,6 +717,7 @@ export const submitQuoteRequest = onCall(
           await file.makePublic();
           const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
           photoUrls.push(publicUrl);
+          console.log(`Photo ${i} uploaded: ${storagePath}`);
         } catch (photoError) {
           console.error(`Error uploading photo ${i}:`, photoError);
         }
@@ -699,6 +726,7 @@ export const submitQuoteRequest = onCall(
       // Update quote request with photo URLs
       if (photoUrls.length > 0) {
         await quoteRequestRef.update({ photoUrls });
+        console.log(`${photoUrls.length} photo URLs saved to quote request`);
       }
     }
 
@@ -707,7 +735,11 @@ export const submitQuoteRequest = onCall(
       'get-clean': 'Get Clean',
       'get-organized': 'Get Organized',
       'get-strong': 'Get Strong',
-      'resale': 'Resale Concierge'
+      'resale': 'Resale Concierge',
+      'cleaning': 'Cleaning',
+      'organization': 'Organization',
+      'gym': 'Gym Setup',
+      'full': 'Full Transformation'
     };
 
     const packageLabels: { [key: string]: string } = {
@@ -754,7 +786,7 @@ export const submitQuoteRequest = onCall(
         <div class="field-label">Service Details:</div>
         <div class="field-value">
           <strong>Service Type:</strong> ${serviceTypeLabels[serviceType] || serviceType}<br>
-          <strong>Package:</strong> ${packageLabels[packageTier] || packageTier}
+          <strong>Package:</strong> ${packageLabels[packageTier] || packageTier || 'Not selected'}
           ${garageSize ? `<br><strong>Garage Size:</strong> ${garageSize}` : ''}
         </div>
       </div>
@@ -787,14 +819,14 @@ export const submitQuoteRequest = onCall(
     await db.collection('mail').add({
       to: ['garagescholars@gmail.com'],
       message: {
-        subject: `📋 New Quote Request: ${name} - ${serviceTypeLabels[serviceType]} (${packageLabels[packageTier]})`,
+        subject: `📋 New Quote Request: ${name} - ${serviceTypeLabels[serviceType] || serviceType} (${packageLabels[packageTier] || 'No package'})`,
         html: emailHtml,
       },
       quoteRequestId: quoteRequestRef.id,
       createdAt: FieldValue.serverTimestamp()
     });
 
-    console.log(`Email notification sent for quote request ${quoteRequestRef.id}`);
+    console.log(`Email notification queued for quote request ${quoteRequestRef.id}`);
 
     // Auto-create a draft job with LEAD status
     const draftJobRef = await db.collection('serviceJobs').add({
@@ -804,16 +836,16 @@ export const submitQuoteRequest = onCall(
       address: zipcode ? `ZIP: ${zipcode}` : 'Address TBD',
       zipcode: zipcode,
       description: description || 'New lead from website quote form',
-      date: new Date().toISOString(), // Placeholder date
-      scheduledEndTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
-      pay: 0, // To be determined
-      clientPrice: 0, // To be determined
+      date: new Date().toISOString(),
+      scheduledEndTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+      pay: 0,
+      clientPrice: 0,
       status: 'LEAD',
       locationLat: 0,
       locationLng: 0,
       checklist: [],
       serviceType,
-      package: packageTier,
+      package: packageTier || null,
       garageSize: garageSize || null,
       intakeMediaPaths: photoUrls,
       quoteRequestId: quoteRequestRef.id,
@@ -834,7 +866,7 @@ export const submitQuoteRequest = onCall(
     };
 
   } catch (error) {
-    console.error('Error submitting quote request:', error);
-    throw new HttpsError("internal", "Failed to submit quote request");
+    console.error('Error submitting quote request:', (error as Error).message, (error as Error).stack);
+    throw new HttpsError("internal", `Failed to submit quote request: ${(error as Error).message}`);
   }
 });

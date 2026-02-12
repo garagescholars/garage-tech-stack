@@ -11,6 +11,7 @@ const firestore_2 = require("firebase-admin/firestore");
 const auth_1 = require("firebase-admin/auth");
 const storage_1 = require("firebase-admin/storage");
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
+const sharp_1 = __importDefault(require("sharp"));
 (0, app_1.initializeApp)();
 const db = (0, firestore_2.getFirestore)();
 const storage = (0, storage_1.getStorage)();
@@ -79,7 +80,7 @@ const buildSopUserMessage = (job, hasImages, adminNotes) => {
     parts.push("\nGenerate the job SOP.");
     return parts.join("\n");
 };
-exports.generateSopForJob = (0, https_1.onCall)({ timeoutSeconds: 120 }, async (request) => {
+exports.generateSopForJob = (0, https_1.onCall)({ timeoutSeconds: 300, memory: "1GiB", secrets: ["ANTHROPIC_API_KEY"] }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Authentication required.");
     }
@@ -102,20 +103,39 @@ exports.generateSopForJob = (0, https_1.onCall)({ timeoutSeconds: 120 }, async (
     // Download images as base64 for Claude vision
     const bucket = storage.bucket();
     const imageBlocks = [];
-    for (const path of intakePaths.slice(0, 3)) {
+    for (const rawPath of intakePaths.slice(0, 3)) {
         try {
-            const [buffer] = await bucket.file(path).download();
-            const ext = path.split(".").pop()?.toLowerCase() || "jpeg";
-            const mediaType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+            // Strip full URL prefix if intakeMediaPaths stores public URLs
+            let storagePath = rawPath;
+            const bucketName = bucket.name; // e.g. "garage-scholars-v2.firebasestorage.app"
+            const prefix = `https://storage.googleapis.com/${bucketName}/`;
+            if (storagePath.startsWith(prefix)) {
+                storagePath = storagePath.slice(prefix.length);
+            }
+            // Also handle firebasestorage.googleapis.com format
+            const altPrefix = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/`;
+            if (storagePath.startsWith(altPrefix)) {
+                storagePath = decodeURIComponent(storagePath.slice(altPrefix.length).split("?")[0]);
+            }
+            console.log(`Downloading image: ${storagePath}`);
+            const [rawBuffer] = await bucket.file(storagePath).download();
+            // Resize to max 1600px longest side + JPEG quality 80 to stay under Claude's 5MB limit
+            const resized = await (0, sharp_1.default)(rawBuffer)
+                .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+                .jpeg({ quality: 80 })
+                .toBuffer();
+            console.log(`Resized image: ${rawBuffer.length} → ${resized.length} bytes`);
             imageBlocks.push({
                 type: "image",
-                source: { type: "base64", media_type: mediaType, data: buffer.toString("base64") }
+                source: { type: "base64", media_type: "image/jpeg", data: resized.toString("base64") }
             });
+            console.log(`Successfully downloaded image: ${storagePath}`);
         }
         catch (err) {
-            console.warn(`Failed to download intake image: ${path}`, err);
+            console.warn(`Failed to download intake image: ${rawPath}`, err);
         }
     }
+    console.log(`Calling Claude API with ${imageBlocks.length} images for job ${jobId}`);
     const anthropic = new sdk_1.default({ apiKey: anthropicKey });
     const userText = buildSopUserMessage(jobData, imageBlocks.length > 0, adminNotes);
     const userContent = [
@@ -123,35 +143,34 @@ exports.generateSopForJob = (0, https_1.onCall)({ timeoutSeconds: 120 }, async (
         { type: "text", text: userText }
     ];
     let generatedSOP = "";
-    let lastError = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-            const response = await anthropic.messages.create({
-                model: "claude-sonnet-4-5-20250929",
-                max_tokens: 4096,
-                system: SOP_SYSTEM_PROMPT,
-                messages: [{ role: "user", content: userContent }]
-            });
-            const textBlock = response.content.find((b) => b.type === "text");
-            generatedSOP = textBlock ? textBlock.text : "";
-            if (generatedSOP && generatedSOP.includes("## 1.")) {
-                break;
-            }
-        }
-        catch (error) {
-            lastError = error;
-            console.error(`SOP generation attempt ${attempt + 1} failed:`, error);
-        }
+    try {
+        console.log(`SOP generation starting...`);
+        const response = await anthropic.messages.create({
+            model: "claude-sonnet-4-5-20250929",
+            max_tokens: 4096,
+            system: SOP_SYSTEM_PROMPT,
+            messages: [{ role: "user", content: userContent }]
+        });
+        const textBlock = response.content.find((b) => b.type === "text");
+        generatedSOP = textBlock ? textBlock.text : "";
+        console.log(`Got ${generatedSOP.length} chars, has sections: ${generatedSOP.includes("## 1.")}`);
+    }
+    catch (error) {
+        console.error(`SOP generation failed:`, error.message);
+        throw new https_1.HttpsError("internal", `Failed to generate SOP: ${error.message}`);
     }
     if (!generatedSOP) {
-        throw new https_1.HttpsError("internal", `Failed to generate SOP: ${lastError?.message || "empty response"}`);
+        console.error(`SOP generation returned empty response for job ${jobId}`);
+        throw new https_1.HttpsError("internal", "SOP generation returned empty response");
     }
     // Save generated SOP directly on the job document
+    console.log(`Saving SOP (${generatedSOP.length} chars) to job ${jobId}`);
     await jobRef.set({
         generatedSOP,
         status: "SOP_NEEDS_REVIEW",
         updatedAt: firestore_2.FieldValue.serverTimestamp()
     }, { merge: true });
+    console.log(`SOP successfully saved for job ${jobId}`);
     return { ok: true, generatedSOP };
 });
 const requireAdmin = async (uid, email) => {
@@ -571,14 +590,14 @@ exports.sendJobReviewEmail = (0, firestore_1.onDocumentWritten)("serviceJobs/{jo
     }
 });
 // Submit quote request from website
-exports.submitQuoteRequest = (0, https_1.onCall)({ cors: true }, // Enable CORS for all origins
-async (request) => {
+exports.submitQuoteRequest = (0, https_1.onCall)({ cors: true, timeoutSeconds: 120, memory: "512MiB" }, async (request) => {
     const { name, email, phone, zipcode, serviceType, package: packageTier, garageSize, description, photoData // Array of base64 encoded images if present
      } = request.data;
-    // Validate required fields
-    if (!name || !email || !phone || !zipcode || !serviceType || !packageTier) {
-        throw new https_1.HttpsError("invalid-argument", "Missing required fields");
+    // Validate required fields (package is optional — HTML form doesn't require it)
+    if (!name || !email || !phone || !zipcode || !serviceType) {
+        throw new https_1.HttpsError("invalid-argument", "Missing required fields: name, email, phone, zipcode, and serviceType are required.");
     }
+    console.log(`submitQuoteRequest called: name=${name}, email=${email}, serviceType=${serviceType}, package=${packageTier || 'none'}`);
     try {
         // Create quote request document
         const quoteRequestRef = await db.collection('quoteRequests').add({
@@ -587,7 +606,7 @@ async (request) => {
             phone,
             zipcode,
             serviceType,
-            package: packageTier,
+            package: packageTier || null,
             garageSize: garageSize || null,
             description: description || null,
             status: 'new',
@@ -598,11 +617,13 @@ async (request) => {
         // Handle photo uploads if present
         let photoUrls = [];
         if (photoData && Array.isArray(photoData) && photoData.length > 0) {
+            console.log(`Uploading ${photoData.length} photos...`);
             const bucket = storage.bucket();
             for (let i = 0; i < photoData.length; i++) {
                 try {
                     const { base64, filename, mimeType } = photoData[i];
                     const buffer = Buffer.from(base64, 'base64');
+                    console.log(`Photo ${i}: ${filename}, ${buffer.length} bytes`);
                     const fileExtension = filename.split('.').pop() || 'jpg';
                     const storagePath = `quote-photos/${quoteRequestRef.id}/${Date.now()}-${i}.${fileExtension}`;
                     const file = bucket.file(storagePath);
@@ -615,6 +636,7 @@ async (request) => {
                     await file.makePublic();
                     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
                     photoUrls.push(publicUrl);
+                    console.log(`Photo ${i} uploaded: ${storagePath}`);
                 }
                 catch (photoError) {
                     console.error(`Error uploading photo ${i}:`, photoError);
@@ -623,6 +645,7 @@ async (request) => {
             // Update quote request with photo URLs
             if (photoUrls.length > 0) {
                 await quoteRequestRef.update({ photoUrls });
+                console.log(`${photoUrls.length} photo URLs saved to quote request`);
             }
         }
         // Send email notification to admin
@@ -630,7 +653,11 @@ async (request) => {
             'get-clean': 'Get Clean',
             'get-organized': 'Get Organized',
             'get-strong': 'Get Strong',
-            'resale': 'Resale Concierge'
+            'resale': 'Resale Concierge',
+            'cleaning': 'Cleaning',
+            'organization': 'Organization',
+            'gym': 'Gym Setup',
+            'full': 'Full Transformation'
         };
         const packageLabels = {
             'undergraduate': 'Undergraduate',
@@ -675,7 +702,7 @@ async (request) => {
         <div class="field-label">Service Details:</div>
         <div class="field-value">
           <strong>Service Type:</strong> ${serviceTypeLabels[serviceType] || serviceType}<br>
-          <strong>Package:</strong> ${packageLabels[packageTier] || packageTier}
+          <strong>Package:</strong> ${packageLabels[packageTier] || packageTier || 'Not selected'}
           ${garageSize ? `<br><strong>Garage Size:</strong> ${garageSize}` : ''}
         </div>
       </div>
@@ -707,13 +734,13 @@ async (request) => {
         await db.collection('mail').add({
             to: ['garagescholars@gmail.com'],
             message: {
-                subject: `📋 New Quote Request: ${name} - ${serviceTypeLabels[serviceType]} (${packageLabels[packageTier]})`,
+                subject: `📋 New Quote Request: ${name} - ${serviceTypeLabels[serviceType] || serviceType} (${packageLabels[packageTier] || 'No package'})`,
                 html: emailHtml,
             },
             quoteRequestId: quoteRequestRef.id,
             createdAt: firestore_2.FieldValue.serverTimestamp()
         });
-        console.log(`Email notification sent for quote request ${quoteRequestRef.id}`);
+        console.log(`Email notification queued for quote request ${quoteRequestRef.id}`);
         // Auto-create a draft job with LEAD status
         const draftJobRef = await db.collection('serviceJobs').add({
             clientName: name,
@@ -722,16 +749,16 @@ async (request) => {
             address: zipcode ? `ZIP: ${zipcode}` : 'Address TBD',
             zipcode: zipcode,
             description: description || 'New lead from website quote form',
-            date: new Date().toISOString(), // Placeholder date
-            scheduledEndTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
-            pay: 0, // To be determined
-            clientPrice: 0, // To be determined
+            date: new Date().toISOString(),
+            scheduledEndTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+            pay: 0,
+            clientPrice: 0,
             status: 'LEAD',
             locationLat: 0,
             locationLng: 0,
             checklist: [],
             serviceType,
-            package: packageTier,
+            package: packageTier || null,
             garageSize: garageSize || null,
             intakeMediaPaths: photoUrls,
             quoteRequestId: quoteRequestRef.id,
@@ -749,7 +776,7 @@ async (request) => {
         };
     }
     catch (error) {
-        console.error('Error submitting quote request:', error);
-        throw new https_1.HttpsError("internal", "Failed to submit quote request");
+        console.error('Error submitting quote request:', error.message, error.stack);
+        throw new https_1.HttpsError("internal", `Failed to submit quote request: ${error.message}`);
     }
 });
