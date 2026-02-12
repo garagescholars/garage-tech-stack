@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -12,6 +45,7 @@ const auth_1 = require("firebase-admin/auth");
 const storage_1 = require("firebase-admin/storage");
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const sharp_1 = __importDefault(require("sharp"));
+const crypto = __importStar(require("crypto"));
 (0, app_1.initializeApp)();
 const db = (0, firestore_2.getFirestore)();
 const storage = (0, storage_1.getStorage)();
@@ -184,6 +218,46 @@ const requireAdmin = async (uid, email) => {
     if (role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Admin role required.");
     }
+};
+// Sanitize a name for use in Storage folder paths (filesystem-safe)
+const sanitizeForPath = (name) => name.trim().replace(/[^a-zA-Z0-9 -]/g, '').replace(/\s+/g, ' ').trim() || 'Unknown';
+// Build the human-readable storage folder name: "ClientName - clientId"
+const buildClientFolder = (name, clientId) => `${sanitizeForPath(name)} - ${clientId}`;
+// Find existing client by email or create a new one in the clients collection
+// Returns { clientId, clientFolder } where clientFolder is the Storage folder name
+const findOrCreateClient = async (name, email, phone, source = 'scheduling') => {
+    const existing = await db.collection('clients')
+        .where('email', '==', email.toLowerCase().trim())
+        .limit(1).get();
+    if (!existing.empty) {
+        const doc = existing.docs[0];
+        const data = doc.data();
+        // Use stored folder name if available, otherwise build it
+        const clientFolder = data.storageFolderName || buildClientFolder(data.name || name, doc.id);
+        // Backfill storageFolderName if missing
+        if (!data.storageFolderName) {
+            await doc.ref.update({ storageFolderName: clientFolder });
+        }
+        return { clientId: doc.id, clientFolder };
+    }
+    const clientRef = await db.collection('clients').add({
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        phone: phone?.trim() || null,
+        source,
+        createdAt: firestore_2.FieldValue.serverTimestamp(),
+        storageFolderName: '', // placeholder — set after we have the ID
+        stats: {
+            totalServiceJobs: 0,
+            totalPropertiesServiced: 0,
+            totalItemsListed: 0,
+            totalItemsSold: 0,
+            totalRevenue: 0
+        }
+    });
+    const clientFolder = buildClientFolder(name, clientRef.id);
+    await clientRef.update({ storageFolderName: clientFolder });
+    return { clientId: clientRef.id, clientFolder };
 };
 exports.approveSignup = (0, https_1.onCall)(async (request) => {
     if (!request.auth) {
@@ -591,6 +665,8 @@ exports.sendJobReviewEmail = (0, firestore_1.onDocumentWritten)("serviceJobs/{jo
 });
 // Submit quote request from website
 exports.submitQuoteRequest = (0, https_1.onCall)({ cors: true, timeoutSeconds: 120, memory: "512MiB" }, async (request) => {
+    console.log('submitQuoteRequest handler entered');
+    console.log('request.data keys:', Object.keys(request.data || {}));
     const { name, email, phone, zipcode, serviceType, package: packageTier, garageSize, description, photoData // Array of base64 encoded images if present
      } = request.data;
     // Validate required fields (package is optional — HTML form doesn't require it)
@@ -599,7 +675,10 @@ exports.submitQuoteRequest = (0, https_1.onCall)({ cors: true, timeoutSeconds: 1
     }
     console.log(`submitQuoteRequest called: name=${name}, email=${email}, serviceType=${serviceType}, package=${packageTier || 'none'}`);
     try {
-        // Create quote request document
+        // Step 1: Find or create client in the clients collection
+        const { clientId, clientFolder } = await findOrCreateClient(name, email, phone);
+        console.log(`Client resolved: ${clientId} (folder: ${clientFolder})`);
+        // Step 2: Create quote request document
         const quoteRequestRef = await db.collection('quoteRequests').add({
             name,
             email,
@@ -610,45 +689,79 @@ exports.submitQuoteRequest = (0, https_1.onCall)({ cors: true, timeoutSeconds: 1
             garageSize: garageSize || null,
             description: description || null,
             status: 'new',
+            clientId,
             createdAt: firestore_2.FieldValue.serverTimestamp(),
             source: 'website'
         });
         console.log(`Quote request created: ${quoteRequestRef.id}`);
-        // Handle photo uploads if present
-        let photoUrls = [];
+        // Step 3: Create draft job with LEAD status (before photo upload so we have jobId for path)
+        const draftJobRef = await db.collection('serviceJobs').add({
+            clientName: name,
+            clientEmail: email,
+            clientPhone: phone,
+            clientId,
+            clientFolder,
+            address: zipcode ? `ZIP: ${zipcode}` : 'Address TBD',
+            zipcode: zipcode,
+            description: description || 'New lead from website quote form',
+            date: new Date().toISOString(),
+            scheduledEndTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+            pay: 0,
+            clientPrice: 0,
+            status: 'LEAD',
+            locationLat: 0,
+            locationLng: 0,
+            checklist: [],
+            serviceType,
+            package: packageTier || null,
+            garageSize: garageSize || null,
+            intakeMediaPaths: [],
+            quoteRequestId: quoteRequestRef.id,
+            createdAt: firestore_2.FieldValue.serverTimestamp(),
+            updatedAt: firestore_2.FieldValue.serverTimestamp()
+        });
+        console.log(`Draft job created with LEAD status: ${draftJobRef.id}`);
+        // Link the job back to the quote request
+        await quoteRequestRef.update({ jobId: draftJobRef.id });
+        // Step 4: Upload photos to client-centric Storage path with human-readable names
+        const intakeMediaPaths = [];
+        const photoEmailUrls = [];
+        const bucket = storage.bucket();
         if (photoData && Array.isArray(photoData) && photoData.length > 0) {
-            console.log(`Uploading ${photoData.length} photos...`);
-            const bucket = storage.bucket();
+            console.log(`Uploading ${photoData.length} photos to clients/${clientFolder}/quote/photos/...`);
             for (let i = 0; i < photoData.length; i++) {
                 try {
-                    const { base64, filename, mimeType } = photoData[i];
+                    const { base64, filename } = photoData[i];
                     const buffer = Buffer.from(base64, 'base64');
                     console.log(`Photo ${i}: ${filename}, ${buffer.length} bytes`);
-                    const fileExtension = filename.split('.').pop() || 'jpg';
-                    const storagePath = `quote-photos/${quoteRequestRef.id}/${Date.now()}-${i}.${fileExtension}`;
+                    const storagePath = `clients/${clientFolder}/quote/photos/photo-${i + 1}.jpg`;
+                    // Generate a download token for email embeds (avoids getSignedUrl permission issues)
+                    const downloadToken = crypto.randomUUID();
                     const file = bucket.file(storagePath);
                     await file.save(buffer, {
                         metadata: {
-                            contentType: mimeType || 'image/jpeg',
+                            contentType: 'image/jpeg',
+                            metadata: { firebaseStorageDownloadTokens: downloadToken }
                         },
                     });
-                    // Make the file publicly accessible
-                    await file.makePublic();
-                    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
-                    photoUrls.push(publicUrl);
+                    intakeMediaPaths.push(storagePath);
+                    // Build a public download URL using the token
+                    const encodedPath = encodeURIComponent(storagePath);
+                    photoEmailUrls.push(`https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`);
                     console.log(`Photo ${i} uploaded: ${storagePath}`);
                 }
                 catch (photoError) {
                     console.error(`Error uploading photo ${i}:`, photoError);
                 }
             }
-            // Update quote request with photo URLs
-            if (photoUrls.length > 0) {
-                await quoteRequestRef.update({ photoUrls });
-                console.log(`${photoUrls.length} photo URLs saved to quote request`);
+            // Update job and quote request with storage paths
+            if (intakeMediaPaths.length > 0) {
+                await draftJobRef.update({ intakeMediaPaths });
+                await quoteRequestRef.update({ photoStoragePaths: intakeMediaPaths });
+                console.log(`${intakeMediaPaths.length} photo paths saved`);
             }
         }
-        // Send email notification to admin
+        // Step 5: Send email notification to admin (use signed URLs for photos)
         const serviceTypeLabels = {
             'get-clean': 'Get Clean',
             'get-organized': 'Get Organized',
@@ -714,16 +827,17 @@ exports.submitQuoteRequest = (0, https_1.onCall)({ cors: true, timeoutSeconds: 1
       </div>
       ` : ''}
 
-      ${photoUrls.length > 0 ? `
+      ${photoEmailUrls.length > 0 ? `
       <div class="photos">
-        <div class="field-label">Photos (${photoUrls.length}):</div>
-        ${photoUrls.map(url => `<img src="${url}" alt="Garage photo">`).join('')}
+        <div class="field-label">Photos (${photoEmailUrls.length}):</div>
+        ${photoEmailUrls.map(url => `<img src="${url}" alt="Garage photo">`).join('')}
       </div>
       ` : ''}
     </div>
 
     <div class="footer">
       <p>Quote Request ID: ${quoteRequestRef.id}</p>
+      <p>Client ID: ${clientId}</p>
       <p>Submitted at ${new Date().toLocaleString()}</p>
       <p><a href="https://console.firebase.google.com/project/${process.env.GCLOUD_PROJECT}/firestore/data/quoteRequests/${quoteRequestRef.id}">View in Firebase Console</a></p>
     </div>
@@ -738,40 +852,15 @@ exports.submitQuoteRequest = (0, https_1.onCall)({ cors: true, timeoutSeconds: 1
                 html: emailHtml,
             },
             quoteRequestId: quoteRequestRef.id,
+            clientId,
             createdAt: firestore_2.FieldValue.serverTimestamp()
         });
         console.log(`Email notification queued for quote request ${quoteRequestRef.id}`);
-        // Auto-create a draft job with LEAD status
-        const draftJobRef = await db.collection('serviceJobs').add({
-            clientName: name,
-            clientEmail: email,
-            clientPhone: phone,
-            address: zipcode ? `ZIP: ${zipcode}` : 'Address TBD',
-            zipcode: zipcode,
-            description: description || 'New lead from website quote form',
-            date: new Date().toISOString(),
-            scheduledEndTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
-            pay: 0,
-            clientPrice: 0,
-            status: 'LEAD',
-            locationLat: 0,
-            locationLng: 0,
-            checklist: [],
-            serviceType,
-            package: packageTier || null,
-            garageSize: garageSize || null,
-            intakeMediaPaths: photoUrls,
-            quoteRequestId: quoteRequestRef.id,
-            createdAt: firestore_2.FieldValue.serverTimestamp(),
-            updatedAt: firestore_2.FieldValue.serverTimestamp()
-        });
-        // Link the job back to the quote request
-        await quoteRequestRef.update({ jobId: draftJobRef.id });
-        console.log(`Draft job created with LEAD status: ${draftJobRef.id}`);
         return {
             success: true,
             quoteRequestId: quoteRequestRef.id,
             jobId: draftJobRef.id,
+            clientId,
             message: 'Quote request submitted successfully and draft job created'
         };
     }

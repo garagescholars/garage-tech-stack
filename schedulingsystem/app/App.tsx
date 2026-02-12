@@ -144,7 +144,9 @@ const App: React.FC = () => {
                   addOns: data.addOns,
                   package: (data as any).package,
                   intakeMediaPaths: data.intakeMediaPaths,
-                  sopId: data.sopId
+                  sopId: data.sopId,
+                  clientId: (data as any).clientId,
+                  clientFolder: (data as any).clientFolder
               };
           });
           setJobs(nextJobs);

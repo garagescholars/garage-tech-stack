@@ -6,6 +6,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../src/firebase';
 import { ArrowLeft, MapPin, CheckCircle, Loader2, CheckSquare, Square, Trash2, Plus, ShieldAlert, Pencil, Calendar, Upload, Clock, AlertTriangle, ChevronDown, ChevronUp, Flag } from 'lucide-react';
+import { resizeImage, resizeFileToBlob } from '../utils/resizeImage';
 
 interface JobDetailProps {
   job: Job;
@@ -79,13 +80,14 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     setMediaBuffer(prev => ({ ...prev, [key]: data, [timestampKey]: finalTimestamp }));
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
             const result = reader.result as string;
-            handleMediaCapture('photoFrontOfHouse', result, new Date().toISOString());
+            const resized = await resizeImage(result, 1600, 0.8);
+            handleMediaCapture('photoFrontOfHouse', resized, new Date().toISOString());
         };
         reader.readAsDataURL(file);
     }
@@ -110,8 +112,11 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
       const response = await fetch(photo);
       const blob = await response.blob();
 
-      // Upload to Firebase Storage
-      const path = `jobs/${job.id}/checkin.jpg`;
+      // Upload to Firebase Storage (client-centric path with legacy fallback)
+      const clientFolder = (job as any).clientFolder;
+      const path = clientFolder
+        ? `clients/${clientFolder}/job/photos/checkin-exterior.jpg`
+        : `jobs/${job.id}/checkin.jpg`;
       const uploadRef = storageRef(storage, path);
       await uploadBytes(uploadRef, blob);
 
@@ -156,11 +161,14 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     try {
       const now = generateTimestamp();
 
-      // Upload photo to Firebase Storage
+      // Upload photo to Firebase Storage (client-centric path with legacy fallback)
+      const clientFolder = (job as any).clientFolder;
       let photoPath = saved?.photoFrontOfHouse || '';
       if (mediaBuffer.photoFrontOfHouse) {
         const photoBlob = await fetch(photo).then(r => r.blob());
-        photoPath = `jobs/${job.id}/checkout.jpg`;
+        photoPath = clientFolder
+          ? `clients/${clientFolder}/outtake/photos/checkout-exterior.jpg`
+          : `jobs/${job.id}/checkout.jpg`;
         await uploadBytes(storageRef(storage, photoPath), photoBlob);
       }
 
@@ -168,7 +176,9 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
       let videoPath = saved?.videoGarage || '';
       if (mediaBuffer.videoGarage) {
         const videoBlob = await fetch(video).then(r => r.blob());
-        videoPath = `jobs/${job.id}/checkout.mp4`;
+        videoPath = clientFolder
+          ? `clients/${clientFolder}/outtake/photos/walkthrough.mp4`
+          : `jobs/${job.id}/checkout.mp4`;
         await uploadBytes(storageRef(storage, videoPath), videoBlob);
       }
 
@@ -224,11 +234,15 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     const availableSlots = Math.max(0, 3 - paths.length);
     const selected = Array.from(files).slice(0, availableSlots);
     if (selected.length === 0) return;
+    const clientFolder = (job as any).clientFolder;
     for (const file of selected) {
-      const safeName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-      const path = `schedulingsystem/jobs/${job.id}/intake/${safeName}`;
+      const safeName = `${Date.now()}_${file.name.replace(/\s+/g, '_').replace(/\.[^.]+$/, '.jpg')}`;
+      const path = clientFolder
+        ? `clients/${clientFolder}/job/photos/${safeName}`
+        : `schedulingsystem/jobs/${job.id}/intake/${safeName}`;
+      const resizedBlob = await resizeFileToBlob(file, 1600, 0.8);
       const uploadRef = storageRef(storage, path);
-      await uploadBytes(uploadRef, file);
+      await uploadBytes(uploadRef, resizedBlob);
       paths.push(path);
     }
     await onUpdateJob({ ...job, intakeMediaPaths: paths });

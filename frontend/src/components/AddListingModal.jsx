@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, UploadCloud, Trash2, Archive, DollarSign, Ban } from 'lucide-react';
-import { db, storage } from '../firebase'; 
+import { db, storage } from '../firebase';
 import { collection, addDoc, updateDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import heic2any from 'heic2any';
 
 export default function AddListingModal({ isOpen, onClose, initialData = null }) {
   const [title, setTitle] = useState('');
@@ -41,6 +42,44 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
     setPlatform('Both'); setImageFiles([]); setPreviews([]);
     setStatusMessage('');
     setShowDeleteMenu(false); // Reset menu
+  };
+
+  // Process image: HEIC → JPEG conversion + resize to 1200px max
+  const processImage = async (file) => {
+    let blob = file;
+
+    // Convert HEIC/HEIF to JPEG
+    const isHeic = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
+    if (isHeic) {
+      const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
+      blob = Array.isArray(converted) ? converted[0] : converted;
+    }
+
+    // Resize via canvas
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1200;
+          let w = img.width, h = img.height;
+          if (w <= maxDim && h <= maxDim) {
+            resolve(new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' }));
+            return;
+          }
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.toBlob((b) => {
+            resolve(new File([b], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+          }, 'image/jpeg', 0.7);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(blob);
+    });
   };
 
   const handleFileChange = (e) => {
@@ -118,10 +157,16 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
         const customDocId = `${cleanClient} - ${cleanTitle}`;
 
         if (imageFiles.length > 0) {
+            setStatusMessage('Processing images...');
             const uploadPromises = imageFiles.map(async (file) => {
-                const fileName = `${Date.now()}_${file.name}`;
-                const storageRef = ref(storage, `${customDocId}/${fileName}`);
-                const snapshot = await uploadBytes(storageRef, file);
+                const processed = await processImage(file);
+                const fileName = `${Date.now()}_${processed.name}`;
+                // Use client-centric path when clientFolder available, otherwise resale/listings
+                const storagePath = initialData?.clientFolder
+                  ? `clients/${initialData.clientFolder}/resale/photos/${fileName}`
+                  : `resale/listings/${customDocId}/photos/${fileName}`;
+                const storageRef = ref(storage, storagePath);
+                const snapshot = await uploadBytes(storageRef, processed);
                 return await getDownloadURL(snapshot.ref);
             });
             const newUrls = await Promise.all(uploadPromises);

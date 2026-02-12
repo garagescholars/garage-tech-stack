@@ -1,15 +1,15 @@
 #!/bin/bash
-# Generate firebase-config.js from environment variables for Vercel deployment
+# Generate firebase-config.js at build time for Vercel deployment
 
-cat > firebase-config.js <<EOF
+cat > firebase-config.js <<'EOF'
 // Firebase Configuration - Generated at build time
 window.firebaseConfig = {
-    apiKey: "${FIREBASE_API_KEY}",
-    authDomain: "${FIREBASE_AUTH_DOMAIN}",
-    projectId: "${FIREBASE_PROJECT_ID}",
-    storageBucket: "${FIREBASE_STORAGE_BUCKET}",
-    messagingSenderId: "${FIREBASE_MESSAGING_SENDER_ID}",
-    appId: "${FIREBASE_APP_ID}"
+    apiKey: "AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8",
+    authDomain: "garage-scholars-v2.firebaseapp.com",
+    projectId: "garage-scholars-v2",
+    storageBucket: "garage-scholars-v2.firebasestorage.app",
+    messagingSenderId: "583159785746",
+    appId: "1:583159785746:web:87d8ed8f5634ea79c26bcb"
 };
 EOF
 
