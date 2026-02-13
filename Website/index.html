@@ -76,7 +76,7 @@
 
             <!-- Service Tabs -->
             <div class="services-grid fade-up">
-                <div class="service-tab active" onclick="showService('declutter')">
+                <div class="service-tab active" onclick="showService('declutter', event)">
                     <div class="tab-header">
                         <div class="tab-title">
                             <i class="fa-solid fa-check check-icon"></i>
@@ -86,7 +86,7 @@
                     </div>
                     <p>Flat fee, responsible removal.</p>
                 </div>
-                <div class="service-tab" onclick="showService('organize')">
+                <div class="service-tab" onclick="showService('organize', event)">
                     <div class="tab-header">
                         <div class="tab-title">
                             <i class="fa-solid fa-check check-icon"></i>
@@ -96,7 +96,7 @@
                     </div>
                     <p>Shelving, totes, neat space.</p>
                 </div>
-                <div class="service-tab" onclick="showService('gym')">
+                <div class="service-tab" onclick="showService('gym', event)">
                     <div class="tab-header">
                         <div class="tab-title">
                             <i class="fa-solid fa-check check-icon"></i>
@@ -106,7 +106,7 @@
                     </div>
                     <p>Full Gym Installation</p>
                 </div>
-                <div class="service-tab" onclick="showService('resale')">
+                <div class="service-tab" onclick="showService('resale', event)">
                     <div class="tab-header">
                         <div class="tab-title">
                             <i class="fa-solid fa-check check-icon"></i>
@@ -343,7 +343,7 @@
         </div>
         <div class="footer-bottom">
             <span class="logo">Garage Scholars</span>
-            <p>&copy; 2024 Garage Scholars. All rights reserved.</p>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
         </div>
     </footer>
 
@@ -427,11 +427,18 @@
             document.getElementById('mobileNav').classList.toggle('open');
         }
 
+        // Close mobile nav when any link inside it is clicked
+        document.querySelectorAll('#mobileNav a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                document.getElementById('mobileNav').classList.remove('open');
+            });
+        });
+
         // ===== Service Tabs =====
-        function showService(service) {
+        function showService(service, e) {
             document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.service-detail').forEach(d => d.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            e.currentTarget.classList.add('active');
             document.getElementById('service-' + service).classList.add('active');
         }
 
@@ -460,7 +467,9 @@
         function resizePhoto(file, maxDim, quality) {
             return new Promise(function(resolve, reject) {
                 var img = new Image();
+                var objectUrl = URL.createObjectURL(file);
                 img.onload = function() {
+                    URL.revokeObjectURL(objectUrl);
                     var w = img.width, h = img.height;
                     if (w > maxDim || h > maxDim) {
                         if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
@@ -472,8 +481,8 @@
                     var dataUrl = canvas.toDataURL('image/jpeg', quality);
                     resolve(dataUrl.split(',')[1]);
                 };
-                img.onerror = reject;
-                img.src = URL.createObjectURL(file);
+                img.onerror = function() { URL.revokeObjectURL(objectUrl); reject(); };
+                img.src = objectUrl;
             });
         }
 
@@ -493,6 +502,7 @@
             const msg = document.getElementById('formMessage');
             msg.textContent = '';
             msg.className = 'form-message';
+            msg.style.display = '';
         }
 
         // Close modal on overlay click
@@ -563,17 +573,25 @@
         // ===== Newsletter =====
         function handleNewsletter(e) {
             e.preventDefault();
-            const email = e.target.querySelector('input[type="email"]').value;
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Subscribing...';
             const db = firebase.firestore();
             db.collection('newsletterSubscriptions').add({
                 email: email,
                 subscribedAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
-                e.target.querySelector('input[type="email"]').value = '';
-                alert('Thank you for subscribing!');
+                form.querySelector('input[type="email"]').value = '';
+                btn.textContent = 'Subscribed!';
+                btn.style.background = 'var(--color-primary-dark)';
+                setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000);
             }).catch(err => {
                 console.error('Newsletter error:', err);
-                alert('Error subscribing. Please try again.');
+                btn.textContent = 'Error - Try Again';
+                btn.style.background = '#c0392b';
+                setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000);
             });
         }
     </script>

@@ -106,7 +106,7 @@
         </div>
         <div class="footer-bottom">
             <span class="logo">Garage Scholars</span>
-            <p>&copy; 2024 Garage Scholars. All rights reserved.</p>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
         </div>
     </footer>
 
@@ -118,10 +118,13 @@
         firebase.initializeApp(window.firebaseConfig);
         function handleNewsletter(e) {
             e.preventDefault();
-            const email = e.target.querySelector('input[type="email"]').value;
-            firebase.firestore().collection('newsletterSubscriptions').add({ email, subscribedAt: firebase.firestore.FieldValue.serverTimestamp() })
-                .then(() => { e.target.querySelector('input[type="email"]').value = ''; alert('Thank you for subscribing!'); })
-                .catch(() => alert('Error. Please try again.'));
+            var form = e.target;
+            var email = form.querySelector('input[type="email"]').value;
+            var btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Subscribing...';
+            firebase.firestore().collection('newsletterSubscriptions').add({ email: email, subscribedAt: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(function() { form.querySelector('input[type="email"]').value = ''; btn.textContent = 'Subscribed!'; btn.style.background = 'var(--color-primary-dark)'; setTimeout(function() { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); })
+                .catch(function() { btn.textContent = 'Error - Try Again'; btn.style.background = '#c0392b'; setTimeout(function() { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); });
         }
     </script>
 

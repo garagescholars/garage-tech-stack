@@ -347,7 +347,7 @@ ul, ol {
     font-size: 1.35rem;
     color: var(--color-white);
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 32px;
 }
 
 .hero-sub {

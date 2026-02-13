@@ -24,6 +24,7 @@
                 <a href="index.html">Home</a>
                 <a href="about.html">About</a>
                 <a href="index.html#services">Services</a>
+                <a href="index.html#pricing">Pricing</a>
                 <a href="contact.html" class="active">Contact</a>
                 <a href="apply.html">Join Our Team</a>
             </nav>
@@ -40,8 +41,11 @@
     <nav class="mobile-nav" id="mobileNav">
         <a href="index.html">Home</a>
         <a href="about.html">About</a>
+        <a href="index.html#services">Services</a>
+        <a href="index.html#pricing">Pricing</a>
         <a href="contact.html">Contact</a>
         <a href="apply.html">Join Our Team</a>
+        <a href="coming-soon.html" class="btn btn-outline">Visualize Your Garage</a>
         <button class="btn btn-primary" onclick="openQuoteModal()">Get a Quote</button>
     </nav>
 
@@ -52,7 +56,7 @@
             <p class="subtitle">Our friendly team would love to hear from you.</p>
             <form id="contactForm" onsubmit="handleContactForm(event)">
                 <div class="form-group">
-                    <label for="contact-name">First Name</label>
+                    <label for="contact-name">Name</label>
                     <input type="text" id="contact-name" name="name" required>
                 </div>
                 <div class="form-group">
@@ -65,7 +69,7 @@
                 </div>
                 <div class="form-checkbox">
                     <input type="checkbox" id="contact-terms" required>
-                    <label for="contact-terms">I accept the terms</label>
+                    <label for="contact-terms">I accept the <a href="termsofuse.html" style="color: var(--color-primary);">Terms of Use</a></label>
                 </div>
                 <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Submit</button>
             </form>
@@ -112,7 +116,7 @@
         </div>
         <div class="footer-bottom">
             <span class="logo">Garage Scholars</span>
-            <p>&copy; 2024 Garage Scholars. All rights reserved.</p>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
         </div>
     </footer>
 
@@ -151,6 +155,7 @@
 
     <script>
         function toggleMobileNav() { document.getElementById('mobileNav').classList.toggle('open'); }
+        document.querySelectorAll('#mobileNav a').forEach(function(link) { link.addEventListener('click', function() { document.getElementById('mobileNav').classList.remove('open'); }); });
 
         firebase.initializeApp(window.firebaseConfig);
         const functions = firebase.functions();
@@ -165,7 +170,7 @@
             document.getElementById('quoteModal').classList.remove('open');
             document.body.style.overflow = 'auto';
             document.getElementById('quoteForm').reset();
-            const msg = document.getElementById('formMessage'); msg.textContent = ''; msg.className = 'form-message';
+            const msg = document.getElementById('formMessage'); msg.textContent = ''; msg.className = 'form-message'; msg.style.display = '';
         }
         document.getElementById('quoteModal').addEventListener('click', function(e) { if (e.target === this) closeQuoteModal(); });
 
@@ -173,7 +178,9 @@
         function resizePhoto(file, maxDim, quality) {
             return new Promise(function(resolve, reject) {
                 var img = new Image();
+                var objectUrl = URL.createObjectURL(file);
                 img.onload = function() {
+                    URL.revokeObjectURL(objectUrl);
                     var w = img.width, h = img.height;
                     if (w > maxDim || h > maxDim) {
                         if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
@@ -185,8 +192,8 @@
                     var dataUrl = canvas.toDataURL('image/jpeg', quality);
                     resolve(dataUrl.split(',')[1]);
                 };
-                img.onerror = reject;
-                img.src = URL.createObjectURL(file);
+                img.onerror = function() { URL.revokeObjectURL(objectUrl); reject(); };
+                img.src = objectUrl;
             });
         }
 
@@ -215,20 +222,25 @@
 
         function handleContactForm(e) {
             e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Sending...';
             const name = document.getElementById('contact-name').value;
             const email = document.getElementById('contact-email').value;
             const message = document.getElementById('contact-message').value;
             db.collection('contactSubmissions').add({ name, email, message, submittedAt: firebase.firestore.FieldValue.serverTimestamp() })
-                .then(() => { alert('Thank you! We\'ll be in touch soon.'); e.target.reset(); })
-                .catch(err => { console.error(err); alert('Error submitting. Please try again or call us at (720) 507-3969.'); });
+                .then(() => { btn.textContent = 'Sent!'; btn.style.background = 'var(--color-primary-dark)'; e.target.reset(); setTimeout(() => { btn.textContent = 'Submit'; btn.style.background = ''; btn.disabled = false; }, 3000); })
+                .catch(err => { console.error(err); btn.textContent = 'Error - Try Again'; btn.style.background = '#c0392b'; setTimeout(() => { btn.textContent = 'Submit'; btn.style.background = ''; btn.disabled = false; }, 3000); });
         }
 
         function handleNewsletter(e) {
             e.preventDefault();
-            const email = e.target.querySelector('input[type="email"]').value;
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Subscribing...';
             db.collection('newsletterSubscriptions').add({ email, subscribedAt: firebase.firestore.FieldValue.serverTimestamp() })
-                .then(() => { e.target.querySelector('input[type="email"]').value = ''; alert('Thank you for subscribing!'); })
-                .catch(err => { console.error(err); alert('Error. Please try again.'); });
+                .then(() => { form.querySelector('input[type="email"]').value = ''; btn.textContent = 'Subscribed!'; btn.style.background = 'var(--color-primary-dark)'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); })
+                .catch(err => { console.error(err); btn.textContent = 'Error - Try Again'; btn.style.background = '#c0392b'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); });
         }
     </script>
 

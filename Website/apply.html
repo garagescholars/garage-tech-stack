@@ -151,6 +151,47 @@
         </div>
     </div>
 
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="newsletter">
+                <h3>Join our newsletter</h3>
+                <p>Sign up for our newsletter to receive exclusive deals, service updates, and garage organization tips. Stay informed!</p>
+                <form class="newsletter-form" onsubmit="handleNewsletter(event)">
+                    <input type="email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
+                <p class="newsletter-disclaimer">By subscribing you agree to our <a href="privacypolicy.html">Privacy Policy</a></p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Menu</h4>
+                    <a href="index.html">Home</a>
+                    <a href="about.html">About</a>
+                    <a href="index.html#services">Services</a>
+                    <a href="contact.html">Contact</a>
+                    <a href="apply.html">Join Our Team</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Quick Links</h4>
+                    <a href="index.html#pricing">Pricing</a>
+                    <a href="privacypolicy.html">Privacy Policy</a>
+                    <a href="termsofuse.html">Terms of Use</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <a href="tel:7205073969">(720) 507-3969</a>
+                    <a href="mailto:garagescholars@gmail.com">garagescholars@gmail.com</a>
+                    <span style="color: var(--color-text-muted); font-size: 0.9rem;">Serving the Denver Metro Area</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="logo">Garage Scholars</span>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
+        </div>
+    </footer>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -159,6 +200,7 @@
 
     <script>
         function toggleMobileNav() { document.getElementById('mobileNav').classList.toggle('open'); }
+        document.querySelectorAll('#mobileNav a').forEach(function(link) { link.addEventListener('click', function() { document.getElementById('mobileNav').classList.remove('open'); }); });
 
         firebase.initializeApp(window.firebaseConfig);
         const db = firebase.firestore();
@@ -201,6 +243,13 @@
 
                 const resumeFile = document.getElementById('resume').files[0];
                 if (resumeFile) {
+                    if (resumeFile.size > 5 * 1024 * 1024) {
+                        errorMessage.textContent = 'Resume file is too large. Please upload a file under 5MB.';
+                        errorMessage.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Apply Now';
+                        return;
+                    }
                     const resumeRef = storage.ref('scholar-resumes/' + Date.now() + '-' + resumeFile.name);
                     await resumeRef.put(resumeFile);
                     formData.resumeURL = await resumeRef.getDownloadURL();
@@ -217,6 +266,16 @@
                 submitBtn.textContent = 'Apply Now';
             }
         });
+        function handleNewsletter(e) {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Subscribing...';
+            db.collection('newsletterSubscriptions').add({ email, subscribedAt: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(() => { form.querySelector('input[type="email"]').value = ''; btn.textContent = 'Subscribed!'; btn.style.background = 'var(--color-primary-dark)'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); })
+                .catch(err => { console.error(err); btn.textContent = 'Error - Try Again'; btn.style.background = '#c0392b'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); });
+        }
     </script>
 
 </body>

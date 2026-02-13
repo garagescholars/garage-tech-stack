@@ -24,6 +24,7 @@
                 <a href="index.html">Home</a>
                 <a href="about.html" class="active">About</a>
                 <a href="index.html#services">Services</a>
+                <a href="index.html#pricing">Pricing</a>
                 <a href="contact.html">Contact</a>
                 <a href="apply.html">Join Our Team</a>
             </nav>
@@ -41,6 +42,7 @@
         <a href="index.html">Home</a>
         <a href="about.html">About</a>
         <a href="index.html#services">Services</a>
+        <a href="index.html#pricing">Pricing</a>
         <a href="contact.html">Contact</a>
         <a href="apply.html">Join Our Team</a>
         <a href="coming-soon.html" class="btn btn-outline">Visualize Your Garage</a>
@@ -147,7 +149,7 @@
         </div>
         <div class="footer-bottom">
             <span class="logo">Garage Scholars</span>
-            <p>&copy; 2024 Garage Scholars. All rights reserved.</p>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
         </div>
     </footer>
 
@@ -226,6 +228,7 @@
 
     <script>
         function toggleMobileNav() { document.getElementById('mobileNav').classList.toggle('open'); }
+        document.querySelectorAll('#mobileNav a').forEach(function(link) { link.addEventListener('click', function() { document.getElementById('mobileNav').classList.remove('open'); }); });
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
@@ -239,7 +242,9 @@
         function resizePhoto(file, maxDim, quality) {
             return new Promise(function(resolve, reject) {
                 var img = new Image();
+                var objectUrl = URL.createObjectURL(file);
                 img.onload = function() {
+                    URL.revokeObjectURL(objectUrl);
                     var w = img.width, h = img.height;
                     if (w > maxDim || h > maxDim) {
                         if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
@@ -251,8 +256,8 @@
                     var dataUrl = canvas.toDataURL('image/jpeg', quality);
                     resolve(dataUrl.split(',')[1]);
                 };
-                img.onerror = reject;
-                img.src = URL.createObjectURL(file);
+                img.onerror = function() { URL.revokeObjectURL(objectUrl); reject(); };
+                img.src = objectUrl;
             });
         }
 
@@ -265,7 +270,7 @@
             document.getElementById('quoteModal').classList.remove('open');
             document.body.style.overflow = 'auto';
             document.getElementById('quoteForm').reset();
-            const msg = document.getElementById('formMessage'); msg.textContent = ''; msg.className = 'form-message';
+            const msg = document.getElementById('formMessage'); msg.textContent = ''; msg.className = 'form-message'; msg.style.display = '';
         }
         document.getElementById('quoteModal').addEventListener('click', function(e) { if (e.target === this) closeQuoteModal(); });
 
@@ -292,10 +297,13 @@
 
         function handleNewsletter(e) {
             e.preventDefault();
-            const email = e.target.querySelector('input[type="email"]').value;
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Subscribing...';
             firebase.firestore().collection('newsletterSubscriptions').add({ email, subscribedAt: firebase.firestore.FieldValue.serverTimestamp() })
-                .then(() => { e.target.querySelector('input[type="email"]').value = ''; alert('Thank you for subscribing!'); })
-                .catch(err => { console.error(err); alert('Error subscribing. Please try again.'); });
+                .then(() => { form.querySelector('input[type="email"]').value = ''; btn.textContent = 'Subscribed!'; btn.style.background = 'var(--color-primary-dark)'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); })
+                .catch(err => { console.error(err); btn.textContent = 'Error - Try Again'; btn.style.background = '#c0392b'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); });
         }
     </script>
 
