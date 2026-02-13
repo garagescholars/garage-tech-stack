@@ -323,9 +323,6 @@ ul, ol {
     height: auto;
     margin: 0 auto 24px;
     display: block;
-    background: rgba(255, 255, 255, 0.93);
-    border-radius: 18px;
-    padding: 18px 22px 10px;
 }
 
 .hero-headline {
