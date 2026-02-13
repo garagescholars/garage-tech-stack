@@ -1,40 +1,149 @@
 const { ebayRequest } = require('./ebayClient');
 const { getSetup, EBAY_MARKETPLACE_ID } = require('./ebaySetup');
+const { logger } = require('../lib/logger');
 
 const EBAY_PUBLISH_ENABLED = (process.env.EBAY_PUBLISH_ENABLED || 'false') === 'true';
 const DEFAULT_CATEGORY_ID = process.env.EBAY_DEFAULT_CATEGORY_ID || '11700';
 
+// --- Price parsing (handles $, commas, whitespace correctly) ---
+
 const parsePrice = (value) => {
     if (value === null || value === undefined) return null;
-    const num = Number(String(value).replace(/[^0-9.]/g, ''));
-    return Number.isFinite(num) ? num : null;
+    const str = String(value).trim();
+    // Remove currency symbols and whitespace, then remove commas (thousands separators)
+    // "$1,234.56" → "1234.56", "1234" → "1234", "$12.99" → "12.99"
+    // Reject negative values upfront
+    if (str.startsWith('-')) return null;
+    const cleaned = str.replace(/[^0-9.,]/g, '').replace(/,/g, '');
+    const num = Number(cleaned);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    // Round to 2 decimal places (eBay requires valid currency)
+    return Math.round(num * 100) / 100;
+};
+
+// --- Condition mapping (expanded) ---
+
+const CONDITION_MAP = {
+    'NEW': { id: 1000, label: 'NEW' },
+    'LIKE NEW': { id: 1500, label: 'LIKE_NEW' },
+    'LIKE_NEW': { id: 1500, label: 'LIKE_NEW' },
+    'EXCELLENT': { id: 2000, label: 'VERY_GOOD' },
+    'VERY GOOD': { id: 2000, label: 'VERY_GOOD' },
+    'VERY_GOOD': { id: 2000, label: 'VERY_GOOD' },
+    'GOOD': { id: 2500, label: 'GOOD' },
+    'USED': { id: 3000, label: 'USED_EXCELLENT' },
+    'ACCEPTABLE': { id: 4000, label: 'USED_ACCEPTABLE' },
+    'REFURBISHED': { id: 2000, label: 'SELLER_REFURBISHED' },
+    'SELLER_REFURBISHED': { id: 2000, label: 'SELLER_REFURBISHED' },
+    'FOR PARTS': { id: 7000, label: 'FOR_PARTS_OR_NOT_WORKING' },
+    'FOR_PARTS': { id: 7000, label: 'FOR_PARTS_OR_NOT_WORKING' },
+    'NOT WORKING': { id: 7000, label: 'FOR_PARTS_OR_NOT_WORKING' }
 };
 
 const normalizeCondition = (condition) => {
-    const normalized = String(condition || '').toUpperCase();
-    if (normalized.includes('NEW')) return 'NEW';
-    return 'USED';
+    const key = String(condition || '').trim().toUpperCase();
+    return CONDITION_MAP[key] || CONDITION_MAP['USED'];
 };
-
-const conditionToId = (condition) => (condition === 'NEW' ? 1000 : 3000);
 
 const sanitizeSku = (sku) => String(sku).replace(/[^a-zA-Z0-9_-]/g, '_');
 
+// --- Image validation ---
+
+/**
+ * Validate and filter image URLs before sending to eBay API.
+ * eBay requires HTTPS URLs pointing to accessible images.
+ */
+const validateImageUrls = (imageUrls) => {
+    if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+        return { valid: [], warnings: ['No images provided — eBay listings without images perform poorly'] };
+    }
+
+    const valid = [];
+    const warnings = [];
+
+    for (let i = 0; i < imageUrls.length; i++) {
+        const url = imageUrls[i];
+        if (!url || typeof url !== 'string') {
+            warnings.push(`Image ${i + 1}: invalid URL (empty or not a string)`);
+            continue;
+        }
+
+        // Must be HTTPS (eBay requirement)
+        if (!url.startsWith('https://')) {
+            warnings.push(`Image ${i + 1}: not HTTPS — skipped (${url.slice(0, 60)})`);
+            continue;
+        }
+
+        // Skip obvious placeholders
+        const placeholders = ['via.placeholder.com', 'placeholder.com', 'placehold.it', 'dummyimage.com'];
+        if (placeholders.some(p => url.includes(p))) {
+            warnings.push(`Image ${i + 1}: placeholder URL — skipped`);
+            continue;
+        }
+
+        valid.push(url);
+    }
+
+    return { valid, warnings };
+};
+
+// --- Error formatting ---
+
 const formatEbayError = (error) => {
     const payload = error.response?.data || null;
+    const status = error.response?.status || null;
+
     if (!payload) {
         return {
             message: error.message || String(error),
-            code: null,
-            rawError: null
+            code: error.code || null,
+            status,
+            rawError: null,
+            isAuthError: error.code === 'EBAY_AUTH_FAILED'
         };
     }
+
     const errors = payload.errors || [];
-    const message = errors[0]?.message || 'eBay API error';
+    const message = errors.map(e => e.message).filter(Boolean).join('; ') || 'eBay API error';
     const code = errors[0]?.errorId || errors[0]?.errorCode || null;
-    const rawError = JSON.stringify(payload).slice(0, 2000);
-    return { message, code, rawError };
+    const rawError = JSON.stringify(payload).slice(0, 3000);
+
+    return { message, code, status, rawError, isAuthError: status === 401 };
 };
+
+// --- Offer error handling (robust extraction of existing offerId) ---
+
+/**
+ * Try to extract an existing offerId from an eBay offer creation error.
+ * eBay returns error 25002 when an offer already exists for the SKU.
+ */
+const extractExistingOfferId = (error) => {
+    try {
+        const errors = error.response?.data?.errors;
+        if (!Array.isArray(errors)) return null;
+
+        for (const err of errors) {
+            // Check error ID for "offer already exists" variants
+            const errorId = err.errorId || err.errorCode;
+            if (errorId !== 25002 && errorId !== '25002') continue;
+
+            // Try multiple paths to extract the offerId
+            const params = err.parameters || [];
+            for (const param of params) {
+                if (param.name === 'offerId' && param.value) return param.value;
+            }
+
+            // Fallback: check the error message for an offerId pattern
+            const msgMatch = (err.message || '').match(/offer\s+(\d+)/i);
+            if (msgMatch) return msgMatch[1];
+        }
+    } catch (_) {
+        // Parsing failed — return null
+    }
+    return null;
+};
+
+// --- API operations ---
 
 const upsertInventoryItem = async (db, sku, payload) => {
     return ebayRequest(db, {
@@ -62,6 +171,8 @@ const publishOffer = async (db, offerId) => {
     return response.data.listingId;
 };
 
+// --- Main listing function ---
+
 const runEbayListing = async ({ inventoryId, item, publicTitle, publicDescription, db, admin }) => {
     const setup = await getSetup(db);
     const marketplaceId = setup?.marketplaceId || EBAY_MARKETPLACE_ID;
@@ -81,27 +192,38 @@ const runEbayListing = async ({ inventoryId, item, publicTitle, publicDescriptio
     const sku = sanitizeSku(item.ebay?.sku || `gs_${inventoryId}`);
     const price = parsePrice(item.price);
     if (!price) {
-        return { ok: false, message: 'Invalid price for eBay listing', code: 'INVALID_PRICE' };
+        return { ok: false, message: `Invalid price for eBay listing: "${item.price}"`, code: 'INVALID_PRICE' };
+    }
+    if (price > 99999) {
+        return { ok: false, message: `Price $${price} exceeds eBay reasonable limit`, code: 'INVALID_PRICE' };
     }
 
     const categoryId = item.ebayCategoryId || DEFAULT_CATEGORY_ID;
     if (!item.ebayCategoryId) {
-        console.warn(`[EBAY] Using fallback category ${categoryId} for ${inventoryId}`);
+        logger.warn('Using fallback eBay category', { categoryId, inventoryId });
     }
 
     const condition = normalizeCondition(item.condition);
     const description = publicDescription || publicTitle;
 
+    // Validate images before sending to eBay
+    const imageResult = validateImageUrls(item.imageUrls);
+    if (imageResult.warnings.length > 0) {
+        logger.warn('eBay image validation warnings', { warnings: imageResult.warnings, inventoryId });
+    }
+
     try {
+        // Step 1: Upsert inventory item
         await upsertInventoryItem(db, sku, {
             availability: { shipToLocationAvailability: { quantity: 1 } },
             product: {
-                title: publicTitle,
-                description,
-                imageUrls: item.imageUrls || []
+                title: publicTitle.slice(0, 80), // eBay max title length
+                description: description.slice(0, 4000), // Reasonable description limit
+                imageUrls: imageResult.valid.length > 0 ? imageResult.valid : (item.imageUrls || [])
             }
         });
 
+        // Step 2: Create or reuse offer
         let offerId = item.ebay?.offerId || null;
         if (!offerId) {
             try {
@@ -111,21 +233,21 @@ const runEbayListing = async ({ inventoryId, item, publicTitle, publicDescriptio
                     format: 'FIXED_PRICE',
                     availableQuantity: 1,
                     categoryId,
-                    conditionId: conditionToId(condition),
+                    listingDescription: description.slice(0, 4000),
                     merchantLocationKey,
-                    listingDescription: description,
+                    conditionId: String(condition.id),
                     listingPolicies: {
                         fulfillmentPolicyId,
                         paymentPolicyId,
                         returnPolicyId
                     },
-                    pricingSummary: { price: { value: price, currency: 'USD' } }
+                    pricingSummary: { price: { value: String(price), currency: 'USD' } }
                 });
             } catch (error) {
-                const existingOfferId = error.response?.data?.errors?.[0]?.parameters?.find(
-                    (param) => param.name === 'offerId'
-                )?.value;
+                // Check if an offer already exists for this SKU
+                const existingOfferId = extractExistingOfferId(error);
                 if (existingOfferId) {
+                    logger.info('Using existing eBay offer', { offerId: existingOfferId, sku });
                     offerId = existingOfferId;
                 } else {
                     throw error;
@@ -133,6 +255,7 @@ const runEbayListing = async ({ inventoryId, item, publicTitle, publicDescriptio
             }
         }
 
+        // Step 3: Publish (if enabled)
         let listingId = item.ebay?.listingId || null;
         let status = 'ready_to_publish';
         if (EBAY_PUBLISH_ENABLED) {
@@ -159,6 +282,17 @@ const runEbayListing = async ({ inventoryId, item, publicTitle, publicDescriptio
         };
     } catch (error) {
         const formatted = formatEbayError(error);
+
+        // Provide actionable guidance for auth failures
+        if (formatted.isAuthError) {
+            return {
+                ok: false,
+                message: `eBay auth failed — run cliAuth.js to re-authorize. (${formatted.message})`,
+                code: 'EBAY_AUTH_FAILED',
+                rawError: formatted.rawError
+            };
+        }
+
         return {
             ok: false,
             message: formatted.message,
@@ -168,4 +302,4 @@ const runEbayListing = async ({ inventoryId, item, publicTitle, publicDescriptio
     }
 };
 
-module.exports = { runEbayListing };
+module.exports = { runEbayListing, parsePrice, validateImageUrls };

@@ -1,4 +1,5 @@
 const { ebayRequest } = require('./ebayClient');
+const { logger } = require('../lib/logger');
 
 const EBAY_SETUP_DOC_PATH = 'integrations/ebay';
 const EBAY_MARKETPLACE_ID = process.env.EBAY_MARKETPLACE_ID || 'EBAY_US';
@@ -58,7 +59,7 @@ const ensureMerchantLocation = async (db, merchantLocationKey = DEFAULT_MERCHANT
     if (existing) return merchantLocationKey;
     if (locations.length > 0) {
         const fallback = pickExistingLocation(locations);
-        console.warn(`[EBAY] Using existing merchant location: ${fallback.merchantLocationKey}`);
+        logger.warn('Using existing merchant location', { merchantLocationKey: fallback.merchantLocationKey });
         return fallback.merchantLocationKey;
     }
     const address = { ...DEFAULT_LOCATION, ...(addressOverride || {}) };
@@ -94,7 +95,7 @@ const ensurePaymentPolicy = async (db, marketplaceId, name = DEFAULT_POLICY_NAME
     const existing = findPolicyByName(policies, name);
     if (existing?.paymentPolicyId) return existing.paymentPolicyId;
     if (policies.length > 0) {
-        console.warn(`[EBAY] Using existing payment policy: ${policies[0].paymentPolicyId}`);
+        logger.warn('Using existing payment policy', { paymentPolicyId: policies[0].paymentPolicyId });
         return policies[0].paymentPolicyId;
     }
 
@@ -124,7 +125,7 @@ const ensureFulfillmentPolicy = async (db, marketplaceId, name = DEFAULT_POLICY_
     const existing = findPolicyByName(policies, name);
     if (existing?.fulfillmentPolicyId) return existing.fulfillmentPolicyId;
     if (policies.length > 0) {
-        console.warn(`[EBAY] Using existing fulfillment policy: ${policies[0].fulfillmentPolicyId}`);
+        logger.warn('Using existing fulfillment policy', { fulfillmentPolicyId: policies[0].fulfillmentPolicyId });
         return policies[0].fulfillmentPolicyId;
     }
 
@@ -165,7 +166,7 @@ const ensureReturnPolicy = async (db, marketplaceId, name = DEFAULT_POLICY_NAMES
     const existing = findPolicyByName(policies, name);
     if (existing?.returnPolicyId) return existing.returnPolicyId;
     if (policies.length > 0) {
-        console.warn(`[EBAY] Using existing return policy: ${policies[0].returnPolicyId}`);
+        logger.warn('Using existing return policy', { returnPolicyId: policies[0].returnPolicyId });
         return policies[0].returnPolicyId;
     }
 
