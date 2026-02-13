@@ -323,6 +323,7 @@ ul, ol {
     height: auto;
     margin: 0 auto 24px;
     display: block;
+    filter: invert(1);
 }
 
 .hero-headline {
