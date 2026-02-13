@@ -319,11 +319,13 @@ ul, ol {
 }
 
 .hero-logo {
-    width: 280px;
+    width: 240px;
     height: auto;
     margin: 0 auto 24px;
     display: block;
-    filter: brightness(0) invert(1);
+    background: rgba(255, 255, 255, 0.93);
+    border-radius: 18px;
+    padding: 18px 22px 10px;
 }
 
 .hero-headline {
@@ -372,7 +374,7 @@ ul, ol {
     }
 
     .hero-logo {
-        width: 240px;
+        width: 200px;
     }
 
     .hero-headline {
