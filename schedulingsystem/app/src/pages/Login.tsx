@@ -38,7 +38,7 @@ const Login: React.FC = () => {
   }, [profile?.status, navigate]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 page-enter">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
         <h1 className="text-2xl font-bold text-slate-800 mb-2">Log In</h1>
         <p className="text-sm text-slate-500 mb-6">Access the Scheduling System.</p>

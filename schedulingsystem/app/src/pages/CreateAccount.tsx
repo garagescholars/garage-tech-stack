@@ -43,11 +43,8 @@ const CreateAccount: React.FC = () => {
     }
     setLoading(true);
     try {
-      console.log('Creating user account...');
       const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
-      console.log('User created:', cred.user.uid);
 
-      console.log('Creating signup request...');
       const requestRef = await addDoc(collection(db, "signupRequests"), {
         email: normalizedEmail,
         name: name.trim(),
@@ -55,9 +52,7 @@ const CreateAccount: React.FC = () => {
         status: "pending",
         createdAt: serverTimestamp()
       });
-      console.log('Signup request created:', requestRef.id);
 
-      console.log('Creating user document...');
       await setDoc(doc(db, COLLECTIONS.PROFILES, cred.user.uid), {
         email: normalizedEmail,
         fullName: name.trim(),
@@ -67,9 +62,7 @@ const CreateAccount: React.FC = () => {
         createdAt: serverTimestamp(),
         requestId: requestRef.id
       }, { merge: true });
-      console.log('User document created');
 
-      console.log('Creating admin notification...');
       await addDoc(collection(db, "adminNotifications"), {
         type: "signup_request",
         requestId: requestRef.id,
@@ -77,14 +70,10 @@ const CreateAccount: React.FC = () => {
         createdAt: serverTimestamp(),
         unread: true
       });
-      console.log('Admin notification created');
 
-      console.log('Signing out...');
       await signOut(auth);
-      console.log('Signed out successfully');
 
       setLoading(false);
-      console.log('Navigating to pending approval...');
       navigate("/pending-approval", { replace: true });
     } catch (err) {
       console.error('Account creation error:', err);
@@ -95,7 +84,7 @@ const CreateAccount: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 page-enter">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
         <h1 className="text-2xl font-bold text-slate-800 mb-2">Create Account</h1>
         <p className="text-sm text-slate-500 mb-6">Submit your request for approval.</p>

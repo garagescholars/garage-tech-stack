@@ -7,7 +7,7 @@ import { functions, db, storage } from "../firebase";
 import { useAuth } from "../auth/AuthProvider";
 import { COLLECTIONS } from "../collections";
 import { JobStatus, ServiceJob } from "../../types";
-import { DollarSign, Package, UserPlus, Settings, Trophy } from "lucide-react";
+import { DollarSign, Package, UserPlus, Settings, Trophy, ClipboardCheck, Bell, Users } from "lucide-react";
 import JobToInventoryModal from "../components/JobToInventoryModal";
 
 type SignupRequest = {
@@ -70,8 +70,20 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-500">
-        Loading...
+      <div className="min-h-screen bg-slate-50 page-enter">
+        <header style={{ background: 'linear-gradient(to bottom, #0f1b2d, #162340)' }}>
+          <div className="max-w-3xl mx-auto px-6 pt-6 pb-6">
+            <div className="skeleton h-3 w-20 mb-3" style={{ background: 'rgba(255,255,255,0.1)' }}></div>
+            <div className="skeleton h-7 w-40 mb-1" style={{ background: 'rgba(255,255,255,0.1)' }}></div>
+            <div className="skeleton h-4 w-24" style={{ background: 'rgba(255,255,255,0.1)' }}></div>
+          </div>
+        </header>
+        <div className="max-w-3xl mx-auto px-6 py-6 space-y-4">
+          <div className="skeleton h-10 w-full"></div>
+          <div className="skeleton h-32 w-full"></div>
+          <div className="skeleton h-32 w-full"></div>
+          <div className="skeleton h-32 w-full"></div>
+        </div>
       </div>
     );
   }
@@ -296,7 +308,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 page-enter">
       {/* Header Banner */}
       <header className="text-white" style={{ background: 'linear-gradient(to bottom, #0f1b2d, #162340)' }}>
         <div className="max-w-3xl mx-auto px-6 pt-6 pb-6">
@@ -322,16 +334,16 @@ const AdminDashboard: React.FC = () => {
       <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
         {/* Admin Navigation */}
         <div className="flex items-center gap-3 flex-wrap">
-          <Link to="/admin/leads" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
+          <Link to="/admin/leads" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 btn-press">
             <UserPlus size={16} /> Leads
           </Link>
-          <Link to="/admin/payouts" className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+          <Link to="/admin/payouts" className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700 btn-press">
             <DollarSign size={16} /> Payouts
           </Link>
-          <Link to="/admin/settings" className="flex items-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-700">
+          <Link to="/admin/settings" className="flex items-center gap-2 bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-700 btn-press">
             <Settings size={16} /> Settings
           </Link>
-          <button onClick={() => navigate("/admin/create-job")} className="bg-slate-700 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+          <button onClick={() => navigate("/admin/create-job")} className="bg-slate-700 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors btn-press">
             + Create Job
           </button>
         </div>
@@ -342,7 +354,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 card-hover">
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-slate-800 text-sm">View As Scholar</h2>
             <button onClick={() => setViewAsUid(null)} className="text-xs text-slate-500">Clear</button>
@@ -352,7 +364,11 @@ const AdminDashboard: React.FC = () => {
           ) : scholarsError ? (
             <div className="text-sm text-rose-600">{scholarsError}</div>
           ) : scholars.length === 0 ? (
-            <div className="text-sm text-slate-500">No active scholars.</div>
+            <div className="text-center py-6">
+              <Users size={32} className="text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 font-medium">No active scholars</p>
+              <p className="text-xs text-slate-400 mt-1">Approved scholars will appear here</p>
+            </div>
           ) : (
             <select
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
@@ -367,14 +383,18 @@ const AdminDashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
           <h2 className="font-bold text-slate-800 text-sm mb-3">Jobs Pending Review</h2>
           {jobsReviewLoading ? (
             <div className="text-sm text-slate-500">Loading jobs...</div>
           ) : jobsReviewError ? (
             <div className="text-sm text-rose-600">{jobsReviewError}</div>
           ) : jobsForReview.length === 0 ? (
-            <div className="text-sm text-slate-500">No jobs awaiting review.</div>
+            <div className="text-center py-8">
+              <ClipboardCheck size={32} className="text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 font-medium">No jobs awaiting review</p>
+              <p className="text-xs text-slate-400 mt-1">Submitted jobs will appear here for approval</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {jobsForReview.map((job) => (
@@ -385,7 +405,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setReviewModalJob(job)}
-                    className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 text-white"
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 text-white btn-press"
                   >
                     Review
                   </button>
@@ -396,7 +416,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Phase X: Completed Jobs - Inventory Extraction */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
               <Package size={16} className="text-emerald-600" />
@@ -409,7 +429,11 @@ const AdminDashboard: React.FC = () => {
           {completedJobsLoading ? (
             <div className="text-sm text-slate-500">Loading completed jobs...</div>
           ) : completedJobs.length === 0 ? (
-            <div className="text-sm text-slate-500">No completed jobs yet.</div>
+            <div className="text-center py-8">
+              <Package size={32} className="text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 font-medium">No completed jobs yet</p>
+              <p className="text-xs text-slate-400 mt-1">Completed jobs will appear here for inventory extraction</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {completedJobs.slice(0, 5).map((job) => (
@@ -428,7 +452,7 @@ const AdminDashboard: React.FC = () => {
                   <button
                     onClick={() => setExtractInventoryJob(job)}
                     disabled={job.inventoryExtracted}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 ${
+                    className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 btn-press ${
                       job.inventoryExtracted
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                         : 'bg-emerald-600 text-white hover:bg-emerald-700'
@@ -443,14 +467,18 @@ const AdminDashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
           <h2 className="font-bold text-slate-800 text-sm mb-3">Pending Signup Requests</h2>
           {requestsLoading ? (
             <div className="text-sm text-slate-500">Loading requests...</div>
           ) : requestsError ? (
             <div className="text-sm text-rose-600">{requestsError}</div>
           ) : requests.filter(r => r.status === "pending").length === 0 ? (
-            <div className="text-sm text-slate-500">No pending requests.</div>
+            <div className="text-center py-8">
+              <UserPlus size={32} className="text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 font-medium">No pending requests</p>
+              <p className="text-xs text-slate-400 mt-1">New requests will appear here</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {requests.filter(r => r.status === "pending").map((request) => (
@@ -463,14 +491,14 @@ const AdminDashboard: React.FC = () => {
                     <button
                       onClick={() => handleDecision(request.id, "approve")}
                       disabled={busyId === request.id}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 text-white"
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 text-white btn-press"
                     >
                       Approve
                     </button>
                     <button
                       onClick={() => handleDecision(request.id, "decline")}
                       disabled={busyId === request.id}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-600 text-white"
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-600 text-white btn-press"
                     >
                       Decline
                     </button>
@@ -481,14 +509,18 @@ const AdminDashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
           <h2 className="font-bold text-slate-800 text-sm mb-3">Admin Notifications</h2>
           {notificationsLoading ? (
             <div className="text-sm text-slate-500">Loading notifications...</div>
           ) : notificationsError ? (
             <div className="text-sm text-rose-600">{notificationsError}</div>
           ) : notifications.length === 0 ? (
-            <div className="text-sm text-slate-500">No notifications.</div>
+            <div className="text-center py-8">
+              <Bell size={32} className="text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 font-medium">No notifications</p>
+              <p className="text-xs text-slate-400 mt-1">System alerts and updates will appear here</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {notifications.map((notif) => (
@@ -594,8 +626,8 @@ const ReviewModal: React.FC<{
     : null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl p-6 max-w-2xl w-full my-8">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto modal-backdrop">
+      <div className="bg-white rounded-xl p-6 max-w-2xl w-full my-8 modal-content">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-slate-800">Review Job: {job.clientName}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
@@ -672,14 +704,14 @@ const ReviewModal: React.FC<{
               <button
                 onClick={onApprove}
                 disabled={busy}
-                className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50"
+                className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50 btn-press"
               >
                 Approve & Pay ${job.pay / 2} (50% now)
               </button>
               <button
                 onClick={() => setShowChangesForm(true)}
                 disabled={busy}
-                className="flex-1 bg-amber-500 text-white font-bold py-3 rounded-xl hover:bg-amber-600 disabled:opacity-50"
+                className="flex-1 bg-amber-500 text-white font-bold py-3 rounded-xl hover:bg-amber-600 disabled:opacity-50 btn-press"
               >
                 Request Changes
               </button>
@@ -696,14 +728,14 @@ const ReviewModal: React.FC<{
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowChangesForm(false)}
-                  className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl"
+                  className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl btn-press"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => onRequestChanges(adminNotes)}
                   disabled={!adminNotes.trim() || busy}
-                  className="flex-1 bg-amber-500 text-white font-bold py-3 rounded-xl hover:bg-amber-600 disabled:opacity-50"
+                  className="flex-1 bg-amber-500 text-white font-bold py-3 rounded-xl hover:bg-amber-600 disabled:opacity-50 btn-press"
                 >
                   Submit Changes Request
                 </button>

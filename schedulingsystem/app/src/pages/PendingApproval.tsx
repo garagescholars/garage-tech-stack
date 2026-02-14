@@ -12,7 +12,6 @@ const PendingApproval: React.FC = () => {
   useEffect(() => {
     if (!profile) return;
     if (profile.role === "admin") {
-      console.warn("Admin hit pending approval route; redirecting to /admin.");
       navigate("/admin", { replace: true });
       return;
     }

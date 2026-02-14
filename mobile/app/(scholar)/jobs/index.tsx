@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  ActivityIndicator,
   RefreshControl,
   TextInput,
 } from "react-native";
@@ -13,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useOpenJobs } from "../../../src/hooks/useJobs";
 import JobCard from "../../../src/components/JobCard";
 import RecentClaimsBanner from "../../../src/components/RecentClaimsBanner";
+import { StaggeredItem, SkeletonBox, FadeInView } from "../../../src/components/AnimatedComponents";
 
 export default function JobFeedScreen() {
   const { jobs, loading } = useOpenJobs();
@@ -36,8 +36,20 @@ export default function JobFeedScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#14b8a6" />
+      <View style={styles.container}>
+        <View style={styles.searchRow}>
+          <SkeletonBox width="100%" height={18} />
+        </View>
+        {[0, 1, 2].map((i) => (
+          <FadeInView key={i} delay={i * 100} style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+            <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#334155' }}>
+              <SkeletonBox width={80} height={20} style={{ marginBottom: 10 }} />
+              <SkeletonBox width="70%" height={17} style={{ marginBottom: 8 }} />
+              <SkeletonBox width="90%" height={13} style={{ marginBottom: 4 }} />
+              <SkeletonBox width="60%" height={13} />
+            </View>
+          </FadeInView>
+        ))}
       </View>
     );
   }
@@ -72,13 +84,15 @@ export default function JobFeedScreen() {
           data={filtered}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={<RecentClaimsBanner />}
-          renderItem={({ item }) => (
-            <JobCard
-              job={item}
-              onPress={() =>
-                router.push(`/(scholar)/jobs/${item.id}` as any)
-              }
-            />
+          renderItem={({ item, index }) => (
+            <StaggeredItem index={index}>
+              <JobCard
+                job={item}
+                onPress={() =>
+                  router.push(`/(scholar)/jobs/${item.id}` as any)
+                }
+              />
+            </StaggeredItem>
           )}
           contentContainerStyle={styles.list}
           refreshControl={

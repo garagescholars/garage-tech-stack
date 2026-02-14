@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Platform } from "react-native";
 
 export default function AdminLayout() {
   return (
@@ -12,8 +13,13 @@ export default function AdminLayout() {
           backgroundColor: "#0f1b2d",
           borderTopColor: "#1e293b",
           borderTopWidth: 1,
-          paddingBottom: 4,
-          height: 60,
+          paddingBottom: Platform.OS === "ios" ? 20 : 4,
+          height: Platform.OS === "ios" ? 80 : 60,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+          elevation: 8,
         },
         tabBarActiveTintColor: "#14b8a6",
         tabBarInactiveTintColor: "#64748b",

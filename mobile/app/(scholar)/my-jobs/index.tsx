@@ -5,13 +5,13 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../../src/hooks/useAuth";
 import { useMyJobs } from "../../../src/hooks/useJobs";
 import JobCard from "../../../src/components/JobCard";
+import { StaggeredItem, SkeletonBox, FadeInView } from "../../../src/components/AnimatedComponents";
 import type { ServiceJob } from "../../../src/types";
 
 type TabKey = "active" | "completed";
@@ -46,8 +46,20 @@ export default function MyJobsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#14b8a6" />
+      <View style={styles.container}>
+        <View style={styles.tabRow}>
+          <View style={[styles.tab, styles.tabActive]}><SkeletonBox width={50} height={14} /></View>
+          <View style={styles.tab}><SkeletonBox width={70} height={14} /></View>
+        </View>
+        {[0, 1, 2].map((i) => (
+          <FadeInView key={i} delay={i * 100} style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+            <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#334155' }}>
+              <SkeletonBox width={80} height={20} style={{ marginBottom: 10 }} />
+              <SkeletonBox width="70%" height={17} style={{ marginBottom: 8 }} />
+              <SkeletonBox width="50%" height={13} />
+            </View>
+          </FadeInView>
+        ))}
       </View>
     );
   }
@@ -92,8 +104,10 @@ export default function MyJobsScreen() {
         <FlatList
           data={display}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <JobCard job={item} onPress={() => onJobPress(item)} showStatus />
+          renderItem={({ item, index }) => (
+            <StaggeredItem index={index}>
+              <JobCard job={item} onPress={() => onJobPress(item)} showStatus />
+            </StaggeredItem>
           )}
           contentContainerStyle={styles.list}
         />

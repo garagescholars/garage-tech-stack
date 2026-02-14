@@ -104,6 +104,7 @@ export interface SopDoc {
 
 export interface JobMedia {
   photoFrontOfHouse: string; // Base64
+  photoAfter?: string; // After-service photo (checkout)
   videoGarage: string; // Base64 or Blob URL
   timestamp: string; // Submission Timestamp
   photoTimestamp?: string; // ISO String for Photo Upload

@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +12,7 @@ import { useAuth } from "../../../src/hooks/useAuth";
 import { useCurrentGoals, useAchievements, useLeaderboard } from "../../../src/hooks/useGoals";
 import ProgressBar from "../../../src/components/ProgressBar";
 import LeaderboardRow from "../../../src/components/LeaderboardRow";
+import { SkeletonBox, FadeInView } from "../../../src/components/AnimatedComponents";
 import type { ScholarTier } from "../../../src/types";
 
 type TabKey = "goals" | "leaderboard" | "achievements";
@@ -30,8 +30,23 @@ export default function GoalsScreen() {
 
   if (goalsLoading || achLoading || lbLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#14b8a6" />
+      <View style={styles.container}>
+        <View style={styles.tabRow}>
+          <View style={[styles.tab, styles.tabActive]}><SkeletonBox width={40} height={14} /></View>
+          <View style={styles.tab}><SkeletonBox width={55} height={14} /></View>
+          <View style={styles.tab}><SkeletonBox width={45} height={14} /></View>
+        </View>
+        <View style={{ padding: 12 }}>
+          {[0, 1].map((i) => (
+            <FadeInView key={i} delay={i * 120} style={{ marginBottom: 12 }}>
+              <View style={{ backgroundColor: '#1e293b', borderRadius: 12, padding: 16 }}>
+                <SkeletonBox width={120} height={16} style={{ marginBottom: 12 }} />
+                <SkeletonBox width="80%" height={28} style={{ marginBottom: 10 }} />
+                <SkeletonBox width="100%" height={8} borderRadius={4} />
+              </View>
+            </FadeInView>
+          ))}
+        </View>
       </View>
     );
   }
