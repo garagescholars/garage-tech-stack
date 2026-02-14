@@ -5,6 +5,7 @@ import CameraCapture from '../components/CameraCapture';
 import { doc, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../src/firebase';
+import { COLLECTIONS } from '../src/collections';
 import { ArrowLeft, MapPin, CheckCircle, Loader2, CheckSquare, Square, Trash2, Plus, ShieldAlert, Pencil, Calendar, Upload, Clock, AlertTriangle, ChevronDown, ChevronUp, Flag } from 'lucide-react';
 import { resizeImage, resizeFileToBlob } from '../utils/resizeImage';
 
@@ -303,9 +304,13 @@ export const JobDetail: React.FC<JobDetailProps> = ({ job, users = [], onBack, o
     // Update Firestore immediately
     if (db) {
       try {
-        // Phase X: Updated to use serviceJobs collection
-        await setDoc(doc(db, 'serviceJobs', job.id), {
-          checklist: updatedChecklist
+        await setDoc(doc(db, COLLECTIONS.JOBS, job.id), {
+          checklist: updatedChecklist.map((item: any) => ({
+            id: item.id,
+            text: item.text,
+            completed: item.isCompleted,
+            approvalStatus: (item.status || 'APPROVED').toLowerCase()
+          }))
         }, { merge: true });
       } catch (error) {
         console.error('Failed to update checklist in Firestore:', error);

@@ -4,6 +4,7 @@ import { addDoc, collection, doc, serverTimestamp, setDoc } from "firebase/fires
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { ADMIN_EMAILS } from "../config";
+import { COLLECTIONS } from "../collections";
 
 const CreateAccount: React.FC = () => {
   const [name, setName] = useState("");
@@ -57,11 +58,12 @@ const CreateAccount: React.FC = () => {
       console.log('Signup request created:', requestRef.id);
 
       console.log('Creating user document...');
-      await setDoc(doc(db, "users", cred.user.uid), {
+      await setDoc(doc(db, COLLECTIONS.PROFILES, cred.user.uid), {
         email: normalizedEmail,
-        name: name.trim(),
+        fullName: name.trim(),
+        phone: "",
         role: "scholar",
-        status: "disabled",
+        isActive: false,
         createdAt: serverTimestamp(),
         requestId: requestRef.id
       }, { merge: true });

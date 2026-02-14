@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { ADMIN_EMAILS } from "../config";
+import { COLLECTIONS } from "../collections";
 
 const AdminSettings: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -41,15 +42,34 @@ const AdminSettings: React.FC = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
       const userId = userCredential.user.uid;
 
-      // Create user document in Firestore
-      await setDoc(doc(db, "users", userId), {
+      // Create user document in gs_profiles
+      await setDoc(doc(db, COLLECTIONS.PROFILES, userId), {
         email: normalizedEmail,
-        name: name.trim(),
+        fullName: name.trim(),
+        phone: "",
         role: role,
-        status: "active", // Admins create users directly as active
+        isActive: true,
         createdAt: serverTimestamp(),
         createdBy: "admin"
       });
+
+      // If scholar, also create gs_scholarProfiles doc
+      if (role === "scholar") {
+        await setDoc(doc(db, COLLECTIONS.SCHOLAR_PROFILES, userId), {
+          scholarId: userId,
+          scholarName: name.trim(),
+          monthlyJobGoal: 10,
+          monthlyMoneyGoal: 3000,
+          totalJobsCompleted: 0,
+          totalEarnings: 0,
+          payScore: 5.0,
+          cancellationRate: 0,
+          acceptanceRate: 100,
+          tier: "new",
+          showOnLeaderboard: true,
+          createdAt: serverTimestamp(),
+        });
+      }
 
       setSuccess(`User ${name} (${normalizedEmail}) created successfully as ${role}.`);
       setEmail("");

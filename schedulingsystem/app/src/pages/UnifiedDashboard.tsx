@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { collection, onSnapshot, query, orderBy, where, limit } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
+import { COLLECTIONS } from "../collections";
 import { ServiceJob, InventoryItem, Client, Property } from "../../types";
 import {
   ArrowLeft, Package, Briefcase, Users, Home, TrendingUp,
@@ -36,8 +37,8 @@ const UnifiedDashboard: React.FC = () => {
     try {
       // Service Jobs
       const jobsQuery = query(
-        collection(db, "serviceJobs"),
-        orderBy("date", "desc"),
+        collection(db, COLLECTIONS.JOBS),
+        orderBy("scheduledDate", "desc"),
         limit(20)
       );
       const unsubJobs = onSnapshot(jobsQuery, (snapshot) => {

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { db, functions } from "../firebase";
 import { Job, JobStatus, Task } from "../../types";
 import { useAuth } from "../auth/AuthProvider";
+import { COLLECTIONS } from "../collections";
 import { ArrowLeft, Phone, Mail, MapPin, Loader2, AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronUp, Edit3, RotateCcw, Plus, Minus } from "lucide-react";
 
 // ── Package tier descriptions (from pricing spreadsheet) ──
@@ -207,7 +208,7 @@ const AdminLeads: React.FC = () => {
     }
 
     const leadsQuery = query(
-      collection(db, "serviceJobs"),
+      collection(db, COLLECTIONS.JOBS),
       where("status", "==", JobStatus.LEAD),
       orderBy("createdAt", "desc")
     );
@@ -301,19 +302,27 @@ const AdminLeads: React.FC = () => {
       const { shelvingSelections, addOns } = serializeSelections(productSelections, convertFormData.selectedPackage);
 
       // Step 1: Update job document with form data + set status to SOP_NEEDS_REVIEW
-      await updateDoc(doc(db, "serviceJobs", convertingLead.id), {
+      await updateDoc(doc(db, COLLECTIONS.JOBS, convertingLead.id), {
+        title: convertFormData.clientName.trim(),
         clientName: convertFormData.clientName.trim(),
         clientEmail: convertFormData.clientEmail.trim(),
         clientPhone: convertFormData.clientPhone.trim(),
         address: convertFormData.address.trim(),
         description: convertFormData.description.trim(),
-        date: scheduledDateTime.toISOString(),
-        scheduledEndTime: endDateTime.toISOString(),
-        pay: convertFormData.scholarPayout,
+        scheduledDate: scheduledDateTime.toISOString(),
+        scheduledTimeStart: scheduledDateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        scheduledTimeEnd: endDateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        payout: convertFormData.scholarPayout,
         clientPrice: convertFormData.clientPrice,
         status: JobStatus.SOP_NEEDS_REVIEW,
-        locationLat: 0,
-        locationLng: 0,
+        lat: 0,
+        lng: 0,
+        urgencyLevel: 'standard',
+        rushBonus: 0,
+        currentViewers: 0,
+        viewerFloor: 0,
+        totalViews: 0,
+        reopenCount: 0,
         accessConstraints: convertFormData.accessInstructions.trim(),
         resaleConcierge: convertFormData.resaleConcierge === "yes",
         donationOptIn: convertFormData.donationOptIn === "yes",
@@ -354,7 +363,7 @@ const AdminLeads: React.FC = () => {
 
       // Reset status back to LEAD on failure
       if (db && convertingLead) {
-        await updateDoc(doc(db, "serviceJobs", convertingLead.id), {
+        await updateDoc(doc(db, COLLECTIONS.JOBS, convertingLead.id), {
           status: JobStatus.LEAD,
           updatedAt: serverTimestamp()
         }).catch(() => {});
@@ -373,15 +382,24 @@ const AdminLeads: React.FC = () => {
       const finalSOP = sopEditMode ? sopEditText : sopReviewData.sopText;
       const checklist = parsePhaseSequenceToChecklist(finalSOP);
 
-      await updateDoc(doc(db, "serviceJobs", sopReviewData.jobId), {
+      // Map checklist to gs_jobs format
+      const gsChecklist = (checklist.length > 0 ? checklist : [
+        { id: "check-in", text: "Check in with photo of property exterior", isCompleted: false, status: "APPROVED" },
+        { id: "check-out", text: "Take final photos and check out", isCompleted: false, status: "APPROVED" }
+      ]).map(item => ({
+        id: item.id,
+        text: item.text,
+        completed: false,
+        approvalStatus: (item.status || 'APPROVED').toLowerCase()
+      }));
+
+      await updateDoc(doc(db, COLLECTIONS.JOBS, sopReviewData.jobId), {
+        sopContent: finalSOP,
         generatedSOP: finalSOP,
         sopApprovedBy: profile.uid,
         sopApprovedAt: new Date().toISOString(),
         status: JobStatus.APPROVED_FOR_POSTING,
-        checklist: checklist.length > 0 ? checklist : [
-          { id: "check-in", text: "Check in with photo of property exterior", isCompleted: false, status: "APPROVED" },
-          { id: "check-out", text: "Take final photos and check out", isCompleted: false, status: "APPROVED" }
-        ],
+        checklist: gsChecklist,
         updatedAt: serverTimestamp()
       });
 
@@ -428,7 +446,7 @@ const AdminLeads: React.FC = () => {
     if (!db || !sopReviewData) return;
 
     try {
-      await updateDoc(doc(db, "serviceJobs", sopReviewData.jobId), {
+      await updateDoc(doc(db, COLLECTIONS.JOBS, sopReviewData.jobId), {
         status: JobStatus.LEAD,
         generatedSOP: null,
         updatedAt: serverTimestamp()
@@ -447,7 +465,7 @@ const AdminLeads: React.FC = () => {
     if (!db || !confirm("Are you sure you want to disqualify this lead?")) return;
     setBusyId(leadId);
     try {
-      await updateDoc(doc(db, "serviceJobs", leadId), {
+      await updateDoc(doc(db, COLLECTIONS.JOBS, leadId), {
         status: JobStatus.CANCELLED,
         cancellationReason: "Lead disqualified"
       });

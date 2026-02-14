@@ -3,6 +3,7 @@ import { collection, onSnapshot, query, orderBy, updateDoc, doc, getDoc } from "
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import { Payout } from "../../types";
+import { COLLECTIONS } from "../collections";
 import { ArrowLeft, DollarSign, Download, CheckCircle2 } from "lucide-react";
 
 const AdminPayouts: React.FC = () => {
@@ -22,14 +23,27 @@ const AdminPayouts: React.FC = () => {
       return;
     }
 
-    const payoutsQuery = query(collection(db, "payouts"), orderBy("createdAt", "desc"));
+    const payoutsQuery = query(collection(db, COLLECTIONS.PAYOUTS), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(
       payoutsQuery,
       (snapshot) => {
-        const payoutsList = snapshot.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...(docSnap.data() as Omit<Payout, "id">)
-        }));
+        const payoutsList = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as Record<string, any>;
+          return {
+            id: docSnap.id,
+            jobId: data.jobId || '',
+            scholarId: data.scholarId || '',
+            scholarName: data.recipientName || data.scholarName || 'Unknown',
+            scholarEmail: data.scholarEmail || '',
+            amount: data.amount || 0,
+            status: data.status || 'pending',
+            createdAt: data.createdAt || '',
+            paidAt: data.paidAt,
+            paymentMethod: data.paymentMethod,
+            transactionNote: data.notes || data.transactionNote,
+            approvedBy: data.approvedBy,
+          } as Payout;
+        });
         setPayouts(payoutsList);
         setError(null);
         setLoading(false);
@@ -48,11 +62,11 @@ const AdminPayouts: React.FC = () => {
 
     setBusyId(markPaidModal.id);
     try {
-      await updateDoc(doc(db, "payouts", markPaidModal.id), {
+      await updateDoc(doc(db, COLLECTIONS.PAYOUTS, markPaidModal.id), {
         status: "paid",
         paidAt: new Date().toISOString(),
-        paymentMethod,
-        transactionNote
+        paymentMethod: `manual_${paymentMethod.toLowerCase()}`,
+        notes: transactionNote
       });
       setMarkPaidModal(null);
       setPaymentMethod('Venmo');
@@ -86,9 +100,10 @@ const AdminPayouts: React.FC = () => {
     }, {} as Record<string, { name: string; email: string; total: number }>);
 
     // Filter scholars with >$600 (1099 threshold)
+    type ScholarTotal = { name: string; email: string; total: number };
     const csv = [
       ['Scholar Name', 'Scholar Email', 'Total Paid (Year-to-Date)', 'Tax ID'].join(','),
-      ...Object.values(scholarTotals)
+      ...(Object.values(scholarTotals) as ScholarTotal[])
         .filter(scholar => scholar.total > 600)
         .map(scholar => [
           scholar.name,

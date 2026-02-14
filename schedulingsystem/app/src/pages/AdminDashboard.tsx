@@ -5,6 +5,7 @@ import { getDownloadURL, ref as storageRef } from "firebase/storage";
 import { useNavigate, Link } from "react-router-dom";
 import { functions, db, storage } from "../firebase";
 import { useAuth } from "../auth/AuthProvider";
+import { COLLECTIONS } from "../collections";
 import { JobStatus, ServiceJob } from "../../types";
 import { DollarSign, Package, UserPlus, Settings, Trophy } from "lucide-react";
 import JobToInventoryModal from "../components/JobToInventoryModal";
@@ -121,12 +122,17 @@ const AdminDashboard: React.FC = () => {
       setNotificationsLoading(false);
     });
 
-    const usersQuery = query(collection(db, "users"));
+    const usersQuery = query(collection(db, COLLECTIONS.PROFILES));
     const unsubUsers = onSnapshot(usersQuery, (snap) => {
-      const rows = snap.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<UserRow, "id">)
-      })).filter((user) => user.role === "scholar" && user.status === "active");
+      const rows = snap.docs.map((docSnap) => {
+        const data = docSnap.data() as Record<string, any>;
+        return {
+          id: docSnap.id,
+          name: data.fullName || data.name || 'Scholar',
+          role: data.role || 'scholar',
+          status: data.isActive !== false ? 'active' : 'disabled',
+        };
+      }).filter((user) => user.role === "scholar" && user.status === "active");
       setScholars(rows);
       setScholarsError(null);
       setScholarsLoading(false);
@@ -136,12 +142,27 @@ const AdminDashboard: React.FC = () => {
     });
 
     // Phase X: Updated to use serviceJobs collection
-    const jobsQuery = query(collection(db, "serviceJobs"), where("status", "==", JobStatus.REVIEW_PENDING));
+    const jobsQuery = query(collection(db, COLLECTIONS.JOBS), where("status", "==", JobStatus.REVIEW_PENDING));
     const unsubJobs = onSnapshot(jobsQuery, (snap) => {
-      const rows = snap.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<JobForReview, "id">)
-      }));
+      const rows = snap.docs.map((docSnap) => {
+        const data = docSnap.data() as Record<string, any>;
+        return {
+          id: docSnap.id,
+          clientName: data.title || data.clientName || 'Unknown',
+          pay: data.payout ?? data.pay ?? 0,
+          assigneeName: data.claimedByName || data.assigneeName,
+          checkInTime: data.checkInTime,
+          checkOutTime: data.checkOutTime,
+          checkInMedia: data.checkInMedia,
+          checkOutMedia: data.checkOutMedia,
+          checklist: Array.isArray(data.checklist) ? data.checklist.map((item: any) => ({
+            id: item.id,
+            text: item.text,
+            isCompleted: item.completed ?? item.isCompleted ?? false
+          })) : [],
+          status: data.status
+        };
+      });
       setJobsForReview(rows);
       setJobsReviewError(null);
       setJobsReviewLoading(false);
@@ -152,15 +173,22 @@ const AdminDashboard: React.FC = () => {
 
     // Phase X: Query completed jobs for inventory extraction
     const completedJobsQuery = query(
-      collection(db, "serviceJobs"),
+      collection(db, COLLECTIONS.JOBS),
       where("status", "==", JobStatus.COMPLETED),
-      orderBy("date", "desc")
+      orderBy("scheduledDate", "desc")
     );
     const unsubCompletedJobs = onSnapshot(completedJobsQuery, (snap) => {
-      const jobs = snap.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<ServiceJob, "id">)
-      })) as ServiceJob[];
+      const jobs = snap.docs.map((docSnap) => {
+        const data = docSnap.data() as Record<string, any>;
+        return {
+          id: docSnap.id,
+          clientName: data.title || data.clientName || 'Unknown',
+          address: data.address || '',
+          date: data.scheduledDate || data.date || '',
+          inventoryExtracted: data.inventoryExtracted || false,
+          extractedItemIds: data.extractedItemIds,
+        } as any;
+      }) as ServiceJob[];
       setCompletedJobs(jobs);
       setCompletedJobsLoading(false);
     }, (err) => {
@@ -209,7 +237,7 @@ const AdminDashboard: React.FC = () => {
     setBusyId(job.id);
     try {
       // Update job status to COMPLETED
-      await updateDoc(doc(db, "serviceJobs", job.id), {
+      await updateDoc(doc(db, COLLECTIONS.JOBS, job.id), {
         status: JobStatus.COMPLETED,
         approvedAt: new Date().toISOString(),
         firstPayoutProcessed: true,
@@ -219,18 +247,18 @@ const AdminDashboard: React.FC = () => {
       // Create payout record for FIRST HALF (50%)
       const firstHalfAmount = job.pay / 2;
       const payoutData = {
-        serviceJobId: job.id, // Phase X: Use serviceJobId
-        jobId: job.id, // Legacy field
-        scholarId: job.assigneeName, // Would normally be scholarId
-        scholarName: job.assigneeName || "Unknown",
+        jobId: job.id,
+        recipientName: job.assigneeName || "Unknown",
         amount: firstHalfAmount,
+        splitType: "checkin_50",
         status: "pending",
-        approvedBy: "admin",
-        paymentType: "first_half", // Track that this is the first 50%
+        paymentMethod: "manual_zelle",
+        complaintWindowPassed: false,
+        taxYear: new Date().getFullYear(),
         createdAt: new Date().toISOString()
       };
 
-      await setDoc(doc(db, "payouts", `${job.id}_first`), payoutData);
+      await setDoc(doc(db, COLLECTIONS.PAYOUTS, `${job.id}_first`), payoutData);
 
       // TODO: Second half payout ($${job.pay / 2}) will be processed automatically 24 hours after approval
       // if no client complaints are filed. Implement Cloud Function to handle this.
@@ -253,7 +281,7 @@ const AdminDashboard: React.FC = () => {
     setBusyId(job.id);
     try {
       // Update job status to CHANGES_REQUESTED with admin notes
-      await updateDoc(doc(db, "serviceJobs", job.id), {
+      await updateDoc(doc(db, COLLECTIONS.JOBS, job.id), {
         status: "CHANGES_REQUESTED",
         adminNotes,
         changesRequestedAt: new Date().toISOString()

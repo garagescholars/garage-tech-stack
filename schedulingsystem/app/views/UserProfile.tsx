@@ -6,6 +6,7 @@ import { signOut } from 'firebase/auth';
 import { auth, db } from '../src/firebase';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { COLLECTIONS } from '../src/collections';
 
 interface UserProfileProps {
   onBack: () => void;
@@ -31,7 +32,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, userRole, users, onUp
     }
 
     const payoutsQuery = query(
-      collection(db, 'payouts'),
+      collection(db, COLLECTIONS.PAYOUTS),
       where('scholarId', '==', currentUserId)
     );
 

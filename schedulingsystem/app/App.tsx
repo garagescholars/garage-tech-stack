@@ -9,6 +9,7 @@ import { broadcastMilestone, requestSmsPermissions, SmsRecipient } from './servi
 import { collection, doc, onSnapshot, orderBy, query, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, firebaseInitError } from './src/firebase';
 import { useAuth } from './src/auth/AuthProvider';
+import { COLLECTIONS } from './src/collections';
 import { 
     Bell, Search, User, X, Check, Calendar as CalendarIcon, List, Timer, 
     ClipboardList, ArrowRight, Users, ChevronLeft, ChevronRight, 
@@ -94,59 +95,69 @@ const App: React.FC = () => {
   useEffect(() => {
       if (!db || !profile) return;
 
-      const usersRef = collection(db, 'users');
+      const usersRef = collection(db, COLLECTIONS.PROFILES);
       const usersUnsub = onSnapshot(usersRef, (snapshot) => {
           const nextUsers = snapshot.docs.map((docSnap) => {
-              const data = docSnap.data() as Partial<UserType>;
+              const data = docSnap.data() as Record<string, any>;
+              const name = data.fullName || data.name || 'Scholar';
               return {
                   id: docSnap.id,
-                  name: data.name || 'Scholar',
+                  name,
                   role: data.role || 'scholar',
-                  monthlyGoal: data.monthlyGoal || 0,
-                  avatarInitials: data.avatarInitials || getInitials(data.name || 'Scholar'),
+                  monthlyGoal: data.monthlyGoal || data.monthlyMoneyGoal || 0,
+                  avatarInitials: data.avatarInitials || getInitials(name),
                   achievedMilestones: data.achievedMilestones || [],
-                  phoneNumber: data.phoneNumber || ''
+                  phoneNumber: data.phone || data.phoneNumber || ''
               };
           });
           setUsers(nextUsers);
       });
 
-      // Phase X: Updated to use serviceJobs collection
-      const jobsRef = query(collection(db, 'serviceJobs'), orderBy('date', 'asc'));
+      // gs_jobs: map gs field names to internal Job type
+      const jobsRef = query(collection(db, COLLECTIONS.JOBS), orderBy('scheduledDate', 'asc'));
       const jobsUnsub = onSnapshot(jobsRef, (snapshot) => {
           const nextJobs = snapshot.docs.map((docSnap) => {
-              const data = docSnap.data() as Partial<Job>;
+              const data = docSnap.data() as Record<string, any>;
+              // Build full ISO date from scheduledDate + scheduledTimeStart
+              const sd = data.scheduledDate || data.date || '';
+              const st = data.scheduledTimeStart || '09:00';
+              const dateStr = sd ? (sd.includes('T') ? sd : `${sd}T${st}:00`) : new Date().toISOString();
               return {
                   id: docSnap.id,
-                  clientName: data.clientName || 'Unknown Client',
+                  clientName: data.title || data.clientName || 'Unknown Client',
                   address: data.address || '',
-                  date: data.date || new Date().toISOString(),
-                  scheduledEndTime: data.scheduledEndTime || new Date().toISOString(),
-                  pay: data.pay || 0,
+                  date: dateStr,
+                  scheduledEndTime: data.scheduledTimeEnd || data.scheduledEndTime || dateStr,
+                  pay: data.payout ?? data.pay ?? 0,
                   description: data.description || '',
                   status: data.status || JobStatus.UPCOMING,
-                  locationLat: data.locationLat || 0,
-                  locationLng: data.locationLng || 0,
-                  checklist: Array.isArray(data.checklist) ? data.checklist : [],
-                  assigneeId: data.assigneeId,
-                  assigneeName: data.assigneeName,
+                  locationLat: data.lat ?? data.locationLat ?? 0,
+                  locationLng: data.lng ?? data.locationLng ?? 0,
+                  checklist: Array.isArray(data.checklist) ? data.checklist.map((item: any) => ({
+                      id: item.id,
+                      text: item.text,
+                      isCompleted: item.completed ?? item.isCompleted ?? false,
+                      status: item.approvalStatus === 'pending' ? 'PENDING' : item.status || 'APPROVED'
+                  })) : [],
+                  assigneeId: data.claimedBy || data.assigneeId,
+                  assigneeName: data.claimedByName || data.assigneeName,
                   checkInTime: data.checkInTime,
                   checkOutTime: data.checkOutTime,
                   checkInMedia: data.checkInMedia,
                   checkOutMedia: data.checkOutMedia,
                   qualityReport: data.qualityReport,
                   cancellationReason: data.cancellationReason,
-                  generatedSOP: data.generatedSOP,
+                  generatedSOP: data.sopContent || data.generatedSOP,
                   sopApprovedBy: data.sopApprovedBy,
                   sopApprovedAt: data.sopApprovedAt,
                   packageTier: data.packageTier,
                   shelvingSelections: data.shelvingSelections,
                   addOns: data.addOns,
-                  package: (data as any).package,
+                  package: data.package,
                   intakeMediaPaths: data.intakeMediaPaths,
                   sopId: data.sopId,
-                  clientId: (data as any).clientId,
-                  clientFolder: (data as any).clientFolder
+                  clientId: data.clientId || data.customerId,
+                  clientFolder: data.clientFolder
               };
           });
           setJobs(nextJobs);
@@ -198,7 +209,7 @@ const App: React.FC = () => {
 
             if (milestoneHit > 0 && !user.achievedMilestones.includes(milestoneHit)) {
                 hasUpdates = true;
-                await setDoc(doc(db, 'users', user.id), {
+                await setDoc(doc(db, COLLECTIONS.PROFILES, user.id), {
                     achievedMilestones: [...user.achievedMilestones, milestoneHit]
                 }, { merge: true });
                 const recipients: SmsRecipient[] = users
@@ -278,15 +289,38 @@ const App: React.FC = () => {
   const handleJobUpdate = async (updatedJob: Job) => {
     setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
     if (!db) return;
-    const { id, ...payload } = updatedJob;
-    // Phase X: Updated to use serviceJobs collection
-    await setDoc(doc(db, 'serviceJobs', id), stripUndefined(payload), { merge: true });
+    const { id, ...raw } = updatedJob;
+    // Map internal Job fields → gs_jobs Firestore fields
+    const payload: Record<string, any> = {
+        ...raw,
+        title: raw.clientName,
+        payout: raw.pay,
+        scheduledDate: raw.date,
+        lat: raw.locationLat,
+        lng: raw.locationLng,
+        claimedBy: raw.assigneeId ?? null,
+        claimedByName: raw.assigneeName ?? null,
+        sopContent: raw.generatedSOP,
+    };
+    if (Array.isArray(raw.checklist)) {
+        payload.checklist = raw.checklist.map((item: any) => ({
+            id: item.id,
+            text: item.text,
+            completed: item.isCompleted,
+            approvalStatus: (item.status || 'APPROVED').toLowerCase()
+        }));
+    }
+    await setDoc(doc(db, COLLECTIONS.JOBS, id), stripUndefined(payload), { merge: true });
   };
 
   const handleUserUpdate = async (userId: string, updates: Partial<UserType>) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
     if (!db) return;
-    await setDoc(doc(db, 'users', userId), stripUndefined(updates), { merge: true });
+    // Map internal User fields → gs_profiles Firestore fields
+    const gsUpdates: Record<string, any> = { ...updates };
+    if (updates.name !== undefined) gsUpdates.fullName = updates.name;
+    if (updates.phoneNumber !== undefined) gsUpdates.phone = updates.phoneNumber;
+    await setDoc(doc(db, COLLECTIONS.PROFILES, userId), stripUndefined(gsUpdates), { merge: true });
   };
 
   
@@ -349,10 +383,11 @@ const App: React.FC = () => {
 
     setIsClaimingJob(true);
     try {
-      // Phase X: Updated to use serviceJobs collection
-      const jobRef = doc(db, 'serviceJobs', claimJobState.id);
+      const jobRef = doc(db, COLLECTIONS.JOBS, claimJobState.id);
 
       await setDoc(jobRef, {
+        claimedBy: currentUserId,
+        claimedByName: currentUser.name,
         assigneeId: currentUserId,
         assigneeName: currentUser.name,
         status: JobStatus.UPCOMING,

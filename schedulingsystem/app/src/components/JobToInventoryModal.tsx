@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import { ref, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase";
+import { COLLECTIONS } from "../collections";
 import { ServiceJob } from "../../types";
 import { X, Plus, Trash2, Package, DollarSign, FileText, Image as ImageIcon, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -169,7 +170,7 @@ const JobToInventoryModal: React.FC<JobToInventoryModalProps> = ({ job, onClose,
       }
 
       // Update the service job to mark inventory as extracted
-      await updateDoc(doc(db, "serviceJobs", job.id), {
+      await updateDoc(doc(db, COLLECTIONS.JOBS, job.id), {
         inventoryExtracted: true,
         extractedItemIds: createdItemIds,
         extractedAt: serverTimestamp()

@@ -3,6 +3,7 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { ADMIN_EMAILS } from "../config";
+import { COLLECTIONS } from "../collections";
 
 type Role = "admin" | "scholar";
 type Status = "active" | "disabled" | "pending";
@@ -57,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const email = (firebaseUser.email || "").toLowerCase();
       const isAdminEmail = ADMIN_EMAILS.includes(email);
-      const userRef = doc(db, "users", firebaseUser.uid);
+      const userRef = doc(db, COLLECTIONS.PROFILES, firebaseUser.uid);
 
       if (isAdminEmail) {
         const name = email.split("@")[0] || "Admin";
@@ -72,9 +73,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
         void setDoc(userRef, {
           email,
-          name,
+          fullName: name,
           role: "admin",
-          status: "active",
+          isActive: true,
+          phone: "",
           createdAt: serverTimestamp()
         }, { merge: true }).catch((err) => {
           console.warn("Failed to ensure admin user profile:", err);
@@ -104,27 +106,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
           return;
         }
-        const data = snap.data() as {
-          email?: string;
-          name?: string;
-          role?: Role;
-          status?: Status;
-        };
-        const role = data.role || "scholar";
-        const status = data.status || "pending";
+        const data = snap.data() as Record<string, any>;
+        const role: Role = data.role || "scholar";
+        // gs_profiles uses isActive (boolean), map to status string
+        const isActive = data.isActive !== false;
+        const status: Status = isActive ? "active" : "pending";
         setProfile({
           uid: firebaseUser.uid,
           email: data.email || email,
-          name: data.name || firebaseUser.displayName || email.split("@")[0] || "Scholar",
+          name: data.fullName || data.name || firebaseUser.displayName || email.split("@")[0] || "Scholar",
           role,
           status
         });
 
-        if (status === "active") {
+        if (isActive) {
           localStorage.removeItem("pendingEmail");
         }
 
-        if (status !== "active") {
+        if (!isActive) {
           setPendingEmail(email);
           await signOut(auth);
         }

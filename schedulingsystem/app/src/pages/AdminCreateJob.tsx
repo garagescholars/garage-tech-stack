@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { JobStatus } from "../../types";
+import { COLLECTIONS } from "../collections";
 
 const AdminCreateJob: React.FC = () => {
   const navigate = useNavigate();
@@ -75,24 +76,38 @@ const AdminCreateJob: React.FC = () => {
         { id: "check-out", text: "Take final photos and check out", isCompleted: false, status: "APPROVED" as const }
       ];
 
-      // Phase X: Updated to use serviceJobs collection
-      const jobDoc = await addDoc(collection(db, "serviceJobs"), {
+      // Write to gs_jobs with both old and new field names
+      const jobDoc = await addDoc(collection(db, COLLECTIONS.JOBS), {
+        // gs_jobs field names (for mobile app)
+        title: formData.clientName.trim(),
         clientName: formData.clientName.trim(),
         clientEmail: formData.clientEmail.trim(),
         clientPhone: formData.clientPhone.trim(),
         address: formData.address.trim(),
         description: formData.description.trim(),
-        date: scheduledDateTime.toISOString(),
-        scheduledEndTime: endDateTime.toISOString(),
-        pay: formData.scholarPayout,
+        scheduledDate: scheduledDateTime.toISOString(),
+        scheduledTimeStart: scheduledDateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        scheduledTimeEnd: endDateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        payout: formData.scholarPayout,
         clientPrice: formData.clientPrice,
         status: JobStatus.APPROVED_FOR_POSTING,
-        locationLat: 0, // TODO: Add geocoding in future
-        locationLng: 0,
-        checklist,
+        lat: 0,
+        lng: 0,
+        urgencyLevel: 'standard',
+        rushBonus: 0,
+        currentViewers: 0,
+        viewerFloor: 0,
+        totalViews: 0,
+        reopenCount: 0,
+        checklist: checklist.map(item => ({
+          id: item.id,
+          text: item.text,
+          completed: false,
+          approvalStatus: 'approved'
+        })),
         accessConstraints: formData.accessInstructions.trim(),
         sellVsKeepPreference: formData.sellVsKeepPreference,
-        inventoryExtracted: false, // Phase X: Track inventory extraction status
+        inventoryExtracted: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
