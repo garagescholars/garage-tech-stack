@@ -500,10 +500,10 @@ export const gsStripeWebhook = onRequest(
     console.log(`Stripe webhook: ${event.type}`);
 
     switch (event.type) {
-      case "transfer.paid": {
+      case "transfer.created": {
         const transfer = event.data.object as any;
         const transferId = transfer.id;
-        // Find payout by stripeTransferId
+        // Find payout by stripeTransferId and mark as processing
         const payoutSnap = await db
           .collection(GS_COLLECTIONS.PAYOUTS)
           .where("stripeTransferId", "==", transferId)
@@ -511,15 +511,14 @@ export const gsStripeWebhook = onRequest(
           .get();
         if (!payoutSnap.empty) {
           await payoutSnap.docs[0].ref.update({
-            status: "paid",
-            paidAt: FieldValue.serverTimestamp(),
+            status: "processing",
           });
-          console.log(`Payout ${payoutSnap.docs[0].id} marked as paid`);
+          console.log(`Payout ${payoutSnap.docs[0].id} marked as processing`);
         }
         break;
       }
 
-      case "transfer.failed": {
+      case "transfer.updated": {
         const transfer = event.data.object as any;
         const payoutSnap = await db
           .collection(GS_COLLECTIONS.PAYOUTS)
@@ -527,18 +526,25 @@ export const gsStripeWebhook = onRequest(
           .limit(1)
           .get();
         if (!payoutSnap.empty) {
-          await payoutSnap.docs[0].ref.update({
-            status: "failed",
-            notes: `Transfer failed: ${transfer.failure_message || "Unknown reason"}`,
-          });
-          const payoutData = payoutSnap.docs[0].data();
-          await notifyAdmins(
-            "⚠️ Stripe Transfer Failed",
-            `<p>Transfer to <strong>${payoutData.recipientName}</strong> failed.</p>
-             <p>Amount: $${payoutData.amount}</p>
-             <p>Reason: ${transfer.failure_message || "Unknown"}</p>
-             <p>Please pay manually.</p>`
-          );
+          if (transfer.reversed || transfer.amount_reversed > 0) {
+            await payoutSnap.docs[0].ref.update({
+              status: "failed",
+              notes: `Transfer reversed or failed`,
+            });
+            const payoutData = payoutSnap.docs[0].data();
+            await notifyAdmins(
+              "⚠️ Stripe Transfer Failed",
+              `<p>Transfer to <strong>${payoutData.recipientName}</strong> failed/reversed.</p>
+               <p>Amount: $${payoutData.amount}</p>
+               <p>Please pay manually.</p>`
+            );
+          } else {
+            await payoutSnap.docs[0].ref.update({
+              status: "paid",
+              paidAt: FieldValue.serverTimestamp(),
+            });
+            console.log(`Payout ${payoutSnap.docs[0].id} marked as paid`);
+          }
         }
         break;
       }
@@ -623,6 +629,84 @@ export const gsStripeWebhook = onRequest(
               paidAt: FieldValue.serverTimestamp(),
             });
           }
+        }
+        break;
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object as any;
+        const piId = charge.payment_intent;
+        if (piId) {
+          const cpSnap = await db
+            .collection(GS_COLLECTIONS.CUSTOMER_PAYMENTS)
+            .where("stripePaymentIntentId", "==", piId)
+            .limit(1)
+            .get();
+          if (!cpSnap.empty) {
+            const refundedFull = charge.refunded === true;
+            await cpSnap.docs[0].ref.update({
+              status: refundedFull ? "refunded" : "partially_refunded",
+              refundedAmount: charge.amount_refunded / 100,
+              refundedAt: FieldValue.serverTimestamp(),
+            });
+            const cpData = cpSnap.docs[0].data();
+            await notifyAdmins(
+              "💰 Payment Refunded",
+              `<p>${refundedFull ? "Full" : "Partial"} refund processed for <strong>${cpData.customerName}</strong>.</p>
+               <p>Refunded: $${(charge.amount_refunded / 100).toFixed(2)}</p>`
+            );
+          }
+        }
+        break;
+      }
+
+      case "charge.dispute.created": {
+        const dispute = event.data.object as any;
+        const piId = dispute.payment_intent;
+        if (piId) {
+          const cpSnap = await db
+            .collection(GS_COLLECTIONS.CUSTOMER_PAYMENTS)
+            .where("stripePaymentIntentId", "==", piId)
+            .limit(1)
+            .get();
+          if (!cpSnap.empty) {
+            await cpSnap.docs[0].ref.update({
+              status: "disputed",
+              disputeReason: dispute.reason || "unknown",
+              disputedAt: FieldValue.serverTimestamp(),
+            });
+          }
+        }
+        await notifyAdmins(
+          "🚨 CHARGEBACK ALERT",
+          `<p>A customer has filed a dispute/chargeback.</p>
+           <p>Amount: $${(dispute.amount / 100).toFixed(2)}</p>
+           <p>Reason: ${dispute.reason || "Not specified"}</p>
+           <p><strong>Action required:</strong> Respond in Stripe Dashboard within the deadline.</p>`
+        );
+        break;
+      }
+
+      case "payment_intent.payment_failed": {
+        const pi = event.data.object as any;
+        const cpSnap = await db
+          .collection(GS_COLLECTIONS.CUSTOMER_PAYMENTS)
+          .where("stripePaymentIntentId", "==", pi.id)
+          .limit(1)
+          .get();
+        if (!cpSnap.empty) {
+          const failMessage = pi.last_payment_error?.message || "Payment failed";
+          await cpSnap.docs[0].ref.update({
+            status: "failed",
+            notes: failMessage,
+          });
+          const cpData = cpSnap.docs[0].data();
+          await notifyAdmins(
+            "⚠️ Customer Payment Failed",
+            `<p>Payment from <strong>${cpData.customerName}</strong> failed.</p>
+             <p>Amount: $${cpData.amount}</p>
+             <p>Reason: ${failMessage}</p>`
+          );
         }
         break;
       }
