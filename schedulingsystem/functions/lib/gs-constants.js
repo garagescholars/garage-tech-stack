@@ -4,7 +4,7 @@
  * Mirror of mobile/src/constants/collections.ts for Cloud Functions
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MAX_RECENT_CLAIMS = exports.TIER_THRESHOLDS = exports.TRANSFER_EXPIRY_MINUTES = exports.SCORE_LOCK_HOURS = exports.SCORING_WEIGHTS = exports.GS_COLLECTIONS = void 0;
+exports.CONVENIENCE_FEE_PERCENT = exports.PAY_PERIOD_BOUNDARIES = exports.TAX_1099_THRESHOLD = exports.COMPLETION_SPLIT_PERCENT = exports.CHECKIN_SPLIT_PERCENT = exports.MINIMUM_SCORE_FOR_PAYMENT = exports.PAYMENT_RELEASE_HOURS = exports.MAX_RECENT_CLAIMS = exports.TIER_THRESHOLDS = exports.TRANSFER_EXPIRY_MINUTES = exports.SCORE_LOCK_HOURS = exports.SCORING_WEIGHTS = exports.GS_COLLECTIONS = void 0;
 exports.GS_COLLECTIONS = {
     PROFILES: "gs_profiles",
     SCHOLAR_PROFILES: "gs_scholarProfiles",
@@ -17,6 +17,12 @@ exports.GS_COLLECTIONS = {
     JOB_TRANSFERS: "gs_jobTransfers",
     JOB_RESCHEDULES: "gs_jobReschedules",
     SCHOLAR_ANALYTICS: "gs_scholarAnalytics",
+    // Payment collections
+    PAYOUTS: "gs_payouts",
+    CUSTOMER_PAYMENTS: "gs_customerPayments",
+    PAYMENT_PERIODS: "gs_paymentPeriods",
+    STRIPE_ACCOUNTS: "gs_stripeAccounts",
+    PLATFORM_CONFIG: "gs_platformConfig",
 };
 /** Quality score weights — must total 1.0 */
 exports.SCORING_WEIGHTS = {
@@ -37,3 +43,18 @@ exports.TIER_THRESHOLDS = {
 };
 /** Max recent claims to keep */
 exports.MAX_RECENT_CLAIMS = 50;
+// ── Payment Constants ──
+/** Hours after checkout before second payout is released */
+exports.PAYMENT_RELEASE_HOURS = 72;
+/** Minimum quality score to auto-release completion payout */
+exports.MINIMUM_SCORE_FOR_PAYMENT = 2.0;
+/** First split percentage (paid on check-in) */
+exports.CHECKIN_SPLIT_PERCENT = 50;
+/** Second split percentage (paid after quality window) */
+exports.COMPLETION_SPLIT_PERCENT = 50;
+/** 1099-NEC filing threshold */
+exports.TAX_1099_THRESHOLD = 600;
+/** Days of month when biweekly pay periods start */
+exports.PAY_PERIOD_BOUNDARIES = [1, 16];
+/** Convenience fee percentage for card payments */
+exports.CONVENIENCE_FEE_PERCENT = 3.0;

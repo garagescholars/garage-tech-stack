@@ -9,6 +9,7 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../../src/hooks/useAuth";
+import { useStripeStatus } from "../../../src/hooks/usePayouts";
 import ScoreStars from "../../../src/components/ScoreStars";
 import ProgressBar from "../../../src/components/ProgressBar";
 import { getTierLabel, getTierColor } from "../../../src/constants/scoring";
@@ -16,6 +17,7 @@ import { getTierLabel, getTierColor } from "../../../src/constants/scoring";
 export default function ProfileScreen() {
   const { profile, signOutUser } = useAuth();
   const router = useRouter();
+  const { payoutsEnabled, bankLast4 } = useStripeStatus(profile?.uid);
 
   const handleSignOut = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -101,6 +103,41 @@ export default function ProfileScreen() {
             }
           />
         </View>
+      </View>
+
+      {/* Payments */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Payments</Text>
+        <TouchableOpacity
+          style={paymentStyles.row}
+          onPress={() => router.push("/(scholar)/profile/payment-setup" as any)}
+        >
+          <Ionicons
+            name={payoutsEnabled ? "checkmark-circle" : "alert-circle"}
+            size={20}
+            color={payoutsEnabled ? "#10b981" : "#f59e0b"}
+          />
+          <View style={paymentStyles.info}>
+            <Text style={paymentStyles.label}>Bank Account</Text>
+            <Text style={paymentStyles.value}>
+              {payoutsEnabled
+                ? `Connected (****${bankLast4 || ""})`
+                : "Set up direct deposit"}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={paymentStyles.row}
+          onPress={() => router.push("/(scholar)/profile/payments" as any)}
+        >
+          <Ionicons name="wallet-outline" size={20} color="#14b8a6" />
+          <View style={paymentStyles.info}>
+            <Text style={paymentStyles.label}>Payment History</Text>
+            <Text style={paymentStyles.value}>View all payouts</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+        </TouchableOpacity>
       </View>
 
       {/* Tier progress */}
@@ -287,4 +324,18 @@ const tierStyles = StyleSheet.create({
   info: { flex: 1 },
   label: { fontSize: 14, fontWeight: "600", color: "#cbd5e1" },
   minScore: { fontSize: 12, color: "#64748b", marginBottom: 4 },
+});
+
+const paymentStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#0f1b2d",
+  },
+  info: { flex: 1 },
+  label: { fontSize: 14, fontWeight: "700", color: "#f8fafc" },
+  value: { fontSize: 12, color: "#94a3b8", marginTop: 2 },
 });

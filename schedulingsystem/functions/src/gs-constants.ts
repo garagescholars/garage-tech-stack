@@ -15,6 +15,12 @@ export const GS_COLLECTIONS = {
   JOB_TRANSFERS: "gs_jobTransfers",
   JOB_RESCHEDULES: "gs_jobReschedules",
   SCHOLAR_ANALYTICS: "gs_scholarAnalytics",
+  // Payment collections
+  PAYOUTS: "gs_payouts",
+  CUSTOMER_PAYMENTS: "gs_customerPayments",
+  PAYMENT_PERIODS: "gs_paymentPeriods",
+  STRIPE_ACCOUNTS: "gs_stripeAccounts",
+  PLATFORM_CONFIG: "gs_platformConfig",
 } as const;
 
 /** Quality score weights — must total 1.0 */
@@ -40,3 +46,26 @@ export const TIER_THRESHOLDS = {
 
 /** Max recent claims to keep */
 export const MAX_RECENT_CLAIMS = 50;
+
+// ── Payment Constants ──
+
+/** Hours after checkout before second payout is released */
+export const PAYMENT_RELEASE_HOURS = 72;
+
+/** Minimum quality score to auto-release completion payout */
+export const MINIMUM_SCORE_FOR_PAYMENT = 2.0;
+
+/** First split percentage (paid on check-in) */
+export const CHECKIN_SPLIT_PERCENT = 50;
+
+/** Second split percentage (paid after quality window) */
+export const COMPLETION_SPLIT_PERCENT = 50;
+
+/** 1099-NEC filing threshold */
+export const TAX_1099_THRESHOLD = 600;
+
+/** Days of month when biweekly pay periods start */
+export const PAY_PERIOD_BOUNDARIES = [1, 16] as const;
+
+/** Convenience fee percentage for card payments */
+export const CONVENIENCE_FEE_PERCENT = 3.0;

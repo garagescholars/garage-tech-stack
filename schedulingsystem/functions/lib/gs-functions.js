@@ -12,6 +12,7 @@ const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
 const firestore_2 = require("firebase-admin/firestore");
 const gs_constants_1 = require("./gs-constants");
+const gs_payments_1 = require("./gs-payments");
 const db = (0, firestore_2.getFirestore)();
 // Max Firestore batch size
 const BATCH_LIMIT = 500;
@@ -116,6 +117,8 @@ exports.gsOnJobUpdated = (0, firestore_1.onDocumentWritten)(`${gs_constants_1.GS
     }
     // ── UPCOMING → IN_PROGRESS (checked in) ──
     if (oldStatus === "UPCOMING" && newStatus === "IN_PROGRESS") {
+        // Trigger first 50% payout
+        await (0, gs_payments_1.createCheckinPayout)(jobId, after);
         const adminTokens = await getAdminTokens();
         if (adminTokens.length > 0) {
             await sendExpoPush(adminTokens, "Scholar Checked In", `${after.claimedByName || "A scholar"} checked in for "${after.title}"`, { screen: "admin-jobs", jobId });
@@ -633,6 +636,8 @@ exports.gsSubmitComplaint = (0, https_1.onCall)({ cors: true, timeoutSeconds: 60
             completionScore: Math.max(0, (scoreData.completionScore || 0) * 0.5),
         });
     }
+    // Hold any pending completion payout
+    await (0, gs_payments_1.holdCompletionPayout)(jobId);
     // Update job with dispute flag
     await jobRef.update({
         status: "DISPUTED",

@@ -87,6 +87,76 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "gs_payouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scholarId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gs_payouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "releaseEligibleAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gs_payouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "taxYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scholarId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gs_customerPayments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "customerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gs_paymentPeriods",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startDate",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

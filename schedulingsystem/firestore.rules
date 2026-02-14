@@ -191,5 +191,49 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false; // functions only
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // Payment System Collections
+    // ═══════════════════════════════════════════════════════════
+
+    // gs_payouts — scholar/customer payouts (scholars read own, functions write)
+    match /gs_payouts/{payoutId} {
+      allow read: if isSignedIn() && (
+        resource.data.scholarId == request.auth.uid ||
+        resource.data.customerId == request.auth.uid ||
+        isAdminByEmail()
+      );
+      allow write: if false; // functions only
+    }
+
+    // gs_customerPayments — payments from customers
+    match /gs_customerPayments/{paymentId} {
+      allow read: if isSignedIn() && (
+        resource.data.customerId == request.auth.uid ||
+        isAdminByEmail()
+      );
+      allow write: if false; // functions only (created via callable)
+    }
+
+    // gs_paymentPeriods — biweekly CPA reporting periods
+    match /gs_paymentPeriods/{periodId} {
+      allow read: if isAdminByEmail();
+      allow write: if false; // functions only
+    }
+
+    // gs_stripeAccounts — Stripe Connect accounts
+    match /gs_stripeAccounts/{accountId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdminByEmail()
+      );
+      allow write: if false; // functions only
+    }
+
+    // gs_platformConfig — admin-managed platform settings
+    match /gs_platformConfig/{configId} {
+      allow read: if isAdminByEmail();
+      allow write: if isAdminByEmail();
+    }
   }
 }

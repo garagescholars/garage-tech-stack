@@ -24,6 +24,19 @@ export {
   gsSendPush,
 } from "./gs-functions";
 
+// ── Garage Scholars Payment functions ──
+export {
+  gsReleaseCompletionPayouts,
+  gsCreateStripeAccount,
+  gsStripeWebhook,
+  gsCreateCustomerPayment,
+  gsCreateRetentionSubscription,
+  gsResalePayout,
+  gsMarkPayoutPaid,
+  gsGeneratePaymentReport,
+  gsExportPaymentData,
+} from "./gs-payments";
+
 const db = getFirestore();
 const storage = getStorage();
 const adminAuth = getAuth();

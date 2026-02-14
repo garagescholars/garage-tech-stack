@@ -17,6 +17,7 @@ import {
   TIER_THRESHOLDS,
   MAX_RECENT_CLAIMS,
 } from "./gs-constants";
+import { createCheckinPayout, holdCompletionPayout } from "./gs-payments";
 
 const db = getFirestore();
 
@@ -140,6 +141,9 @@ export const gsOnJobUpdated = onDocumentWritten(
 
     // ── UPCOMING → IN_PROGRESS (checked in) ──
     if (oldStatus === "UPCOMING" && newStatus === "IN_PROGRESS") {
+      // Trigger first 50% payout
+      await createCheckinPayout(jobId, after);
+
       const adminTokens = await getAdminTokens();
       if (adminTokens.length > 0) {
         await sendExpoPush(
@@ -786,6 +790,9 @@ export const gsSubmitComplaint = onCall(
         completionScore: Math.max(0, (scoreData.completionScore || 0) * 0.5),
       });
     }
+
+    // Hold any pending completion payout
+    await holdCompletionPayout(jobId);
 
     // Update job with dispute flag
     await jobRef.update({

@@ -12,4 +12,10 @@ export const COLLECTIONS = {
   JOB_TRANSFERS: 'gs_jobTransfers',
   JOB_RESCHEDULES: 'gs_jobReschedules',
   SCHOLAR_ANALYTICS: 'gs_scholarAnalytics',
+  // Payment collections
+  PAYOUTS: 'gs_payouts',
+  CUSTOMER_PAYMENTS: 'gs_customerPayments',
+  PAYMENT_PERIODS: 'gs_paymentPeriods',
+  STRIPE_ACCOUNTS: 'gs_stripeAccounts',
+  PLATFORM_CONFIG: 'gs_platformConfig',
 } as const;

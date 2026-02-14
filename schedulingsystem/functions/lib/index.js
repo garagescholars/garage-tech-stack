@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.approveSignup = exports.generateSopForJob = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
+exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.approveSignup = exports.generateSopForJob = exports.gsExportPaymentData = exports.gsGeneratePaymentReport = exports.gsMarkPayoutPaid = exports.gsResalePayout = exports.gsCreateRetentionSubscription = exports.gsCreateCustomerPayment = exports.gsStripeWebhook = exports.gsCreateStripeAccount = exports.gsReleaseCompletionPayouts = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const app_1 = require("firebase-admin/app");
@@ -59,6 +59,17 @@ Object.defineProperty(exports, "gsMonthlyGoalReset", { enumerable: true, get: fu
 Object.defineProperty(exports, "gsComputeAnalytics", { enumerable: true, get: function () { return gs_functions_1.gsComputeAnalytics; } });
 Object.defineProperty(exports, "gsSubmitComplaint", { enumerable: true, get: function () { return gs_functions_1.gsSubmitComplaint; } });
 Object.defineProperty(exports, "gsSendPush", { enumerable: true, get: function () { return gs_functions_1.gsSendPush; } });
+// ── Garage Scholars Payment functions ──
+var gs_payments_1 = require("./gs-payments");
+Object.defineProperty(exports, "gsReleaseCompletionPayouts", { enumerable: true, get: function () { return gs_payments_1.gsReleaseCompletionPayouts; } });
+Object.defineProperty(exports, "gsCreateStripeAccount", { enumerable: true, get: function () { return gs_payments_1.gsCreateStripeAccount; } });
+Object.defineProperty(exports, "gsStripeWebhook", { enumerable: true, get: function () { return gs_payments_1.gsStripeWebhook; } });
+Object.defineProperty(exports, "gsCreateCustomerPayment", { enumerable: true, get: function () { return gs_payments_1.gsCreateCustomerPayment; } });
+Object.defineProperty(exports, "gsCreateRetentionSubscription", { enumerable: true, get: function () { return gs_payments_1.gsCreateRetentionSubscription; } });
+Object.defineProperty(exports, "gsResalePayout", { enumerable: true, get: function () { return gs_payments_1.gsResalePayout; } });
+Object.defineProperty(exports, "gsMarkPayoutPaid", { enumerable: true, get: function () { return gs_payments_1.gsMarkPayoutPaid; } });
+Object.defineProperty(exports, "gsGeneratePaymentReport", { enumerable: true, get: function () { return gs_payments_1.gsGeneratePaymentReport; } });
+Object.defineProperty(exports, "gsExportPaymentData", { enumerable: true, get: function () { return gs_payments_1.gsExportPaymentData; } });
 const db = (0, firestore_2.getFirestore)();
 const storage = (0, storage_1.getStorage)();
 const adminAuth = (0, auth_1.getAuth)();

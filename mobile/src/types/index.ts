@@ -47,6 +47,10 @@ export type GsScholarProfile = {
   tier: ScholarTier;
   showOnLeaderboard: boolean;
   onboardingComplete?: boolean;
+  // Payment fields
+  stripeAccountId?: string;
+  stripeOnboardingComplete?: boolean;
+  bankLinked?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
@@ -121,6 +125,11 @@ export type GsJob = {
   // SOP / checklist
   sopContent?: string;
   checklist?: ChecklistItem[];
+
+  // Payment tracking
+  firstPayoutId?: string;
+  secondPayoutId?: string;
+  paymentStatus?: "unpaid" | "first_paid" | "held" | "fully_paid";
 
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -283,15 +292,113 @@ export type GsScholarAnalytics = {
   lastUpdated?: Timestamp;
 };
 
-// ── Payouts ──
+// ── Payouts (gs_payouts) ──
 
-export type Payout = {
+export type PayoutSplitType = "checkin_50" | "completion_50" | "resale" | "full";
+export type PayoutStatus = "pending" | "processing" | "paid" | "failed" | "held";
+export type PayoutMethod = "stripe_ach" | "manual_zelle" | "manual_venmo" | "manual_cash" | "manual_check";
+
+export type GsPayout = {
   id: string;
-  scholarId: string;
-  serviceJobId: string;
+  jobId: string;
+  scholarId?: string;
+  customerId?: string;
+  recipientName?: string;
   amount: number;
-  status: "pending" | "paid" | "failed";
-  paymentMethod?: string;
+  splitType: PayoutSplitType;
+  status: PayoutStatus;
+  stripeTransferId?: string;
+  paymentMethod: PayoutMethod;
+  releaseEligibleAt?: Timestamp;
+  qualityScoreAtRelease?: number;
+  complaintWindowPassed: boolean;
+  holdReason?: string;
+  taxYear: number;
   notes?: string;
   createdAt?: Timestamp;
+  paidAt?: Timestamp;
+};
+
+/** @deprecated Use GsPayout instead */
+export type Payout = GsPayout;
+
+// ── Customer Payments (gs_customerPayments) ──
+
+export type CustomerPaymentType = "package" | "one_off" | "retention_monthly";
+export type CustomerPaymentMethod = "ach" | "card";
+export type CustomerPaymentStatus = "pending" | "processing" | "succeeded" | "failed" | "refunded";
+
+export type GsCustomerPayment = {
+  id: string;
+  customerId: string;
+  customerName: string;
+  jobId?: string;
+  amount: number;
+  type: CustomerPaymentType;
+  stripePaymentIntentId?: string;
+  stripeSubscriptionId?: string;
+  paymentMethod: CustomerPaymentMethod;
+  convenienceFee: number;
+  totalCharged: number;
+  status: CustomerPaymentStatus;
+  description?: string;
+  createdAt?: Timestamp;
+  paidAt?: Timestamp;
+};
+
+// ── Payment Periods (gs_paymentPeriods) ──
+
+export type PaymentPeriodStatus = "open" | "closed" | "reported";
+
+export type ScholarPeriodBreakdown = {
+  scholarId: string;
+  scholarName: string;
+  jobCount: number;
+  totalPaid: number;
+  payoutIds: string[];
+};
+
+export type GsPaymentPeriod = {
+  id: string;
+  periodType: "biweekly";
+  startDate: string;
+  endDate: string;
+  totalPayouts: number;
+  totalAmount: number;
+  scholarBreakdowns: ScholarPeriodBreakdown[];
+  cpaReportSentAt?: Timestamp;
+  status: PaymentPeriodStatus;
+  createdAt?: Timestamp;
+};
+
+// ── Stripe Accounts (gs_stripeAccounts) ──
+
+export type StripeAccountType = "scholar" | "resale_customer";
+
+export type GsStripeAccount = {
+  id: string;
+  userId: string;
+  stripeAccountId: string;
+  accountType: StripeAccountType;
+  onboardingComplete: boolean;
+  payoutsEnabled: boolean;
+  bankLast4?: string;
+  taxIdProvided: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+};
+
+// ── Platform Config (gs_platformConfig/payments) ──
+
+export type GsPaymentConfig = {
+  stripeEnabled: boolean;
+  checkinSplitPercent: number;
+  completionSplitPercent: number;
+  paymentReleaseWindowHours: number;
+  minimumScoreForRelease: number;
+  cpaEmail: string;
+  cpaAutoEmailEnabled: boolean;
+  cpaReportFrequency: "biweekly";
+  convenienceFeePercent: number;
+  achPreferred: boolean;
 };
