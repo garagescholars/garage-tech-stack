@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, UploadCloud, Trash2, Archive, DollarSign, Ban } from 'lucide-react';
+import { X, UploadCloud, Trash2, DollarSign, Ban, RefreshCw } from 'lucide-react';
 import { db, storage } from '../firebase';
-import { collection, addDoc, updateDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { updateDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import heic2any from 'heic2any';
+import { useToast } from '../context/ToastContext';
 
 export default function AddListingModal({ isOpen, onClose, initialData = null }) {
   const [title, setTitle] = useState('');
@@ -11,15 +12,16 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
   const [clientName, setClientName] = useState('');
   const [description, setDescription] = useState('');
   const [platform, setPlatform] = useState('Both');
-  
-  const [imageFiles, setImageFiles] = useState([]); 
-  const [previews, setPreviews] = useState([]);     
-  
+  const [condition, setCondition] = useState('USED');
+
+  const [imageFiles, setImageFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-
-  // NEW: State to toggle the "Decision Menu"
   const [showDeleteMenu, setShowDeleteMenu] = useState(false);
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (initialData) {
@@ -28,7 +30,8 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
         setClientName(initialData.clientName || '');
         setDescription(initialData.description || '');
         setPlatform(initialData.platform || 'Both');
-        
+        setCondition(initialData.condition || 'USED');
+
         if (initialData.imageUrls && Array.isArray(initialData.imageUrls)) {
             setPreviews(initialData.imageUrls);
         }
@@ -39,23 +42,19 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
 
   const resetForm = () => {
     setTitle(''); setPrice(''); setClientName(''); setDescription('');
-    setPlatform('Both'); setImageFiles([]); setPreviews([]);
+    setPlatform('Both'); setCondition('USED'); setImageFiles([]); setPreviews([]);
     setStatusMessage('');
-    setShowDeleteMenu(false); // Reset menu
+    setShowDeleteMenu(false);
   };
 
-  // Process image: HEIC → JPEG conversion + resize to 1200px max
   const processImage = async (file) => {
     let blob = file;
-
-    // Convert HEIC/HEIF to JPEG
     const isHeic = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
     if (isHeic) {
       const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
       blob = Array.isArray(converted) ? converted[0] : converted;
     }
 
-    // Resize via canvas
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -98,54 +97,71 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
       setPreviews(updatedPreviews);
   };
 
-  // --- PATH A: SOLD (Revenue) ---
   const handleMarkSold = async () => {
         setIsSubmitting(true);
         setStatusMessage('Moving to Sold Archive...');
-        
         try {
             const soldData = {
                 ...initialData,
                 status: 'Sold',
                 dateSold: new Date().toLocaleDateString(),
                 archivedAt: new Date(),
-                soldBy: 'Garage Scholars' 
+                soldBy: 'Garage Scholars'
             };
-            // Write to Sold
             await setDoc(doc(db, "sold_inventory", initialData.id), soldData);
-            // Delete from Active
             await deleteDoc(doc(db, "inventory", initialData.id));
-            onClose(); 
+            showToast({ type: 'success', message: `"${title}" marked as sold` });
+            onClose();
         } catch (error) {
             console.error("Error archiving:", error);
-            alert("Failed. Check console.");
+            showToast({ type: 'error', message: 'Failed to archive item. Check console.' });
         } finally {
             setIsSubmitting(false);
         }
   };
 
-  // --- PATH B: DELETE (Void) ---
   const handlePermanentDelete = async () => {
-        if(!window.confirm("CONFIRM: This will delete the data forever. It will NOT count as a sale.")) return;
-
+        setShowDeleteMenu(false);
         setIsSubmitting(true);
         setStatusMessage('Deleting permanently...');
-        
         try {
             await deleteDoc(doc(db, "inventory", initialData.id));
-            onClose(); 
+            showToast({ type: 'info', message: `"${title}" deleted permanently` });
+            onClose();
         } catch (error) {
             console.error("Error deleting:", error);
-            alert("Failed. Check console.");
+            showToast({ type: 'error', message: 'Failed to delete. Check console.' });
         } finally {
             setIsSubmitting(false);
         }
+  };
+
+  const handleRepost = async () => {
+    setIsSubmitting(true);
+    try {
+      await updateDoc(doc(db, "inventory", initialData.id), {
+        status: 'Pending',
+        lastError: null,
+        progress: {},
+        lastUpdated: new Date()
+      });
+      showToast({ type: 'success', message: `Re-queued "${title}" for automation` });
+      onClose();
+    } catch (error) {
+      console.error("Error re-posting:", error);
+      showToast({ type: 'error', message: 'Failed to re-post. Check console.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !price) return alert("Title and Price are required.");
-    
+    if (!title || !price) {
+      showToast({ type: 'error', message: 'Title and Price are required.' });
+      return;
+    }
+
     setIsSubmitting(true);
     setStatusMessage('Creating folders & uploading...');
 
@@ -161,7 +177,6 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
             const uploadPromises = imageFiles.map(async (file) => {
                 const processed = await processImage(file);
                 const fileName = `${Date.now()}_${processed.name}`;
-                // Use client-centric path when clientFolder available, otherwise resale/listings
                 const storagePath = initialData?.clientFolder
                   ? `clients/${initialData.clientFolder}/resale/photos/${fileName}`
                   : `resale/listings/${customDocId}/photos/${fileName}`;
@@ -177,20 +192,23 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
 
         const formData = {
             title,
-            price: price.replace(/[^0-9.]/g, ''), 
+            price: price.replace(/[^0-9.]/g, ''),
             clientName,
             description,
             platform,
-            status: 'Pending', 
-            imageUrls: finalImageUrls, 
+            condition,
+            status: 'Pending',
+            imageUrls: finalImageUrls,
             dateListed: initialData?.dateListed || new Date().toLocaleDateString(),
             lastUpdated: new Date()
         };
 
         if (initialData) {
             await updateDoc(doc(db, "inventory", initialData.id), formData);
+            showToast({ type: 'success', message: `"${title}" updated and re-queued` });
         } else {
             await setDoc(doc(db, "inventory", customDocId), formData);
+            showToast({ type: 'success', message: `"${title}" created — automation starting` });
         }
 
         onClose();
@@ -198,7 +216,7 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
 
     } catch (error) {
         console.error("Error saving:", error);
-        alert("Upload failed. Check console.");
+        showToast({ type: 'error', message: 'Upload failed. Check console.' });
     } finally {
         setIsSubmitting(false);
         setStatusMessage('');
@@ -207,11 +225,12 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
 
   if (!isOpen) return null;
 
+  const canRepost = initialData && (initialData.status === 'Active' || initialData.status === 'Error' || initialData.status === 'Compliance Error');
+
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto relative">
-        
-        {/* HEADER */}
+
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-white">
             {showDeleteMenu ? 'Remove Item' : (initialData ? 'Edit Listing' : 'Add New Listing')}
@@ -219,9 +238,8 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
           <button onClick={onClose} className="text-slate-400 hover:text-white"><X size={24} /></button>
         </div>
 
-        {/* --- VIEW 1: THE DECISION MENU (If Delete Clicked) --- */}
         {showDeleteMenu ? (
-            <div className="space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="space-y-4">
                 <div className="p-4 bg-slate-800 rounded-lg text-center border border-slate-700">
                     <p className="text-white font-medium mb-1">Why are we removing this item?</p>
                     <p className="text-sm text-slate-400">"{title}"</p>
@@ -235,7 +253,6 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
                             <p className="text-xs text-emerald-500/60">Moves to Sold Archive. Counts as Revenue.</p>
                         </div>
                     </div>
-                    <span className="text-lg opacity-0 group-hover:opacity-100 transition-opacity">➔</span>
                 </button>
 
                 <button onClick={handlePermanentDelete} className="w-full flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 text-red-400 transition-all group">
@@ -246,7 +263,6 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
                             <p className="text-xs text-red-500/60">Deletes permanently. No Revenue stats.</p>
                         </div>
                     </div>
-                    <span className="text-lg opacity-0 group-hover:opacity-100 transition-opacity">➔</span>
                 </button>
 
                 <button onClick={() => setShowDeleteMenu(false)} className="w-full text-slate-500 text-sm py-2 hover:text-white">
@@ -254,7 +270,6 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
                 </button>
             </div>
         ) : (
-        /* --- VIEW 2: THE NORMAL FORM --- */
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><label className="block text-sm font-medium text-slate-400 mb-1">Item Title</label><input type="text" required className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:border-teal-500 outline-none" value={title} onChange={(e) => setTitle(e.target.value)}/></div>
           <div className="grid grid-cols-2 gap-4">
@@ -262,7 +277,10 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
               <div><label className="block text-sm font-medium text-slate-400 mb-1">Client Name</label><input type="text" placeholder="(Optional)" className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:border-teal-500 outline-none" value={clientName} onChange={(e) => setClientName(e.target.value)}/></div>
           </div>
           <div><label className="block text-sm font-medium text-slate-400 mb-1">Description</label><textarea required rows="4" className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:border-teal-500 outline-none resize-none" value={description} onChange={(e) => setDescription(e.target.value)}/></div>
-          <div><label className="block text-sm font-medium text-slate-400 mb-1">Platform</label><select className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:border-teal-500 outline-none" value={platform} onChange={(e) => setPlatform(e.target.value)}><option value="Both">Both (FB + CL)</option><option value="All">All (CL + FB + eBay)</option><option value="Craigslist">Craigslist Only</option><option value="FB Marketplace">Facebook Only</option><option value="eBay Only">eBay Only</option></select></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="block text-sm font-medium text-slate-400 mb-1">Platform</label><select className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:border-teal-500 outline-none" value={platform} onChange={(e) => setPlatform(e.target.value)}><option value="Both">Both (FB + CL)</option><option value="All">All (CL + FB + eBay)</option><option value="Craigslist">Craigslist Only</option><option value="FB Marketplace">Facebook Only</option><option value="eBay Only">eBay Only</option></select></div>
+            <div><label className="block text-sm font-medium text-slate-400 mb-1">Condition</label><select className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:border-teal-500 outline-none" value={condition} onChange={(e) => setCondition(e.target.value)}><option value="NEW">New</option><option value="LIKE_NEW">Like New</option><option value="GOOD">Good</option><option value="USED">Used</option><option value="FOR_PARTS">For Parts</option></select></div>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">Photos (Max 6)</label>
@@ -286,9 +304,19 @@ export default function AddListingModal({ isOpen, onClose, initialData = null })
           </div>
 
           {initialData && (
-            <div className="pt-4 border-t border-slate-800">
-               <button 
-                 type="button" 
+            <div className="pt-4 border-t border-slate-800 space-y-2">
+               {canRepost && (
+                 <button
+                   type="button"
+                   onClick={handleRepost}
+                   disabled={isSubmitting}
+                   className="w-full flex items-center justify-center gap-2 text-teal-400 py-2.5 rounded-lg border border-teal-500/20 bg-teal-500/5 hover:bg-teal-500/10 transition-colors"
+                 >
+                   <RefreshCw size={16} /> Re-Post to Marketplaces
+                 </button>
+               )}
+               <button
+                 type="button"
                  onClick={() => setShowDeleteMenu(true)}
                  className="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-white py-3 rounded-lg border border-slate-700 hover:bg-slate-800 transition-colors"
                >
