@@ -10,6 +10,11 @@
       "rewrites": [
         { "source": "**", "destination": "/index.html" }
       ]
+    },
+    {
+      "target": "complaint",
+      "public": "complaint",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
     }
   ],
   "firestore": {

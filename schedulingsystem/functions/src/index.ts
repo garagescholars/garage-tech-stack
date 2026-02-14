@@ -10,6 +10,20 @@ import * as crypto from "crypto";
 
 initializeApp();
 
+// ── Garage Scholars Mobile App functions ──
+export {
+  gsOnJobUpdated,
+  gsOnTransferCreated,
+  gsOnRescheduleUpdated,
+  gsLockScores,
+  gsExpireTransfers,
+  gsResetViewerCounts,
+  gsMonthlyGoalReset,
+  gsComputeAnalytics,
+  gsSubmitComplaint,
+  gsSendPush,
+} from "./gs-functions";
+
 const db = getFirestore();
 const storage = getStorage();
 const adminAuth = getAuth();

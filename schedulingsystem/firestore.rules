@@ -93,5 +93,103 @@ service cloud.firestore {
       allow create: if true;  // Anyone can submit an application
       allow read, update, delete: if isAdminByEmail();
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // Garage Scholars Mobile App Collections
+    // ═══════════════════════════════════════════════════════════
+
+    // gs_profiles — basic user profile (phone auth)
+    match /gs_profiles/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (
+        request.auth.uid == userId || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_scholarProfiles — scholar-specific stats (managed by functions)
+    match /gs_scholarProfiles/{scholarId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == scholarId;
+      allow update: if isSignedIn() && (
+        request.auth.uid == scholarId || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_jobs — service jobs
+    match /gs_jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow create: if isAdminByEmail();
+      allow update: if isSignedIn(); // scholars claim, check in/out; admins manage
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_recentClaims — FOMO feed (written by Cloud Functions)
+    match /gs_recentClaims/{claimId} {
+      allow read: if isSignedIn();
+      allow write: if false; // functions only
+    }
+
+    // gs_jobCheckins — check-in/out media & GPS
+    match /gs_jobCheckins/{checkinId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.scholarId == request.auth.uid || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_jobQualityScores — quality scoring (admin + functions)
+    match /gs_jobQualityScores/{scoreId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdminByEmail();
+      allow delete: if false;
+    }
+
+    // gs_scholarGoals — monthly goals
+    match /gs_scholarGoals/{goalId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && (
+        resource == null || resource.data.scholarId == request.auth.uid || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_scholarAchievements — badges
+    match /gs_scholarAchievements/{achievementId} {
+      allow read: if isSignedIn();
+      allow write: if false; // functions only
+    }
+
+    // gs_jobTransfers — job transfers between scholars
+    match /gs_jobTransfers/{transferId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.fromScholarId == request.auth.uid ||
+        resource.data.toScholarId == request.auth.uid ||
+        isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_jobReschedules — reschedule requests
+    match /gs_jobReschedules/{rescheduleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.scholarId == request.auth.uid || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_scholarAnalytics — computed analytics (functions only)
+    match /gs_scholarAnalytics/{analyticsId} {
+      allow read: if isSignedIn();
+      allow write: if false; // functions only
+    }
   }
 }

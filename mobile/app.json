@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "Garage Scholars",
+    "slug": "garage-scholars",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "garage-scholars",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f1b2d"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.garagescholars.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Garage Scholars needs camera access for check-in/out photos and videos.",
+        "NSMicrophoneUsageDescription": "Garage Scholars needs microphone access for check-in/out videos.",
+        "NSLocationWhenInUseUsageDescription": "Garage Scholars needs your location for job site check-in verification.",
+        "NSPhotoLibraryUsageDescription": "Garage Scholars needs photo library access to upload freight receipts."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f1b2d"
+      },
+      "package": "com.garagescholars.app",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Garage Scholars needs camera access for check-in/out photos and videos.",
+          "microphonePermission": "Garage Scholars needs microphone access for check-in/out videos.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Garage Scholars needs your location for job site check-in verification."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Garage Scholars needs photo library access to upload freight receipts."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0f1b2d"
+        }
+      ]
+    ]
+  }
+}
