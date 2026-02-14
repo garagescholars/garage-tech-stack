@@ -141,8 +141,12 @@ export const gsOnJobUpdated = onDocumentWritten(
 
     // ── UPCOMING → IN_PROGRESS (checked in) ──
     if (oldStatus === "UPCOMING" && newStatus === "IN_PROGRESS") {
-      // Trigger first 50% payout
-      await createCheckinPayout(jobId, after);
+      // Trigger first 50% payout (wrapped so payout failure doesn't crash trigger)
+      try {
+        await createCheckinPayout(jobId, after);
+      } catch (err) {
+        console.error(`createCheckinPayout failed for job ${jobId}:`, err);
+      }
 
       const adminTokens = await getAdminTokens();
       if (adminTokens.length > 0) {
@@ -792,7 +796,11 @@ export const gsSubmitComplaint = onCall(
     }
 
     // Hold any pending completion payout
-    await holdCompletionPayout(jobId);
+    try {
+      await holdCompletionPayout(jobId);
+    } catch (err) {
+      console.error(`holdCompletionPayout failed for job ${jobId}:`, err);
+    }
 
     // Update job with dispute flag
     await jobRef.update({

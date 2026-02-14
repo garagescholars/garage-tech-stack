@@ -178,47 +178,59 @@ async function holdCompletionPayout(jobId) {
 }
 // ═══════════════════════════════════════════════════════════════
 // 3. SCHEDULED: Release completion payouts after 72hr window
-//    Runs every hour, checks for eligible payouts
+//    Runs every hour. Only queries jobs awaiting second payout
+//    (paymentStatus == "first_paid") to avoid scanning all history.
 // ═══════════════════════════════════════════════════════════════
-exports.gsReleaseCompletionPayouts = (0, scheduler_1.onSchedule)("every 1 hours", async () => {
+exports.gsReleaseCompletionPayouts = (0, scheduler_1.onSchedule)({ schedule: "every 1 hours", timeoutSeconds: 300 }, async () => {
     console.log("gsReleaseCompletionPayouts: checking for payouts to release...");
     const now = firestore_1.Timestamp.now();
-    // Find quality scores where:
-    // - Score is locked (48hr complaint window passed)
-    // - No customer complaint
-    // - 72hrs have passed since checkout (releaseEligibleAt)
-    const eligibleScores = await db
-        .collection(gs_constants_1.GS_COLLECTIONS.JOB_QUALITY_SCORES)
-        .where("scoreLocked", "==", true)
+    // Only query jobs that are awaiting second payout — bounded set
+    const pendingJobs = await db
+        .collection(gs_constants_1.GS_COLLECTIONS.JOBS)
+        .where("paymentStatus", "==", "first_paid")
         .get();
-    if (eligibleScores.empty) {
-        console.log("No locked scores to process.");
+    if (pendingJobs.empty) {
+        console.log("No jobs awaiting completion payout.");
         return;
     }
-    for (const scoreDoc of eligibleScores.docs) {
+    console.log(`Found ${pendingJobs.size} jobs awaiting completion payout.`);
+    for (const jobDoc of pendingJobs.docs) {
         try {
-            const scoreData = scoreDoc.data();
-            const jobId = scoreData.jobId;
-            // Skip if complaint
+            const jobId = jobDoc.id;
+            const jobData = jobDoc.data();
+            const scholarId = jobData.claimedBy;
+            if (!scholarId)
+                continue;
+            // Get quality score for this job
+            const scoreSnap = await db.collection(gs_constants_1.GS_COLLECTIONS.JOB_QUALITY_SCORES).doc(jobId).get();
+            if (!scoreSnap.exists)
+                continue;
+            const scoreData = scoreSnap.data();
+            // Must be locked (48hr complaint window passed)
+            if (!scoreData.scoreLocked)
+                continue;
+            // Skip if complaint filed
             if (scoreData.customerComplaint) {
                 console.log(`Job ${jobId}: has complaint, skipping auto-release.`);
                 continue;
             }
-            // Skip if score too low
+            // Score must meet minimum
             const finalScore = scoreData.finalScore || 0;
             if (finalScore < gs_constants_1.MINIMUM_SCORE_FOR_PAYMENT) {
-                console.log(`Job ${jobId}: score ${finalScore} below minimum ${gs_constants_1.MINIMUM_SCORE_FOR_PAYMENT}, skipping.`);
+                console.log(`Job ${jobId}: score ${finalScore} below minimum ${gs_constants_1.MINIMUM_SCORE_FOR_PAYMENT}, holding.`);
+                await jobDoc.ref.update({ paymentStatus: "held" });
                 continue;
             }
-            // Check if 72hrs have passed since complaint window end
-            // (complaintWindowEnd is 48hrs after checkout, so we need 72hrs total = 24hrs after window)
+            // 72hrs must have passed since checkout
+            // complaintWindowEnd = checkout + 48hrs, so releaseTime = complaintWindowEnd + 24hrs
             const complaintWindowEnd = scoreData.complaintWindowEnd?.toDate();
             if (!complaintWindowEnd)
                 continue;
-            const releaseTime = new Date(complaintWindowEnd.getTime() + (gs_constants_1.PAYMENT_RELEASE_HOURS - 48) * 60 * 60 * 1000);
+            const hoursAfterWindow = gs_constants_1.PAYMENT_RELEASE_HOURS - gs_constants_1.SCORE_LOCK_HOURS;
+            const releaseTime = new Date(complaintWindowEnd.getTime() + hoursAfterWindow * 60 * 60 * 1000);
             if (now.toDate() < releaseTime)
                 continue;
-            // Check if completion payout already exists
+            // Idempotency: skip if completion payout already exists
             const existingPayout = await db
                 .collection(gs_constants_1.GS_COLLECTIONS.PAYOUTS)
                 .where("jobId", "==", jobId)
@@ -226,15 +238,10 @@ exports.gsReleaseCompletionPayouts = (0, scheduler_1.onSchedule)("every 1 hours"
                 .limit(1)
                 .get();
             if (!existingPayout.empty) {
-                console.log(`Completion payout already exists for job ${jobId}, skipping.`);
+                // Fix stale paymentStatus
+                await jobDoc.ref.update({ paymentStatus: "fully_paid", secondPayoutId: existingPayout.docs[0].id });
                 continue;
             }
-            // Get job data for payout amount
-            const jobSnap = await db.collection(gs_constants_1.GS_COLLECTIONS.JOBS).doc(jobId).get();
-            if (!jobSnap.exists)
-                continue;
-            const jobData = jobSnap.data();
-            const scholarId = jobData.claimedBy || scoreData.scholarId;
             const totalPayout = (jobData.payout || 0) + (jobData.rushBonus || 0);
             const secondHalf = Math.round((totalPayout * gs_constants_1.COMPLETION_SPLIT_PERCENT) / 100 * 100) / 100;
             // Check for Stripe
@@ -286,7 +293,7 @@ exports.gsReleaseCompletionPayouts = (0, scheduler_1.onSchedule)("every 1 hours"
             }
             await payoutRef.set(payoutData);
             // Update job
-            await db.collection(gs_constants_1.GS_COLLECTIONS.JOBS).doc(jobId).update({
+            await jobDoc.ref.update({
                 secondPayoutId: payoutRef.id,
                 paymentStatus: "fully_paid",
             });
@@ -299,15 +306,15 @@ exports.gsReleaseCompletionPayouts = (0, scheduler_1.onSchedule)("every 1 hours"
             // Notify admins if manual
             if (!hasStripe) {
                 await notifyAdmins(`💰 Manual Payment Required: $${secondHalf} (Completion)`, `<p>Completion payout released for "<strong>${jobData.title || jobId}</strong>".</p>
-           <p>Scholar: <strong>${jobData.claimedByName || scholarId}</strong></p>
-           <p>Amount: <strong>$${secondHalf}</strong></p>
-           <p>Quality Score: ${finalScore.toFixed(2)}</p>
-           <p>Please pay manually via Zelle/Venmo.</p>`);
+             <p>Scholar: <strong>${jobData.claimedByName || scholarId}</strong></p>
+             <p>Amount: <strong>$${secondHalf}</strong></p>
+             <p>Quality Score: ${finalScore.toFixed(2)}</p>
+             <p>Please pay manually via Zelle/Venmo.</p>`);
             }
             console.log(`Completion payout created: ${payoutRef.id}, job=${jobId}, amount=$${secondHalf}`);
         }
         catch (err) {
-            console.error(`Error processing completion payout for score ${scoreDoc.id}:`, err);
+            console.error(`Error processing completion payout for job ${jobDoc.id}:`, err);
         }
     }
 });
@@ -365,13 +372,13 @@ exports.gsCreateStripeAccount = (0, https_1.onCall)({ cors: true, timeoutSeconds
             taxIdProvided: false,
             createdAt: firestore_1.FieldValue.serverTimestamp(),
         });
-        // Update scholar profile if scholar
+        // Update scholar profile if scholar (use merge to avoid failing on missing doc)
         if (accountType === "scholar") {
-            await db.collection(gs_constants_1.GS_COLLECTIONS.SCHOLAR_PROFILES).doc(userId).update({
+            await db.collection(gs_constants_1.GS_COLLECTIONS.SCHOLAR_PROFILES).doc(userId).set({
                 stripeAccountId: account.id,
                 stripeOnboardingComplete: false,
                 bankLinked: false,
-            });
+            }, { merge: true });
         }
     }
     // Create onboarding link

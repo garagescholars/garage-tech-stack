@@ -117,8 +117,13 @@ exports.gsOnJobUpdated = (0, firestore_1.onDocumentWritten)(`${gs_constants_1.GS
     }
     // ── UPCOMING → IN_PROGRESS (checked in) ──
     if (oldStatus === "UPCOMING" && newStatus === "IN_PROGRESS") {
-        // Trigger first 50% payout
-        await (0, gs_payments_1.createCheckinPayout)(jobId, after);
+        // Trigger first 50% payout (wrapped so payout failure doesn't crash trigger)
+        try {
+            await (0, gs_payments_1.createCheckinPayout)(jobId, after);
+        }
+        catch (err) {
+            console.error(`createCheckinPayout failed for job ${jobId}:`, err);
+        }
         const adminTokens = await getAdminTokens();
         if (adminTokens.length > 0) {
             await sendExpoPush(adminTokens, "Scholar Checked In", `${after.claimedByName || "A scholar"} checked in for "${after.title}"`, { screen: "admin-jobs", jobId });
@@ -637,7 +642,12 @@ exports.gsSubmitComplaint = (0, https_1.onCall)({ cors: true, timeoutSeconds: 60
         });
     }
     // Hold any pending completion payout
-    await (0, gs_payments_1.holdCompletionPayout)(jobId);
+    try {
+        await (0, gs_payments_1.holdCompletionPayout)(jobId);
+    }
+    catch (err) {
+        console.error(`holdCompletionPayout failed for job ${jobId}:`, err);
+    }
     // Update job with dispute flag
     await jobRef.update({
         status: "DISPUTED",

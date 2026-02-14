@@ -5,8 +5,6 @@ import {
   where,
   orderBy,
   onSnapshot,
-  doc,
-  getDoc,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { COLLECTIONS } from "../constants/collections";
