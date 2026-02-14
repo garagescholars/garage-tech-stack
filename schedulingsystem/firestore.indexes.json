@@ -13,6 +13,80 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "gs_jobQualityScores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scoreLocked",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "complaintWindowEnd",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gs_jobQualityScores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scholarId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoreLocked",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gs_jobTransfers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "transferType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gs_scholarGoals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scholarId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "month",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "year",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gs_recentClaims",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "claimedAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

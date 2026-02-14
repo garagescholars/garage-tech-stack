@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.approveSignup = exports.generateSopForJob = void 0;
+exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.approveSignup = exports.generateSopForJob = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const app_1 = require("firebase-admin/app");
@@ -47,6 +47,18 @@ const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const sharp_1 = __importDefault(require("sharp"));
 const crypto = __importStar(require("crypto"));
 (0, app_1.initializeApp)();
+// ── Garage Scholars Mobile App functions ──
+var gs_functions_1 = require("./gs-functions");
+Object.defineProperty(exports, "gsOnJobUpdated", { enumerable: true, get: function () { return gs_functions_1.gsOnJobUpdated; } });
+Object.defineProperty(exports, "gsOnTransferCreated", { enumerable: true, get: function () { return gs_functions_1.gsOnTransferCreated; } });
+Object.defineProperty(exports, "gsOnRescheduleUpdated", { enumerable: true, get: function () { return gs_functions_1.gsOnRescheduleUpdated; } });
+Object.defineProperty(exports, "gsLockScores", { enumerable: true, get: function () { return gs_functions_1.gsLockScores; } });
+Object.defineProperty(exports, "gsExpireTransfers", { enumerable: true, get: function () { return gs_functions_1.gsExpireTransfers; } });
+Object.defineProperty(exports, "gsResetViewerCounts", { enumerable: true, get: function () { return gs_functions_1.gsResetViewerCounts; } });
+Object.defineProperty(exports, "gsMonthlyGoalReset", { enumerable: true, get: function () { return gs_functions_1.gsMonthlyGoalReset; } });
+Object.defineProperty(exports, "gsComputeAnalytics", { enumerable: true, get: function () { return gs_functions_1.gsComputeAnalytics; } });
+Object.defineProperty(exports, "gsSubmitComplaint", { enumerable: true, get: function () { return gs_functions_1.gsSubmitComplaint; } });
+Object.defineProperty(exports, "gsSendPush", { enumerable: true, get: function () { return gs_functions_1.gsSendPush; } });
 const db = (0, firestore_2.getFirestore)();
 const storage = (0, storage_1.getStorage)();
 const adminAuth = (0, auth_1.getAuth)();

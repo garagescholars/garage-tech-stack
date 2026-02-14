@@ -10,7 +10,7 @@ import {
   Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, where, getDocs } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { db } from "../../../src/lib/firebase";
 import { COLLECTIONS } from "../../../src/constants/collections";
@@ -41,13 +41,28 @@ export default function AdminJobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [job, setJob] = useState<ServiceJob | null>(null);
+  const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
+  const [afterPhotos, setAfterPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    const unsub = onSnapshot(doc(db, COLLECTIONS.JOBS, id), (snap) => {
+    const unsub = onSnapshot(doc(db, COLLECTIONS.JOBS, id), async (snap) => {
       if (snap.exists()) {
-        setJob({ id: snap.id, ...snap.data() } as ServiceJob);
+        const jobData = { id: snap.id, ...snap.data() } as ServiceJob;
+        setJob(jobData);
+        // Load checkin photos if a scholar claimed this job
+        if (jobData.claimedBy) {
+          const checkinDocId = `${id}_${jobData.claimedBy}`;
+          const checkinSnap = await getDocs(
+            query(collection(db, COLLECTIONS.JOB_CHECKINS), where("jobId", "==", id))
+          );
+          if (!checkinSnap.empty) {
+            const checkinData = checkinSnap.docs[0].data();
+            setBeforePhotos(checkinData.beforePhotos || []);
+            setAfterPhotos(checkinData.afterPhotos || []);
+          }
+        }
       }
       setLoading(false);
     });
@@ -146,10 +161,10 @@ export default function AdminJobDetailScreen() {
       )}
 
       {/* Before Photos */}
-      {job.beforePhotos && job.beforePhotos.length > 0 && (
+      {beforePhotos.length > 0 && (
         <Section title="Before Photos">
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {job.beforePhotos.map((url, i) => (
+            {beforePhotos.map((url: string, i: number) => (
               <Image key={i} source={{ uri: url }} style={styles.photo} />
             ))}
           </ScrollView>
@@ -157,10 +172,10 @@ export default function AdminJobDetailScreen() {
       )}
 
       {/* After Photos */}
-      {job.afterPhotos && job.afterPhotos.length > 0 && (
+      {afterPhotos.length > 0 && (
         <Section title="After Photos">
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {job.afterPhotos.map((url, i) => (
+            {afterPhotos.map((url: string, i: number) => (
               <Image key={i} source={{ uri: url }} style={styles.photo} />
             ))}
           </ScrollView>

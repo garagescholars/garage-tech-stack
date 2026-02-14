@@ -80,11 +80,11 @@ export default function ScoreHistoryScreen() {
           />
         </View>
 
-        {item.customer_complaint && (
+        {item.customerComplaint && (
           <View style={styles.complaintBanner}>
             <Ionicons name="warning" size={16} color="#ef4444" />
             <Text style={styles.complaintText}>
-              Customer complaint: {item.complaint_details || "Filed"}
+              Customer complaint: {item.complaintDetails || "Filed"}
             </Text>
           </View>
         )}

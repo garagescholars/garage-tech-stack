@@ -107,7 +107,8 @@ export type GsJob = {
   claimedByName?: string | null;
   claimedAt?: Timestamp | null;
 
-  // Customer
+  // Client / Customer
+  clientName?: string;
   customerId?: string | null;
   customerName?: string;
   customerPhone?: string;

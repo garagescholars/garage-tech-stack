@@ -63,22 +63,26 @@ export default function CheckInScreen() {
     setGpsChecking(true);
     try {
       const location = await getCurrentLocation();
-      setCoords({ lat: location.coords.latitude, lng: location.coords.longitude });
+      if (!location) {
+        Alert.alert("Location Error", "Could not get your location. Please enable location services.");
+        return;
+      }
+      setCoords({ lat: location.latitude, lng: location.longitude });
 
       const result = validateGeofence(
-        location.coords.latitude,
-        location.coords.longitude,
+        location.latitude,
+        location.longitude,
         job.lat,
         job.lng,
         GEOFENCE_RADIUS_METERS
       );
       setGpsValid(result.valid);
-      setGpsDistance(result.distance);
+      setGpsDistance(result.distanceMeters);
 
       if (!result.valid) {
         Alert.alert(
           "Too Far Away",
-          `You are ${Math.round(result.distance)}m from the job site. You need to be within ${GEOFENCE_RADIUS_METERS}m to check in.`
+          `You are ${result.distanceMeters}m from the job site. You need to be within ${GEOFENCE_RADIUS_METERS}m to check in.`
         );
       }
     } catch (err: any) {

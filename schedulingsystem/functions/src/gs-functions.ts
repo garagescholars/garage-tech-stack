@@ -20,6 +20,9 @@ import {
 
 const db = getFirestore();
 
+// Max Firestore batch size
+const BATCH_LIMIT = 500;
+
 // ─── Helper: send Expo push notification ───
 async function sendExpoPush(pushTokens: string[], title: string, body: string, data?: Record<string, string>) {
   const messages = pushTokens
@@ -61,6 +64,24 @@ function getTierFromScore(score: number): string {
   return "new";
 }
 
+// Helper: commit writes in chunks of BATCH_LIMIT
+async function commitInChunks(
+  ops: Array<{ ref: FirebaseFirestore.DocumentReference; data: Record<string, any>; type: "set" | "update" }>
+) {
+  for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+    const chunk = ops.slice(i, i + BATCH_LIMIT);
+    const batch = db.batch();
+    for (const op of chunk) {
+      if (op.type === "set") {
+        batch.set(op.ref, op.data);
+      } else {
+        batch.update(op.ref, op.data);
+      }
+    }
+    await batch.commit();
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // 1. FIRESTORE TRIGGER: gs_jobs status changes
 // ═══════════════════════════════════════════════════════════════
@@ -90,8 +111,7 @@ export const gsOnJobUpdated = onDocumentWritten(
       await claimRef.set({
         jobId,
         jobTitle: after.title || "",
-        scholarId: after.claimedBy,
-        scholarFirstName: (after.claimedByName || "Scholar").split(" ")[0],
+        scholarName: (after.claimedByName || "Scholar").split(" ")[0],
         payout: (after.payout || 0) + (after.rushBonus || 0),
         claimedAt: FieldValue.serverTimestamp(),
       });
@@ -138,16 +158,17 @@ export const gsOnJobUpdated = onDocumentWritten(
         {
           jobId,
           scholarId: after.claimedBy || "",
-          photoQuality: 0,
-          completion: 0,
-          timeliness: 0,
+          photoQualityScore: 0,
+          completionScore: 0,
+          timelinessScore: 0,
           finalScore: 0,
-          locked: false,
-          createdAt: FieldValue.serverTimestamp(),
-          lockedAt: null,
-          complaintDeadline: Timestamp.fromDate(
+          customerComplaint: false,
+          scoreLocked: false,
+          scoreLockedAt: null,
+          complaintWindowEnd: Timestamp.fromDate(
             new Date(Date.now() + SCORE_LOCK_HOURS * 60 * 60 * 1000)
           ),
+          createdAt: FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
@@ -182,27 +203,29 @@ export const gsOnJobUpdated = onDocumentWritten(
 
       // Update current month goal progress
       const now = new Date();
-      const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
       const goalsSnap = await db
         .collection(GS_COLLECTIONS.SCHOLAR_GOALS)
         .where("scholarId", "==", scholarId)
-        .where("monthKey", "==", monthKey)
+        .where("month", "==", month)
+        .where("year", "==", year)
         .get();
 
-      const batch = db.batch();
-      goalsSnap.docs.forEach((doc) => {
-        const data = doc.data();
+      const goalBatch = db.batch();
+      goalsSnap.docs.forEach((goalDoc) => {
+        const data = goalDoc.data();
         if (data.goalType === "jobs") {
-          batch.update(doc.ref, { currentProgress: FieldValue.increment(1) });
-        } else if (data.goalType === "earnings") {
-          batch.update(doc.ref, {
+          goalBatch.update(goalDoc.ref, { currentProgress: FieldValue.increment(1) });
+        } else if (data.goalType === "money") {
+          goalBatch.update(goalDoc.ref, {
             currentProgress: FieldValue.increment(
               (after.payout || 0) + (after.rushBonus || 0)
             ),
           });
         }
       });
-      if (!goalsSnap.empty) await batch.commit();
+      if (!goalsSnap.empty) await goalBatch.commit();
 
       // Notify scholar
       const token = await getPushToken(scholarId);
@@ -245,13 +268,12 @@ export const gsOnTransferCreated = onDocumentCreated(
       // Notify all scholars about requeued job
       const scholarsSnap = await db
         .collection(GS_COLLECTIONS.SCHOLAR_PROFILES)
-        .where("isActive", "!=", false)
         .get();
 
       const tokens: string[] = [];
-      for (const doc of scholarsSnap.docs) {
-        if (doc.id === data.fromScholarId) continue; // skip the transferring scholar
-        const t = await getPushToken(doc.id);
+      for (const scholarDoc of scholarsSnap.docs) {
+        if (scholarDoc.id === data.fromScholarId) continue;
+        const t = await getPushToken(scholarDoc.id);
         if (t) tokens.push(t);
       }
 
@@ -287,7 +309,7 @@ export const gsOnRescheduleUpdated = onDocumentWritten(
         updatedAt: FieldValue.serverTimestamp(),
       });
 
-      const token = await getPushToken(after.scholarId);
+      const token = await getPushToken(after.requestedBy);
       if (token) {
         await sendExpoPush(
           [token],
@@ -297,7 +319,7 @@ export const gsOnRescheduleUpdated = onDocumentWritten(
         );
       }
     } else if (after.status === "declined") {
-      const token = await getPushToken(after.scholarId);
+      const token = await getPushToken(after.requestedBy);
       if (token) {
         await sendExpoPush(
           [token],
@@ -319,8 +341,8 @@ export const gsLockScores = onSchedule("every 1 hours", async () => {
   const now = Timestamp.now();
   const unlocked = await db
     .collection(GS_COLLECTIONS.JOB_QUALITY_SCORES)
-    .where("locked", "==", false)
-    .where("complaintDeadline", "<=", now)
+    .where("scoreLocked", "==", false)
+    .where("complaintWindowEnd", "<=", now)
     .get();
 
   if (unlocked.empty) {
@@ -331,46 +353,57 @@ export const gsLockScores = onSchedule("every 1 hours", async () => {
   console.log(`Locking ${unlocked.size} scores...`);
   const scholarScores: Record<string, number[]> = {};
 
-  const batch = db.batch();
-  for (const doc of unlocked.docs) {
-    const data = doc.data();
-    const finalScore =
-      (data.photoQuality || 0) * SCORING_WEIGHTS.PHOTO_QUALITY +
-      (data.completion || 0) * SCORING_WEIGHTS.COMPLETION +
-      (data.timeliness || 0) * SCORING_WEIGHTS.TIMELINESS;
+  const lockOps: Array<{ ref: FirebaseFirestore.DocumentReference; data: Record<string, any>; type: "set" | "update" }> = [];
+  for (const scoreDoc of unlocked.docs) {
+    try {
+      const data = scoreDoc.data();
+      const finalScore =
+        (data.photoQualityScore || 0) * SCORING_WEIGHTS.PHOTO_QUALITY +
+        (data.completionScore || 0) * SCORING_WEIGHTS.COMPLETION +
+        (data.timelinessScore || 0) * SCORING_WEIGHTS.TIMELINESS;
 
-    batch.update(doc.ref, {
-      finalScore,
-      locked: true,
-      lockedAt: FieldValue.serverTimestamp(),
-    });
+      lockOps.push({
+        ref: scoreDoc.ref,
+        data: {
+          finalScore,
+          scoreLocked: true,
+          scoreLockedAt: FieldValue.serverTimestamp(),
+        },
+        type: "update",
+      });
 
-    if (data.scholarId) {
-      if (!scholarScores[data.scholarId]) scholarScores[data.scholarId] = [];
-      scholarScores[data.scholarId].push(finalScore);
+      if (data.scholarId) {
+        if (!scholarScores[data.scholarId]) scholarScores[data.scholarId] = [];
+        scholarScores[data.scholarId].push(finalScore);
+      }
+    } catch (err) {
+      console.error(`Error processing score ${scoreDoc.id}:`, err);
     }
   }
-  await batch.commit();
+  await commitInChunks(lockOps);
 
   // Update scholar payScores and tiers
   for (const [scholarId, newScores] of Object.entries(scholarScores)) {
-    // Get all locked scores for this scholar
-    const allScores = await db
-      .collection(GS_COLLECTIONS.JOB_QUALITY_SCORES)
-      .where("scholarId", "==", scholarId)
-      .where("locked", "==", true)
-      .get();
+    try {
+      const allScores = await db
+        .collection(GS_COLLECTIONS.JOB_QUALITY_SCORES)
+        .where("scholarId", "==", scholarId)
+        .where("scoreLocked", "==", true)
+        .get();
 
-    const scores = allScores.docs.map((d) => d.data().finalScore as number);
-    const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-    const tier = getTierFromScore(avg);
+      const scores = allScores.docs.map((d) => d.data().finalScore as number);
+      const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+      const tier = getTierFromScore(avg);
 
-    await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).doc(scholarId).update({
-      payScore: Math.round(avg * 100) / 100,
-      tier,
-    });
+      await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).doc(scholarId).update({
+        payScore: Math.round(avg * 100) / 100,
+        tier,
+      });
 
-    console.log(`Scholar ${scholarId}: payScore=${avg.toFixed(2)}, tier=${tier}`);
+      console.log(`Scholar ${scholarId}: payScore=${avg.toFixed(2)}, tier=${tier}`);
+    } catch (err) {
+      console.error(`Error updating scholar ${scholarId} tier:`, err);
+    }
   }
 });
 
@@ -393,36 +426,40 @@ export const gsExpireTransfers = onSchedule("every 5 minutes", async () => {
 
   console.log(`Expiring ${expired.size} transfers...`);
 
-  for (const doc of expired.docs) {
-    const data = doc.data();
+  for (const transferDoc of expired.docs) {
+    try {
+      const data = transferDoc.data();
 
-    // Mark transfer as expired
-    await doc.ref.update({
-      status: "expired",
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    // Requeue the job
-    if (data.jobId) {
-      await db.collection(GS_COLLECTIONS.JOBS).doc(data.jobId).update({
-        status: "REOPENED",
-        claimedBy: null,
-        claimedByName: null,
-        reopenedAt: FieldValue.serverTimestamp(),
-        reopenCount: FieldValue.increment(1),
+      // Mark transfer as expired
+      await transferDoc.ref.update({
+        status: "expired",
         updatedAt: FieldValue.serverTimestamp(),
       });
-    }
 
-    // Notify the original scholar
-    const token = await getPushToken(data.fromScholarId);
-    if (token) {
-      await sendExpoPush(
-        [token],
-        "Transfer Expired",
-        `Your transfer for "${data.jobTitle}" expired. The job has been requeued.`,
-        { screen: "my-jobs" }
-      );
+      // Requeue the job
+      if (data.jobId) {
+        await db.collection(GS_COLLECTIONS.JOBS).doc(data.jobId).update({
+          status: "REOPENED",
+          claimedBy: null,
+          claimedByName: null,
+          reopenedAt: FieldValue.serverTimestamp(),
+          reopenCount: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+
+      // Notify the original scholar
+      const token = await getPushToken(data.fromScholarId);
+      if (token) {
+        await sendExpoPush(
+          [token],
+          "Transfer Expired",
+          `Your transfer for "${data.jobTitle}" expired. The job has been requeued.`,
+          { screen: "my-jobs" }
+        );
+      }
+    } catch (err) {
+      console.error(`Error expiring transfer ${transferDoc.id}:`, err);
     }
   }
 });
@@ -443,11 +480,12 @@ export const gsResetViewerCounts = onSchedule("every day 03:00", async () => {
     return;
   }
 
-  const batch = db.batch();
-  jobs.docs.forEach((doc) => {
-    batch.update(doc.ref, { currentViewers: 0 });
-  });
-  await batch.commit();
+  const ops = jobs.docs.map((jobDoc) => ({
+    ref: jobDoc.ref,
+    data: { currentViewers: 0 },
+    type: "update" as const,
+  }));
+  await commitInChunks(ops);
 
   console.log(`Reset viewer counts on ${jobs.size} jobs.`);
 });
@@ -457,156 +495,249 @@ export const gsResetViewerCounts = onSchedule("every day 03:00", async () => {
 // ═══════════════════════════════════════════════════════════════
 export const gsMonthlyGoalReset = onSchedule("0 0 1 * *", async () => {
   const now = new Date();
-  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  console.log(`Creating monthly goals for ${monthKey}...`);
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+  console.log(`Creating monthly goals for ${year}-${month}...`);
 
   const scholars = await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).get();
-  const batch = db.batch();
+  const ops: Array<{ ref: FirebaseFirestore.DocumentReference; data: Record<string, any>; type: "set" | "update" }> = [];
 
-  for (const doc of scholars.docs) {
-    const data = doc.data();
-    const scholarId = doc.id;
+  for (const scholarDoc of scholars.docs) {
+    try {
+      const data = scholarDoc.data();
+      const scholarId = scholarDoc.id;
 
-    // Create jobs goal
-    if (data.monthlyJobGoal && data.monthlyJobGoal > 0) {
-      const jobGoalRef = db.collection(GS_COLLECTIONS.SCHOLAR_GOALS).doc(`${scholarId}_${monthKey}_jobs`);
-      batch.set(jobGoalRef, {
-        scholarId,
-        monthKey,
-        goalType: "jobs",
-        goalTarget: data.monthlyJobGoal,
-        currentProgress: 0,
-        goalMet: false,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-    }
+      // Create jobs goal
+      if (data.monthlyJobGoal && data.monthlyJobGoal > 0) {
+        const jobGoalRef = db.collection(GS_COLLECTIONS.SCHOLAR_GOALS).doc(`${scholarId}_${year}_${month}_jobs`);
+        ops.push({
+          ref: jobGoalRef,
+          data: {
+            scholarId,
+            month,
+            year,
+            goalType: "jobs",
+            goalTarget: data.monthlyJobGoal,
+            currentProgress: 0,
+            goalMet: false,
+            notifiedAt90: false,
+            notifiedAt100: false,
+            createdAt: FieldValue.serverTimestamp(),
+          },
+          type: "set",
+        });
+      }
 
-    // Create earnings goal
-    if (data.monthlyMoneyGoal && data.monthlyMoneyGoal > 0) {
-      const earningsGoalRef = db.collection(GS_COLLECTIONS.SCHOLAR_GOALS).doc(`${scholarId}_${monthKey}_earnings`);
-      batch.set(earningsGoalRef, {
-        scholarId,
-        monthKey,
-        goalType: "earnings",
-        goalTarget: data.monthlyMoneyGoal,
-        currentProgress: 0,
-        goalMet: false,
-        createdAt: FieldValue.serverTimestamp(),
-      });
+      // Create money goal
+      if (data.monthlyMoneyGoal && data.monthlyMoneyGoal > 0) {
+        const moneyGoalRef = db.collection(GS_COLLECTIONS.SCHOLAR_GOALS).doc(`${scholarId}_${year}_${month}_money`);
+        ops.push({
+          ref: moneyGoalRef,
+          data: {
+            scholarId,
+            month,
+            year,
+            goalType: "money",
+            goalTarget: data.monthlyMoneyGoal,
+            currentProgress: 0,
+            goalMet: false,
+            notifiedAt90: false,
+            notifiedAt100: false,
+            createdAt: FieldValue.serverTimestamp(),
+          },
+          type: "set",
+        });
+      }
+    } catch (err) {
+      console.error(`Error creating goals for scholar ${scholarDoc.id}:`, err);
     }
   }
 
-  await batch.commit();
-  console.log(`Created goals for ${scholars.size} scholars.`);
+  await commitInChunks(ops);
+  console.log(`Created ${ops.length} goals for ${scholars.size} scholars.`);
 });
 
 // ═══════════════════════════════════════════════════════════════
 // 8. SCHEDULED: Compute analytics daily at 4am
 // ═══════════════════════════════════════════════════════════════
-export const gsComputeAnalytics = onSchedule("every day 04:00", async () => {
-  console.log("Computing scholar analytics...");
+export const gsComputeAnalytics = onSchedule(
+  { schedule: "every day 04:00", timeoutSeconds: 540 },
+  async () => {
+    console.log("Computing scholar analytics...");
 
-  const scholars = await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).get();
+    const scholars = await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).get();
+    if (scholars.empty) return;
 
-  for (const doc of scholars.docs) {
-    const scholarId = doc.id;
-    const profileData = doc.data();
+    // Bulk-fetch all data to avoid N+1 queries
+    const [allJobsSnap, allScoresSnap, allTransfersSnap, allReschedulesSnap] = await Promise.all([
+      db.collection(GS_COLLECTIONS.JOBS).get(),
+      db.collection(GS_COLLECTIONS.JOB_QUALITY_SCORES).where("scoreLocked", "==", true).get(),
+      db.collection(GS_COLLECTIONS.JOB_TRANSFERS).get(),
+      db.collection(GS_COLLECTIONS.JOB_RESCHEDULES).get(),
+    ]);
 
-    // Get completed jobs
-    const completedJobs = await db
-      .collection(GS_COLLECTIONS.JOBS)
-      .where("claimedBy", "==", scholarId)
-      .where("status", "==", "COMPLETED")
-      .get();
+    // Index data by scholarId
+    const jobsByScholar: Record<string, FirebaseFirestore.QueryDocumentSnapshot[]> = {};
+    for (const jobDoc of allJobsSnap.docs) {
+      const claimedBy = jobDoc.data().claimedBy;
+      if (claimedBy) {
+        if (!jobsByScholar[claimedBy]) jobsByScholar[claimedBy] = [];
+        jobsByScholar[claimedBy].push(jobDoc);
+      }
+    }
 
-    // Get all assigned jobs (for acceptance rate)
-    const allJobs = await db
-      .collection(GS_COLLECTIONS.JOBS)
-      .where("claimedBy", "==", scholarId)
-      .get();
+    const scoresByScholar: Record<string, number[]> = {};
+    for (const scoreDoc of allScoresSnap.docs) {
+      const sid = scoreDoc.data().scholarId;
+      if (sid) {
+        if (!scoresByScholar[sid]) scoresByScholar[sid] = [];
+        scoresByScholar[sid].push(scoreDoc.data().finalScore as number || 0);
+      }
+    }
 
-    // Get quality scores
-    const scores = await db
-      .collection(GS_COLLECTIONS.JOB_QUALITY_SCORES)
-      .where("scholarId", "==", scholarId)
-      .where("locked", "==", true)
-      .get();
+    const transfersByScholar: Record<string, number> = {};
+    for (const tDoc of allTransfersSnap.docs) {
+      const sid = tDoc.data().fromScholarId;
+      if (sid) transfersByScholar[sid] = (transfersByScholar[sid] || 0) + 1;
+    }
 
-    const scoreValues = scores.docs.map((d) => d.data().finalScore as number);
-    const avgScore = scoreValues.length > 0
-      ? scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length
-      : 0;
+    const reschedulesByScholar: Record<string, number> = {};
+    for (const rDoc of allReschedulesSnap.docs) {
+      const sid = rDoc.data().requestedBy;
+      if (sid) reschedulesByScholar[sid] = (reschedulesByScholar[sid] || 0) + 1;
+    }
 
-    // Count cancellations
-    const cancelledJobs = allJobs.docs.filter(
-      (d) => d.data().status === "CANCELLED"
-    ).length;
-
-    const totalJobs = allJobs.size;
-    const cancellationRate = totalJobs > 0 ? (cancelledJobs / totalJobs) * 100 : 0;
-
-    // Compute total earnings
-    const totalEarnings = completedJobs.docs.reduce((sum, d) => {
-      const data = d.data();
-      return sum + (data.payout || 0) + (data.rushBonus || 0);
-    }, 0);
-
-    // Get transfers/reschedules
-    const transfers = await db
-      .collection(GS_COLLECTIONS.JOB_TRANSFERS)
-      .where("fromScholarId", "==", scholarId)
-      .get();
-
-    const reschedules = await db
-      .collection(GS_COLLECTIONS.JOB_RESCHEDULES)
-      .where("scholarId", "==", scholarId)
-      .get();
-
-    // Compute current month stats
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthJobs = completedJobs.docs.filter((d) => {
-      const ts = d.data().updatedAt;
-      if (!ts) return false;
-      return ts.toDate() >= monthStart;
-    }).length;
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-    const monthEarnings = completedJobs.docs
-      .filter((d) => {
-        const ts = d.data().updatedAt;
-        if (!ts) return false;
-        return ts.toDate() >= monthStart;
-      })
-      .reduce((sum, d) => {
-        const data = d.data();
-        return sum + (data.payout || 0) + (data.rushBonus || 0);
-      }, 0);
+    for (const scholarDoc of scholars.docs) {
+      try {
+        const scholarId = scholarDoc.id;
+        const profileData = scholarDoc.data();
+        const scholarJobs = jobsByScholar[scholarId] || [];
 
-    // Write analytics doc
-    await db.collection(GS_COLLECTIONS.SCHOLAR_ANALYTICS).doc(scholarId).set({
-      scholarId,
-      totalJobsCompleted: completedJobs.size,
-      totalEarnings,
-      avgScore: Math.round(avgScore * 100) / 100,
-      cancellationRate: Math.round(cancellationRate * 10) / 10,
-      totalTransfers: transfers.size,
-      totalReschedules: reschedules.size,
-      monthJobsCompleted: monthJobs,
-      monthEarnings,
-      tier: profileData.tier || "new",
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+        // Completed jobs
+        const completedJobs = scholarJobs.filter((j) => j.data().status === "COMPLETED");
+        const cancelledJobs = scholarJobs.filter((j) => j.data().status === "CANCELLED");
 
-    // Also sync key stats back to scholar profile
-    await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).doc(scholarId).update({
-      totalJobsCompleted: completedJobs.size,
-      totalEarnings,
-      cancellationRate: Math.round(cancellationRate * 10) / 10,
-    });
+        // Total earnings
+        const totalEarningsAllTime = completedJobs.reduce((sum, j) => {
+          const d = j.data();
+          return sum + (d.payout || 0) + (d.rushBonus || 0);
+        }, 0);
+
+        // Time-windowed stats helper
+        const jobsInWindow = (jobs: FirebaseFirestore.QueryDocumentSnapshot[], after: Date) =>
+          jobs.filter((j) => {
+            const ts = j.data().updatedAt;
+            return ts && ts.toDate() >= after;
+          });
+
+        const earningsInWindow = (jobs: FirebaseFirestore.QueryDocumentSnapshot[], after: Date) =>
+          jobsInWindow(jobs, after).reduce((sum, j) => {
+            const d = j.data();
+            return sum + (d.payout || 0) + (d.rushBonus || 0);
+          }, 0);
+
+        const jobsThisMonth = jobsInWindow(completedJobs, monthStart).length;
+        const earningsThisMonth = earningsInWindow(completedJobs, monthStart);
+        const jobsLast30Days = jobsInWindow(completedJobs, thirtyDaysAgo).length;
+        const jobsLast90Days = jobsInWindow(completedJobs, ninetyDaysAgo).length;
+        const earningsLast30Days = earningsInWindow(completedJobs, thirtyDaysAgo);
+        const earningsLast90Days = earningsInWindow(completedJobs, ninetyDaysAgo);
+        const cancellationsThisMonth = jobsInWindow(cancelledJobs, monthStart).length;
+
+        // Reschedules this month
+        const reschedulesThisMonth = allReschedulesSnap.docs.filter((d) => {
+          const data = d.data();
+          if (data.requestedBy !== scholarId) return false;
+          const ts = data.createdAt;
+          return ts && ts.toDate() >= monthStart;
+        }).length;
+
+        // Quality scores
+        const scores = scoresByScholar[scholarId] || [];
+        const avgPayScoreThisMonth = scores.length > 0
+          ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100
+          : 0;
+
+        // Avg claim response (time from job creation to claim) — simplified
+        const claimResponseTimes: number[] = [];
+        for (const j of scholarJobs) {
+          const d = j.data();
+          if (d.claimedAt && d.createdAt) {
+            const diff = (d.claimedAt.toDate().getTime() - d.createdAt.toDate().getTime()) / 60000;
+            if (diff > 0 && diff < 10080) claimResponseTimes.push(diff); // cap at 7 days
+          }
+        }
+        const avgClaimResponseMinutes = claimResponseTimes.length > 0
+          ? Math.round(claimResponseTimes.reduce((a, b) => a + b, 0) / claimResponseTimes.length)
+          : 0;
+
+        // Trends (compare last 30 days to previous 30 days)
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        const jobsPrev30 = completedJobs.filter((j) => {
+          const ts = j.data().updatedAt;
+          return ts && ts.toDate() >= sixtyDaysAgo && ts.toDate() < thirtyDaysAgo;
+        }).length;
+        const earningsPrev30 = completedJobs
+          .filter((j) => {
+            const ts = j.data().updatedAt;
+            return ts && ts.toDate() >= sixtyDaysAgo && ts.toDate() < thirtyDaysAgo;
+          })
+          .reduce((sum, j) => {
+            const d = j.data();
+            return sum + (d.payout || 0) + (d.rushBonus || 0);
+          }, 0);
+
+        const jobsTrend: "increasing" | "stable" | "declining" =
+          jobsLast30Days > jobsPrev30 * 1.1 ? "increasing" :
+          jobsLast30Days < jobsPrev30 * 0.9 ? "declining" : "stable";
+        const earningsTrend: "increasing" | "stable" | "declining" =
+          earningsLast30Days > earningsPrev30 * 1.1 ? "increasing" :
+          earningsLast30Days < earningsPrev30 * 0.9 ? "declining" : "stable";
+
+        // Write analytics doc matching GsScholarAnalytics type
+        await db.collection(GS_COLLECTIONS.SCHOLAR_ANALYTICS).doc(scholarId).set({
+          scholarId,
+          scholarName: profileData.scholarName || "",
+          jobsThisMonth,
+          earningsThisMonth,
+          avgPayScoreThisMonth,
+          jobsLast30Days,
+          jobsLast90Days,
+          earningsLast30Days,
+          earningsLast90Days,
+          avgClaimResponseMinutes,
+          cancellationsThisMonth,
+          reschedulesThisMonth,
+          jobsTrend,
+          earningsTrend,
+          totalJobsAllTime: completedJobs.length,
+          totalEarningsAllTime,
+          memberSince: profileData.createdAt || null,
+          lastUpdated: FieldValue.serverTimestamp(),
+        });
+
+        // Sync key stats back to scholar profile
+        const cancellationRate = scholarJobs.length > 0
+          ? Math.round((cancelledJobs.length / scholarJobs.length) * 1000) / 10
+          : 0;
+        await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).doc(scholarId).update({
+          totalJobsCompleted: completedJobs.length,
+          totalEarnings: totalEarningsAllTime,
+          cancellationRate,
+        });
+      } catch (err) {
+        console.error(`Error computing analytics for scholar ${scholarDoc.id}:`, err);
+      }
+    }
+
+    console.log(`Analytics computed for ${scholars.size} scholars.`);
   }
-
-  console.log(`Analytics computed for ${scholars.size} scholars.`);
-});
+);
 
 // ═══════════════════════════════════════════════════════════════
 // 9. CALLABLE: Submit customer complaint
@@ -639,7 +770,7 @@ export const gsSubmitComplaint = onCall(
 
     if (scoreSnap.exists) {
       const scoreData = scoreSnap.data()!;
-      if (scoreData.locked) {
+      if (scoreData.scoreLocked) {
         throw new HttpsError(
           "failed-precondition",
           "The complaint window for this job has closed."
@@ -649,11 +780,10 @@ export const gsSubmitComplaint = onCall(
       // Deduct points from quality score
       await scoreRef.update({
         customerComplaint: true,
-        complaintDescription: description,
-        complaintPhotoUrls: photoUrls || [],
-        complaintAt: FieldValue.serverTimestamp(),
+        complaintDetails: description,
+        complaintPhotos: photoUrls || [],
         // Reduce completion score by 50% on complaint
-        completion: Math.max(0, (scoreData.completion || 0) * 0.5),
+        completionScore: Math.max(0, (scoreData.completionScore || 0) * 0.5),
       });
     }
 

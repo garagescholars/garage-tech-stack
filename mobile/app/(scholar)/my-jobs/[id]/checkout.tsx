@@ -26,6 +26,7 @@ export default function CheckOutScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [job, setJob] = useState<ServiceJob | null>(null);
+  const [checkinTime, setCheckinTime] = useState<Timestamp | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,7 +42,7 @@ export default function CheckOutScreen() {
   }, [id]);
 
   const loadJob = async () => {
-    if (!id) return;
+    if (!id || !user) return;
     const snap = await getDoc(doc(db, COLLECTIONS.JOBS, id));
     if (snap.exists()) {
       const data = { id: snap.id, ...snap.data() } as ServiceJob;
@@ -49,6 +50,12 @@ export default function CheckOutScreen() {
       if (data.checklist) {
         setChecklist(data.checklist.map((c) => ({ ...c })));
       }
+    }
+    // Load checkin doc for duration display
+    const checkinDocId = `${id}_${user.uid}`;
+    const checkinSnap = await getDoc(doc(db, COLLECTIONS.JOB_CHECKINS, checkinDocId));
+    if (checkinSnap.exists()) {
+      setCheckinTime(checkinSnap.data()?.checkinTime || null);
     }
     setLoading(false);
   };
@@ -114,8 +121,10 @@ export default function CheckOutScreen() {
       let checkoutLng: number | undefined;
       try {
         const loc = await getCurrentLocation();
-        checkoutLat = loc.coords.latitude;
-        checkoutLng = loc.coords.longitude;
+        if (loc) {
+          checkoutLat = loc.latitude;
+          checkoutLng = loc.longitude;
+        }
       } catch {
         // Non-blocking — location is optional on checkout
       }
@@ -166,8 +175,8 @@ export default function CheckOutScreen() {
 
   // Duration display
   let durationText = "";
-  if (job.checkInTime) {
-    const elapsed = Date.now() - (job.checkInTime as Timestamp).toMillis();
+  if (checkinTime) {
+    const elapsed = Date.now() - checkinTime.toMillis();
     const hours = Math.floor(elapsed / 3600000);
     const mins = Math.floor((elapsed % 3600000) / 60000);
     durationText = hours > 0 ? `${hours}h ${mins}m on site` : `${mins}m on site`;
