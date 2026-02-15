@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeInLeft } from "react-native-reanimated";
 import ScoreStars from "./ScoreStars";
 import type { ScholarTier } from "../types";
 
@@ -10,6 +11,7 @@ type Props = {
   tier?: ScholarTier;
   jobsCompleted: number;
   isCurrentUser?: boolean;
+  index?: number;
 };
 
 const RANK_COLORS: Record<number, string> = {
@@ -25,12 +27,16 @@ export default function LeaderboardRow({
   tier,
   jobsCompleted,
   isCurrentUser,
+  index = 0,
 }: Props) {
   const rankColor = RANK_COLORS[rank] || "#64748b";
   const isTopThree = rank <= 3;
 
   return (
-    <View style={[styles.row, isCurrentUser && styles.currentUser]}>
+    <Animated.View
+      entering={FadeInLeft.delay(index * 60).duration(300).springify()}
+      style={[styles.row, isCurrentUser && styles.currentUser]}
+    >
       <View style={[styles.rankBadge, isTopThree && { backgroundColor: rankColor + "30" }]}>
         {isTopThree ? (
           <Ionicons name="trophy" size={16} color={rankColor} />
@@ -40,7 +46,7 @@ export default function LeaderboardRow({
       </View>
 
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>
+        <Text style={[styles.name, isCurrentUser && styles.currentName]} numberOfLines={1}>
           {name}
           {isCurrentUser ? " (You)" : ""}
         </Text>
@@ -48,10 +54,10 @@ export default function LeaderboardRow({
       </View>
 
       <View style={styles.stats}>
-        <Text style={styles.jobCount}>{jobsCompleted}</Text>
+        <Text style={[styles.jobCount, isCurrentUser && styles.currentCount]}>{jobsCompleted}</Text>
         <Text style={styles.jobLabel}>jobs</Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -65,14 +71,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   currentUser: {
-    backgroundColor: "#14b8a620",
+    backgroundColor: "#14b8a615",
     borderLeftWidth: 3,
     borderLeftColor: "#14b8a6",
   },
+  currentName: {
+    color: "#14b8a6",
+  },
+  currentCount: {
+    color: "#2dd4bf",
+  },
   rankBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#1e293b",

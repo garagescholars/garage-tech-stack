@@ -17,6 +17,7 @@ import { useAuth } from "../../../src/hooks/useAuth";
 import { claimJob } from "../../../src/hooks/useJobs";
 import { useViewerCount } from "../../../src/hooks/useViewerCount";
 import { COLLECTIONS } from "../../../src/constants/collections";
+import { SkeletonBox, FadeInView } from "../../../src/components/AnimatedComponents";
 import UrgencyBadge from "../../../src/components/UrgencyBadge";
 import CountdownTimer from "../../../src/components/CountdownTimer";
 import ViewerCount from "../../../src/components/ViewerCount";
@@ -78,8 +79,27 @@ export default function JobDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#14b8a6" />
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <FadeInView delay={0}>
+            <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 20, marginBottom: 12 }}>
+              <SkeletonBox width={100} height={24} style={{ marginBottom: 12 }} />
+              <SkeletonBox width="90%" height={20} style={{ marginBottom: 10 }} />
+              <SkeletonBox width="70%" height={14} style={{ marginBottom: 6 }} />
+              <SkeletonBox width="60%" height={14} style={{ marginBottom: 6 }} />
+              <SkeletonBox width="50%" height={14} />
+            </View>
+          </FadeInView>
+          <FadeInView delay={100}>
+            <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 20, marginBottom: 12 }}>
+              <SkeletonBox width={80} height={14} style={{ marginBottom: 10 }} />
+              <SkeletonBox width="100%" height={60} style={{ marginBottom: 8 }} />
+            </View>
+          </FadeInView>
+          <FadeInView delay={200}>
+            <SkeletonBox width="100%" height={52} borderRadius={12} />
+          </FadeInView>
+        </ScrollView>
       </View>
     );
   }

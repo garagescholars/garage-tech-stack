@@ -1,22 +1,31 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { PhoneAuthProvider, ApplicationVerifier } from "firebase/auth";
 import { auth } from "../../src/lib/firebase";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  FadeInDown,
+} from "react-native-reanimated";
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
   const router = useRouter();
+  const buttonScale = useSharedValue(1);
 
   const formatPhone = (input: string) => {
     const digits = input.replace(/\D/g, "");
@@ -25,9 +34,11 @@ export default function LoginScreen() {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
   };
 
+  const digits = phone.replace(/\D/g, "");
+  const isValid = digits.length === 10;
+
   const handleSendCode = async () => {
-    const digits = phone.replace(/\D/g, "");
-    if (digits.length !== 10) {
+    if (!isValid) {
       Alert.alert("Invalid Phone", "Please enter a valid 10-digit US phone number.");
       return;
     }
@@ -35,10 +46,6 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const fullPhone = `+1${digits}`;
-      // In production, you'd use a reCAPTCHA verifier or Firebase's built-in
-      // phone auth. For Expo, firebase-recaptcha or expo-firebase-recaptcha
-      // handles this. For now, we'll navigate to verify with the phone number.
-      // The actual verification setup requires native config (google-services.json).
       router.push({
         pathname: "/(auth)/verify",
         params: { phone: fullPhone },
@@ -50,26 +57,30 @@ export default function LoginScreen() {
     }
   };
 
+  const buttonAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.content}>
-        <View style={styles.header}>
+        <Animated.View entering={FadeInDown.duration(500).springify()} style={styles.header}>
           <Text style={styles.emoji}>🔧</Text>
           <Text style={styles.title}>Garage Scholars</Text>
           <Text style={styles.subtitle}>Enter your phone number to get started</Text>
-        </View>
+        </Animated.View>
 
-        <View style={styles.form}>
+        <Animated.View entering={FadeInDown.delay(150).duration(500).springify()} style={styles.form}>
           <Text style={styles.label}>Phone Number</Text>
-          <View style={styles.phoneRow}>
-            <View style={styles.countryCode}>
-              <Text style={styles.countryCodeText}>+1</Text>
+          <View style={[styles.phoneRow, focused && styles.phoneRowFocused]}>
+            <View style={[styles.countryCode, focused && styles.countryCodeFocused]}>
+              <Text style={[styles.countryCodeText, focused && { color: "#14b8a6" }]}>+1</Text>
             </View>
             <TextInput
-              style={styles.input}
+              style={[styles.input, focused && styles.inputFocused]}
               value={phone}
               onChangeText={(t) => setPhone(formatPhone(t))}
               placeholder="(555) 123-4567"
@@ -77,24 +88,46 @@ export default function LoginScreen() {
               keyboardType="phone-pad"
               maxLength={14}
               autoFocus
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
             />
           </View>
+          {digits.length > 0 && !isValid && (
+            <Animated.Text
+              entering={FadeInDown.duration(200)}
+              style={styles.hint}
+            >
+              {10 - digits.length} more digit{10 - digits.length !== 1 ? 's' : ''} needed
+            </Animated.Text>
+          )}
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleSendCode}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Sending..." : "Send Verification Code"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          <Animated.View style={buttonAnimStyle}>
+            <Pressable
+              style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
+              onPress={handleSendCode}
+              disabled={loading || !isValid}
+              onPressIn={() => { buttonScale.value = withSpring(0.96); }}
+              onPressOut={() => { buttonScale.value = withSpring(1); }}
+            >
+              {loading ? (
+                <View style={styles.buttonContent}>
+                  <ActivityIndicator size="small" color="#fff" />
+                  <Text style={styles.buttonText}>Sending...</Text>
+                </View>
+              ) : (
+                <Text style={styles.buttonText}>Send Verification Code</Text>
+              )}
+            </Pressable>
+          </Animated.View>
+        </Animated.View>
 
-        <Text style={styles.disclaimer}>
+        <Animated.Text
+          entering={FadeInDown.delay(300).duration(500).springify()}
+          style={styles.disclaimer}
+        >
           By continuing, you agree to receive SMS messages for verification.
           Standard messaging rates may apply.
-        </Text>
+        </Animated.Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -140,8 +173,9 @@ const styles = StyleSheet.create({
   },
   phoneRow: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 6,
   },
+  phoneRowFocused: {},
   countryCode: {
     backgroundColor: "#1e293b",
     borderRadius: 12,
@@ -150,6 +184,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderWidth: 1,
     borderColor: "#334155",
+  },
+  countryCodeFocused: {
+    borderColor: "#14b8a6",
   },
   countryCodeText: {
     color: "#cbd5e1",
@@ -168,14 +205,29 @@ const styles = StyleSheet.create({
     borderColor: "#334155",
     letterSpacing: 0.5,
   },
+  inputFocused: {
+    borderColor: "#14b8a6",
+  },
+  hint: {
+    fontSize: 12,
+    color: "#64748b",
+    marginBottom: 14,
+    marginLeft: 4,
+  },
   button: {
     backgroundColor: "#14b8a6",
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
+    marginTop: 14,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    backgroundColor: "#1e293b",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   buttonText: {
     color: "#ffffff",

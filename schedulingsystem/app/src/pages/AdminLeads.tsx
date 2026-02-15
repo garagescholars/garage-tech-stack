@@ -461,8 +461,14 @@ const AdminLeads: React.FC = () => {
     setSopRegenerateNotes("");
   };
 
-  const handleDisqualifyLead = async (leadId: string) => {
-    if (!db || !confirm("Are you sure you want to disqualify this lead?")) return;
+  const [disqualifyConfirmId, setDisqualifyConfirmId] = useState<string | null>(null);
+
+  const handleDisqualifyLead = (leadId: string) => {
+    setDisqualifyConfirmId(leadId);
+  };
+
+  const actualDisqualify = async (leadId: string) => {
+    if (!db) return;
     setBusyId(leadId);
     try {
       await updateDoc(doc(db, COLLECTIONS.JOBS, leadId), {
@@ -511,8 +517,46 @@ const AdminLeads: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-sm text-slate-500">Loading leads...</div>
+      <div className="min-h-screen bg-slate-50 p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-slate-200 skeleton" />
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-slate-200 rounded skeleton" />
+              <div className="h-4 w-64 bg-slate-200 rounded skeleton" />
+            </div>
+          </div>
+          {/* Summary card skeletons */}
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 space-y-2">
+                <div className="h-3 w-20 bg-slate-200 rounded skeleton" />
+                <div className="h-7 w-16 bg-slate-200 rounded skeleton" />
+              </div>
+            ))}
+          </div>
+          {/* Table skeleton */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="bg-slate-50 border-b px-4 py-3 flex gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-3 w-24 bg-slate-200 rounded skeleton" />
+              ))}
+            </div>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="px-4 py-4 border-b border-slate-100 flex gap-4 items-center">
+                <div className="h-4 w-32 bg-slate-200 rounded skeleton" />
+                <div className="h-4 w-40 bg-slate-200 rounded skeleton" />
+                <div className="h-4 w-24 bg-slate-200 rounded skeleton" />
+                <div className="h-4 w-28 bg-slate-200 rounded skeleton" />
+                <div className="flex gap-2">
+                  <div className="h-7 w-16 bg-slate-200 rounded skeleton" />
+                  <div className="h-7 w-16 bg-slate-200 rounded skeleton" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -542,11 +586,11 @@ const AdminLeads: React.FC = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
             <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Total Leads</div>
             <div className="text-2xl font-bold text-blue-600">{leads.length}</div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
             <div className="text-xs font-semibold text-slate-500 uppercase mb-1">New Today</div>
             <div className="text-2xl font-bold text-emerald-600">
               {leads.filter((l) => {
@@ -556,7 +600,7 @@ const AdminLeads: React.FC = () => {
               }).length}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
             <div className="text-xs font-semibold text-slate-500 uppercase mb-1">This Week</div>
             <div className="text-2xl font-bold text-slate-800">
               {leads.filter((l) => {
@@ -584,13 +628,15 @@ const AdminLeads: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {leads.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">
-                      No leads found. New quote requests will appear here.
+                    <td colSpan={5} className="px-4 py-12 text-center">
+                      <Mail size={32} className="text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500 font-medium">No leads yet</p>
+                      <p className="text-xs text-slate-400 mt-1">New quote requests from the website will appear here</p>
                     </td>
                   </tr>
                 ) : (
                   leads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-slate-50">
+                    <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-4">
                         <div className="space-y-1">
                           <div className="font-semibold text-slate-800">{lead.clientName}</div>
@@ -642,21 +688,21 @@ const AdminLeads: React.FC = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => setSelectedLead(lead)}
-                            className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 btn-press transition-colors"
                           >
                             View
                           </button>
                           <button
                             onClick={() => handlePublishToScholars(lead)}
                             disabled={busyId === lead.id}
-                            className="text-sm px-3 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+                            className="text-sm px-3 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 btn-press transition-colors"
                           >
                             {busyId === lead.id ? "..." : "Publish"}
                           </button>
                           <button
-                            onClick={() => handleDisqualifyLead(lead.id)}
+                            onClick={() => setDisqualifyConfirmId(lead.id)}
                             disabled={busyId === lead.id}
-                            className="text-sm px-3 py-1 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 disabled:opacity-50"
+                            className="text-sm px-3 py-1 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 disabled:opacity-50 btn-press transition-colors"
                           >
                             Disqualify
                           </button>
@@ -675,8 +721,8 @@ const AdminLeads: React.FC = () => {
       {/* Lead Detail Modal                                  */}
       {/* ══════════════════════════════════════════════════ */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 modal-backdrop">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content">
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-slate-800">Lead Details</h2>
@@ -728,7 +774,7 @@ const AdminLeads: React.FC = () => {
             </div>
 
             <div className="p-6 border-t flex gap-3 justify-end">
-              <button onClick={() => setSelectedLead(null)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300">
+              <button onClick={() => setSelectedLead(null)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 btn-press">
                 Close
               </button>
               <button
@@ -736,7 +782,7 @@ const AdminLeads: React.FC = () => {
                   handlePublishToScholars(selectedLead);
                   setSelectedLead(null);
                 }}
-                className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 btn-press"
               >
                 Publish to Scholars
               </button>
@@ -749,8 +795,8 @@ const AdminLeads: React.FC = () => {
       {/* Publish to Scholars Modal (Convert + Schedule)     */}
       {/* ══════════════════════════════════════════════════ */}
       {convertingLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 modal-backdrop">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto modal-content">
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
                 <div>
@@ -1089,10 +1135,10 @@ const AdminLeads: React.FC = () => {
 
               {/* Submit Buttons */}
               <div className="flex gap-3 pt-4 border-t">
-                <button type="button" onClick={() => { setConvertingLead(null); setSopError(null); }} className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-300">
+                <button type="button" onClick={() => { setConvertingLead(null); setSopError(null); }} className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-300 btn-press">
                   Cancel
                 </button>
-                <button type="submit" disabled={sopGenerating || busyId === convertingLead.id} className="flex-1 bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button type="submit" disabled={sopGenerating || busyId === convertingLead.id} className="flex-1 bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2 btn-press">
                   {sopGenerating ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
@@ -1112,8 +1158,8 @@ const AdminLeads: React.FC = () => {
       {/* SOP Review Modal                                   */}
       {/* ══════════════════════════════════════════════════ */}
       {sopReviewData && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 modal-backdrop">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl modal-content">
             {/* Header */}
             <div className="sticky top-0 bg-slate-800 text-white p-6 rounded-t-2xl z-10">
               <div className="flex justify-between items-start">
@@ -1223,7 +1269,7 @@ const AdminLeads: React.FC = () => {
             <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3 rounded-b-2xl">
               <button
                 onClick={handleSopCancel}
-                className="px-5 py-3 bg-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-300 flex items-center gap-2"
+                className="px-5 py-3 bg-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-300 flex items-center gap-2 btn-press"
               >
                 <XCircle size={16} />
                 Cancel
@@ -1231,7 +1277,7 @@ const AdminLeads: React.FC = () => {
               <button
                 onClick={handleSopRegenerate}
                 disabled={sopRegenerating}
-                className="px-5 py-3 bg-amber-500 text-white font-semibold rounded-xl hover:bg-amber-600 disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-3 bg-amber-500 text-white font-semibold rounded-xl hover:bg-amber-600 disabled:opacity-50 flex items-center gap-2 btn-press"
               >
                 {sopRegenerating ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
                 {sopRegenerating ? "Regenerating..." : "Edit & Regenerate"}
@@ -1239,11 +1285,25 @@ const AdminLeads: React.FC = () => {
               <button
                 onClick={handleSopApprove}
                 disabled={sopApproving}
-                className="flex-1 px-5 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-5 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2 btn-press"
               >
                 {sopApproving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                 {sopApproving ? "Publishing..." : "Approve & Publish"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disqualify Confirm Modal */}
+      {disqualifyConfirmId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full modal-content">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Disqualify Lead?</h3>
+            <p className="text-sm text-slate-600 mb-6">This will mark the lead as cancelled. This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDisqualifyConfirmId(null)} className="flex-1 bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl btn-press">Cancel</button>
+              <button onClick={async () => { await actualDisqualify(disqualifyConfirmId); setDisqualifyConfirmId(null); }} className="flex-1 bg-rose-600 text-white font-bold py-2.5 rounded-xl hover:bg-rose-700 btn-press">Disqualify</button>
             </div>
           </div>
         </div>

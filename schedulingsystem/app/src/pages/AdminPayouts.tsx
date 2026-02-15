@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import { Payout } from "../../types";
 import { COLLECTIONS } from "../collections";
-import { ArrowLeft, DollarSign, Download, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, DollarSign, Download, CheckCircle2, Loader2 } from "lucide-react";
 
 const AdminPayouts: React.FC = () => {
   const navigate = useNavigate();
@@ -129,8 +129,44 @@ const AdminPayouts: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-sm text-slate-500">Loading payouts...</div>
+      <div className="min-h-screen bg-slate-50 p-6">
+        <div className="max-w-5xl mx-auto space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-slate-200 skeleton" />
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-slate-200 rounded skeleton" />
+              <div className="h-4 w-64 bg-slate-200 rounded skeleton" />
+            </div>
+          </div>
+          {/* Summary card skeletons */}
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 space-y-2">
+                <div className="h-3 w-20 bg-slate-200 rounded skeleton" />
+                <div className="h-7 w-24 bg-slate-200 rounded skeleton" />
+              </div>
+            ))}
+          </div>
+          {/* Table skeleton */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="bg-slate-50 border-b px-4 py-3 flex gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-3 w-20 bg-slate-200 rounded skeleton" />
+              ))}
+            </div>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="px-4 py-4 border-b border-slate-100 flex gap-4 items-center">
+                <div className="h-4 w-20 bg-slate-200 rounded skeleton" />
+                <div className="h-4 w-28 bg-slate-200 rounded skeleton" />
+                <div className="h-4 w-20 bg-slate-200 rounded skeleton" />
+                <div className="h-4 w-16 bg-slate-200 rounded skeleton" />
+                <div className="h-5 w-16 bg-slate-200 rounded-full skeleton" />
+                <div className="h-7 w-24 bg-slate-200 rounded-lg skeleton" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -143,7 +179,7 @@ const AdminPayouts: React.FC = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="p-2 hover:bg-slate-200 rounded-full"
+              className="p-2 hover:bg-slate-200 rounded-full transition-colors"
             >
               <ArrowLeft size={20} className="text-slate-600" />
             </button>
@@ -154,7 +190,7 @@ const AdminPayouts: React.FC = () => {
           </div>
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700"
+            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700 btn-press transition-colors"
           >
             <Download size={16} />
             Export for Taxes
@@ -169,19 +205,19 @@ const AdminPayouts: React.FC = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
             <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Pending</div>
             <div className="text-2xl font-bold text-amber-600">
               ${payouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
             <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Paid (YTD)</div>
             <div className="text-2xl font-bold text-emerald-600">
               ${payouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 card-hover">
             <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Total Payouts</div>
             <div className="text-2xl font-bold text-slate-800">{payouts.length}</div>
           </div>
@@ -204,13 +240,15 @@ const AdminPayouts: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {payouts.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">
-                      No payouts found.
+                    <td colSpan={6} className="px-4 py-12 text-center">
+                      <DollarSign size={32} className="text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500 font-medium">No payouts yet</p>
+                      <p className="text-xs text-slate-400 mt-1">Payouts will appear here when scholars complete jobs</p>
                     </td>
                   </tr>
                 ) : (
                   payouts.map((payout) => (
-                    <tr key={payout.id} className="hover:bg-slate-50">
+                    <tr key={payout.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 text-sm font-mono text-slate-600">
                         {payout.id.slice(0, 8)}...
                       </td>
@@ -220,7 +258,7 @@ const AdminPayouts: React.FC = () => {
                       <td className="px-4 py-3">
                         <button
                           onClick={() => handleJobClick(payout.jobId)}
-                          className="text-sm text-blue-600 hover:underline font-mono"
+                          className="text-sm text-blue-600 hover:underline font-mono transition-colors"
                         >
                           {payout.jobId.slice(0, 8)}...
                         </button>
@@ -245,7 +283,7 @@ const AdminPayouts: React.FC = () => {
                         {payout.status === 'pending' ? (
                           <button
                             onClick={() => setMarkPaidModal(payout)}
-                            className="text-xs font-bold bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700"
+                            className="text-xs font-bold bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 btn-press transition-colors"
                           >
                             Mark as Paid
                           </button>
@@ -276,8 +314,8 @@ const AdminPayouts: React.FC = () => {
 
       {/* Mark as Paid Modal */}
       {markPaidModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full modal-content">
             <h2 className="text-xl font-bold text-slate-800 mb-4">Confirm Payment</h2>
             <p className="text-sm text-slate-600 mb-6">
               Confirm payment of <span className="font-bold text-emerald-600">${markPaidModal.amount.toFixed(2)}</span> to{' '}
@@ -323,14 +361,14 @@ const AdminPayouts: React.FC = () => {
                   setTransactionNote('');
                 }}
                 disabled={busyId === markPaidModal.id}
-                className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl"
+                className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl btn-press"
               >
                 Cancel
               </button>
               <button
                 onClick={handleMarkAsPaid}
                 disabled={busyId === markPaidModal.id || !transactionNote.trim()}
-                className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50"
+                className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 disabled:opacity-50 btn-press"
               >
                 {busyId === markPaidModal.id ? 'Processing...' : 'Confirm Payment'}
               </button>

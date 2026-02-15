@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../../src/hooks/useAuth";
 import { useStripeStatus } from "../../../src/hooks/usePayouts";
+import { FadeInView, SkeletonBox } from "../../../src/components/AnimatedComponents";
 import ScoreStars from "../../../src/components/ScoreStars";
 import ProgressBar from "../../../src/components/ProgressBar";
 import { getTierLabel, getTierColor } from "../../../src/constants/scoring";
@@ -26,7 +27,37 @@ export default function ProfileScreen() {
     ]);
   };
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
+        <View style={styles.profileCard}>
+          <SkeletonBox width={72} height={72} borderRadius={36} style={{ marginBottom: 12 }} />
+          <SkeletonBox width={160} height={22} style={{ marginBottom: 6 }} />
+          <SkeletonBox width={120} height={14} style={{ marginBottom: 8 }} />
+          <SkeletonBox width={90} height={26} borderRadius={8} />
+        </View>
+        <View style={styles.section}>
+          <SkeletonBox width={80} height={14} style={{ marginBottom: 12 }} />
+          <SkeletonBox width="100%" height={32} style={{ marginBottom: 8 }} />
+          <SkeletonBox width="80%" height={13} />
+        </View>
+        <View style={styles.section}>
+          <SkeletonBox width={80} height={14} style={{ marginBottom: 12 }} />
+          <View style={styles.statsGrid}>
+            {[0, 1, 2, 3].map((i) => (
+              <FadeInView key={i} delay={i * 80} style={{ width: '48%' as any }}>
+                <View style={statStyles.card}>
+                  <SkeletonBox width={20} height={20} borderRadius={10} />
+                  <SkeletonBox width={60} height={20} style={{ marginTop: 4 }} />
+                  <SkeletonBox width={80} height={11} style={{ marginTop: 4 }} />
+                </View>
+              </FadeInView>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
 
   const tier = profile.tier || "new";
   const payScore = profile.payScore ?? 5.0;
@@ -35,6 +66,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       {/* Profile header */}
+      <FadeInView delay={0}>
       <View style={styles.profileCard}>
         <View style={[styles.avatar, { borderColor: tierColor }]}>
           <Ionicons name="person" size={36} color={tierColor} />
@@ -47,8 +79,10 @@ export default function ProfileScreen() {
           </Text>
         </View>
       </View>
+      </FadeInView>
 
       {/* Pay Score */}
+      <FadeInView delay={80}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Pay Score</Text>
@@ -63,8 +97,10 @@ export default function ProfileScreen() {
           Your Pay Score determines your tier and job priority. Keep it high with quality work!
         </Text>
       </View>
+      </FadeInView>
 
       {/* Stats */}
+      <FadeInView delay={160}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Statistics</Text>
         <View style={styles.statsGrid}>
@@ -104,8 +140,10 @@ export default function ProfileScreen() {
           />
         </View>
       </View>
+      </FadeInView>
 
       {/* Payments */}
+      <FadeInView delay={240}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payments</Text>
         <TouchableOpacity
@@ -139,18 +177,23 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
       </View>
+      </FadeInView>
 
       {/* Tier progress */}
+      <FadeInView delay={320}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tier Progress</Text>
         <TierProgress currentScore={payScore} currentTier={tier} />
       </View>
+      </FadeInView>
 
       {/* Sign out */}
+      <FadeInView delay={400}>
       <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
         <Ionicons name="log-out-outline" size={20} color="#ef4444" />
         <Text style={styles.signOutText}>Sign Out</Text>
       </TouchableOpacity>
+      </FadeInView>
     </ScrollView>
   );
 }

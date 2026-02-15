@@ -4,6 +4,7 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { ADMIN_EMAILS } from "../config";
 import { COLLECTIONS } from "../collections";
+import { Loader2, CheckCircle, UserPlus } from "lucide-react";
 
 const AdminSettings: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -94,7 +95,7 @@ const AdminSettings: React.FC = () => {
         </div>
 
         {/* Create User Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 card-hover">
           <div className="flex items-start gap-3 mb-6 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
             <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
               <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,8 +115,9 @@ const AdminSettings: React.FC = () => {
           )}
 
           {success && (
-            <div className="mb-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-              {success}
+            <div className="mb-4 success-banner">
+              <CheckCircle size={18} />
+              <span className="text-sm font-semibold">{success}</span>
             </div>
           )}
 
@@ -172,9 +174,19 @@ const AdminSettings: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold py-3 px-6 rounded-xl transition-colors btn-press flex items-center justify-center gap-2"
             >
-              {loading ? "Creating User..." : "Add User"}
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Creating User...
+                </>
+              ) : (
+                <>
+                  <UserPlus size={18} />
+                  Add User
+                </>
+              )}
             </button>
           </form>
         </div>

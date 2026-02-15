@@ -1,5 +1,10 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import UrgencyBadge from "./UrgencyBadge";
 import CountdownTimer from "./CountdownTimer";
 import ViewerCount from "./ViewerCount";
@@ -13,6 +18,11 @@ type Props = {
 
 export default function JobCard({ job, onPress, showStatus }: Props) {
   const payout = (job.payout || 0) + (job.rushBonus || 0);
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const statusColors: Record<string, { bg: string; text: string }> = {
     UPCOMING: { bg: "#dbeafe", text: "#1d4ed8" },
@@ -23,65 +33,72 @@ export default function JobCard({ job, onPress, showStatus }: Props) {
   };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.topRow}>
-        <View style={styles.badges}>
-          <UrgencyBadge
-            level={job.urgencyLevel || "standard"}
-            reopened={(job.reopenCount || 0) > 0}
-          />
-          {showStatus && job.status && (
-            <View
-              style={[
-                styles.statusBadge,
-                {
-                  backgroundColor: statusColors[job.status]?.bg || "#f1f5f9",
-                },
-              ]}
-            >
-              <Text
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        style={styles.card}
+        onPress={onPress}
+        onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 300 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+      >
+        <View style={styles.topRow}>
+          <View style={styles.badges}>
+            <UrgencyBadge
+              level={job.urgencyLevel || "standard"}
+              reopened={(job.reopenCount || 0) > 0}
+            />
+            {showStatus && job.status && (
+              <View
                 style={[
-                  styles.statusText,
-                  { color: statusColors[job.status]?.text || "#475569" },
+                  styles.statusBadge,
+                  {
+                    backgroundColor: statusColors[job.status]?.bg || "#f1f5f9",
+                  },
                 ]}
               >
-                {job.status.replace(/_/g, " ")}
-              </Text>
-            </View>
-          )}
+                <Text
+                  style={[
+                    styles.statusText,
+                    { color: statusColors[job.status]?.text || "#475569" },
+                  ]}
+                >
+                  {job.status.replace(/_/g, " ")}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.payout}>
+            ${payout.toFixed(0)}
+            {job.rushBonus ? (
+              <Text style={styles.bonus}> +${job.rushBonus}</Text>
+            ) : null}
+          </Text>
         </View>
-        <Text style={styles.payout}>
-          ${payout.toFixed(0)}
-          {job.rushBonus ? (
-            <Text style={styles.bonus}> +${job.rushBonus}</Text>
-          ) : null}
+
+        <Text style={styles.title} numberOfLines={2}>
+          {job.title}
         </Text>
-      </View>
 
-      <Text style={styles.title} numberOfLines={2}>
-        {job.title}
-      </Text>
+        <View style={styles.infoRow}>
+          <Ionicons name="location-outline" size={14} color="#64748b" />
+          <Text style={styles.infoText} numberOfLines={1}>
+            {job.address}
+          </Text>
+        </View>
 
-      <View style={styles.infoRow}>
-        <Ionicons name="location-outline" size={14} color="#64748b" />
-        <Text style={styles.infoText} numberOfLines={1}>
-          {job.address}
-        </Text>
-      </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="calendar-outline" size={14} color="#64748b" />
+          <Text style={styles.infoText}>
+            {job.scheduledDate} at {job.scheduledTimeStart}
+            {job.scheduledTimeEnd ? ` - ${job.scheduledTimeEnd}` : ""}
+          </Text>
+        </View>
 
-      <View style={styles.infoRow}>
-        <Ionicons name="calendar-outline" size={14} color="#64748b" />
-        <Text style={styles.infoText}>
-          {job.scheduledDate} at {job.scheduledTimeStart}
-          {job.scheduledTimeEnd ? ` - ${job.scheduledTimeEnd}` : ""}
-        </Text>
-      </View>
-
-      <View style={styles.bottomRow}>
-        <CountdownTimer deadline={undefined} />
-        <ViewerCount count={job.currentViewers || 0} />
-      </View>
-    </TouchableOpacity>
+        <View style={styles.bottomRow}>
+          <CountdownTimer deadline={undefined} />
+          <ViewerCount count={job.currentViewers || 0} />
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 

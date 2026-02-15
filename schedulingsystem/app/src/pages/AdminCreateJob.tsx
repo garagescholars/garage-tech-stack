@@ -4,11 +4,13 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { JobStatus } from "../../types";
 import { COLLECTIONS } from "../collections";
+import { CheckCircle, Loader2 } from "lucide-react";
 
 const AdminCreateJob: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     clientName: "",
@@ -112,14 +114,14 @@ const AdminCreateJob: React.FC = () => {
         updatedAt: serverTimestamp()
       });
 
-      // Show success message
+      // Show inline success banner
       setError(null);
-      alert(`Job created successfully! Job ID: ${jobDoc.id}`);
+      setSuccess(`Job created successfully! ID: ${jobDoc.id.slice(0, 8)}...`);
 
-      // Redirect to admin dashboard after 2 seconds
+      // Redirect to admin dashboard after 2.5 seconds
       setTimeout(() => {
         navigate("/admin");
-      }, 2000);
+      }, 2500);
 
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create job.";
@@ -144,6 +146,14 @@ const AdminCreateJob: React.FC = () => {
             Add a new job that will be available for scholars to claim.
           </p>
         </div>
+
+        {success && (
+          <div className="mb-4 success-banner">
+            <CheckCircle size={18} />
+            <span className="text-sm font-semibold">{success}</span>
+            <span className="text-xs ml-auto text-emerald-500">Redirecting...</span>
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-3">
@@ -333,16 +343,21 @@ const AdminCreateJob: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate("/admin")}
-              className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-300 transition-colors"
+              className="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-300 transition-colors btn-press"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !!success}
+              className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed btn-press flex items-center justify-center gap-2"
             >
-              {loading ? "Creating Job..." : "Create Job"}
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Creating Job...
+                </>
+              ) : "Create Job"}
             </button>
           </div>
         </form>
