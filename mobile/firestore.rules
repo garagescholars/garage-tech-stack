@@ -1,0 +1,239 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userDoc().data.role == 'admin';
+    }
+
+    function isAdminByEmail() {
+      return isSignedIn() && request.auth.token.email in [
+        'tylerzsodia@gmail.com',
+        'zach.harmon25@gmail.com'
+      ];
+    }
+
+    function isJobParticipant(jobId) {
+      return isSignedIn() && (
+        get(/databases/$(database)/documents/jobs/$(jobId)).data.assigneeId == request.auth.uid ||
+        get(/databases/$(database)/documents/jobs/$(jobId)).data.clientId == request.auth.uid
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if isAdminByEmail() || request.auth.uid == userId;
+      allow create: if isAdminByEmail() || (
+        isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == "scholar"
+        && request.resource.data.status in ["disabled", "pending"]
+      );
+      allow update: if isAdminByEmail() || (request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status);
+    }
+
+    match /jobs/{jobId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Phase X: New data model collections
+    match /serviceJobs/{jobId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /inventory/{itemId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /clients/{clientId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /properties/{propertyId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /automationJobs/{jobId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /payouts/{payoutId} {
+      allow read: if isSignedIn();
+      allow write: if isAdminByEmail();
+    }
+
+    match /signupRequests/{requestId} {
+      allow create: if isSignedIn()
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == "pending";
+      allow read, update, delete: if isAdminByEmail();
+    }
+
+    match /adminNotifications/{notificationId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if isAdminByEmail();
+    }
+
+    match /sops/{sopId} {
+      allow read: if isAdmin() || (resource.data.qaStatus == 'APPROVED' && isJobParticipant(resource.data.jobId));
+      allow write: if isAdmin();
+    }
+
+    // Scholar recruitment applications - allow public submissions
+    match /scholarApplications/{applicationId} {
+      allow create: if true;  // Anyone can submit an application
+      allow read, update, delete: if isAdminByEmail();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Garage Scholars Mobile App Collections
+    // ═══════════════════════════════════════════════════════════
+
+    // gs_profiles — basic user profile (phone auth)
+    match /gs_profiles/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (
+        request.auth.uid == userId || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_scholarProfiles — scholar-specific stats (managed by functions)
+    match /gs_scholarProfiles/{scholarId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == scholarId;
+      allow update: if isSignedIn() && (
+        request.auth.uid == scholarId || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_jobs — service jobs
+    match /gs_jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow create: if isAdminByEmail();
+      allow update: if isSignedIn(); // scholars claim, check in/out; admins manage
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_recentClaims — FOMO feed (written by Cloud Functions)
+    match /gs_recentClaims/{claimId} {
+      allow read: if isSignedIn();
+      allow write: if false; // functions only
+    }
+
+    // gs_jobCheckins — check-in/out media & GPS
+    match /gs_jobCheckins/{checkinId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.scholarId == request.auth.uid || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_jobQualityScores — quality scoring (admin + functions)
+    match /gs_jobQualityScores/{scoreId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdminByEmail();
+      allow delete: if false;
+    }
+
+    // gs_scholarGoals — monthly goals
+    match /gs_scholarGoals/{goalId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && (
+        resource == null || resource.data.scholarId == request.auth.uid || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_scholarAchievements — badges
+    match /gs_scholarAchievements/{achievementId} {
+      allow read: if isSignedIn();
+      allow write: if false; // functions only
+    }
+
+    // gs_jobTransfers — job transfers between scholars
+    match /gs_jobTransfers/{transferId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.fromScholarId == request.auth.uid ||
+        resource.data.toScholarId == request.auth.uid ||
+        isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_jobReschedules — reschedule requests
+    match /gs_jobReschedules/{rescheduleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.scholarId == request.auth.uid || isAdminByEmail()
+      );
+      allow delete: if isAdminByEmail();
+    }
+
+    // gs_scholarAnalytics — computed analytics (functions only)
+    match /gs_scholarAnalytics/{analyticsId} {
+      allow read: if isSignedIn();
+      allow write: if false; // functions only
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Payment System Collections
+    // ═══════════════════════════════════════════════════════════
+
+    // gs_payouts — scholar/customer payouts (scholars read own, functions write)
+    match /gs_payouts/{payoutId} {
+      allow read: if isSignedIn() && (
+        resource.data.scholarId == request.auth.uid ||
+        resource.data.customerId == request.auth.uid ||
+        isAdminByEmail()
+      );
+      allow write: if false; // functions only
+    }
+
+    // gs_customerPayments — payments from customers
+    match /gs_customerPayments/{paymentId} {
+      allow read: if isSignedIn() && (
+        resource.data.customerId == request.auth.uid ||
+        isAdminByEmail()
+      );
+      allow write: if false; // functions only (created via callable)
+    }
+
+    // gs_paymentPeriods — biweekly CPA reporting periods
+    match /gs_paymentPeriods/{periodId} {
+      allow read: if isAdminByEmail();
+      allow write: if false; // functions only
+    }
+
+    // gs_stripeAccounts — Stripe Connect accounts
+    match /gs_stripeAccounts/{accountId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdminByEmail()
+      );
+      allow write: if false; // functions only
+    }
+
+    // gs_platformConfig — admin-managed platform settings
+    match /gs_platformConfig/{configId} {
+      allow read: if isAdminByEmail();
+      allow write: if isAdminByEmail();
+    }
+  }
+}

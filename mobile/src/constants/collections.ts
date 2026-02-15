@@ -18,4 +18,10 @@ export const COLLECTIONS = {
   PAYMENT_PERIODS: 'gs_paymentPeriods',
   STRIPE_ACCOUNTS: 'gs_stripeAccounts',
   PLATFORM_CONFIG: 'gs_platformConfig',
+  // Web admin collections
+  SIGNUP_REQUESTS: 'signupRequests',
+  ADMIN_NOTIFICATIONS: 'adminNotifications',
+  INVENTORY: 'inventory',
+  CLIENTS: 'clients',
+  PROPERTIES: 'properties',
 } as const;

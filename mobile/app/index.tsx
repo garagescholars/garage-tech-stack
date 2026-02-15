@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ActivityIndicator, View, Text, StyleSheet } from "react-native";
+import { ActivityIndicator, Platform, View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../src/hooks/useAuth";
 
@@ -11,7 +11,11 @@ export default function Index() {
     if (loading) return;
 
     if (!user) {
-      router.replace("/(auth)/login");
+      if (Platform.OS === "web") {
+        router.replace("/(auth)/email-login");
+      } else {
+        router.replace("/(auth)/login");
+      }
       return;
     }
 

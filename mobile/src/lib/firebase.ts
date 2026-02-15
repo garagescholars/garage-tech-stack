@@ -1,10 +1,9 @@
+import { Platform } from "react-native";
 import { initializeApp } from "firebase/app";
-import { initializeAuth } from "firebase/auth";
-// @ts-expect-error - getReactNativePersistence exists at runtime via Metro resolver
-import { getReactNativePersistence } from "@firebase/auth";
+import { type Auth, initializeAuth, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -17,9 +16,21 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-});
+let auth: Auth;
+if (Platform.OS === "web") {
+  auth = initializeAuth(app, { persistence: browserLocalPersistence });
+} else {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { getReactNativePersistence } = require("@firebase/auth");
+  const AsyncStorage =
+    require("@react-native-async-storage/async-storage").default;
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+}
+
+export { auth };
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
 export default app;

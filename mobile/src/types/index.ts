@@ -8,6 +8,9 @@ export type ScholarTier = "new" | "standard" | "elite" | "top_hustler";
 export type UrgencyLevel = "standard" | "rush" | "same_day";
 
 export type JobStatus =
+  | "LEAD"
+  | "INTAKE_SUBMITTED"
+  | "SOP_NEEDS_REVIEW"
   | "APPROVED_FOR_POSTING"
   | "UPCOMING"
   | "IN_PROGRESS"
@@ -130,6 +133,24 @@ export type GsJob = {
   firstPayoutId?: string;
   secondPayoutId?: string;
   paymentStatus?: "unpaid" | "first_paid" | "held" | "fully_paid";
+
+  // Phase X: Client intake & SOP fields
+  clientEmail?: string;
+  clientPhone?: string;
+  estimatedHours?: number;
+  clientPrice?: number;
+  accessConstraints?: string;
+  resaleConcierge?: boolean;
+  donationOptIn?: boolean;
+  productSelections?: Record<string, any>;
+  package?: string;
+  packageTier?: string;
+  generatedSOP?: string;
+  sopApprovedBy?: string;
+  sopApprovedAt?: string;
+  inventoryExtracted?: boolean;
+  extractedItemIds?: string[];
+  intakeImageUrls?: string[];
 
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -401,4 +422,92 @@ export type GsPaymentConfig = {
   cpaReportFrequency: "biweekly";
   convenienceFeePercent: number;
   achPreferred: boolean;
+};
+
+// ── SOP Types ──
+
+export type SopSection = {
+  title: string;
+  body: string;
+};
+
+export type SopSectionStep = {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+  status: "pending" | "approved" | "rejected";
+};
+
+export type SopRequiredPhoto = {
+  id: string;
+  label: string;
+  phase: string;
+};
+
+// ── Client (Phase X) ──
+
+export type Client = {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  stats?: {
+    totalRevenue: number;
+    totalJobs: number;
+  };
+  createdAt?: Timestamp;
+};
+
+// ── Property (Phase X) ──
+
+export type Property = {
+  id: string;
+  clientId: string;
+  address: string;
+  type?: string;
+  notes?: string;
+  createdAt?: Timestamp;
+};
+
+// ── Inventory Item ──
+
+export type InventoryItem = {
+  id: string;
+  title: string;
+  description?: string;
+  price: number;
+  condition: "new" | "used";
+  platform: string;
+  status: "Pending" | "Active" | "Sold" | "Removed";
+  imageUrls: string[];
+  clientId?: string;
+  clientName?: string;
+  propertyId?: string;
+  sourceServiceJobId?: string;
+  dateListed?: string;
+  lastUpdated?: Timestamp;
+  createdAt?: Timestamp;
+};
+
+// ── Signup Request ──
+
+export type SignupRequest = {
+  id: string;
+  fullName: string;
+  email: string;
+  role: "scholar" | "customer";
+  status: "pending" | "approved" | "declined";
+  createdAt?: Timestamp;
+};
+
+// ── Admin Notification ──
+
+export type AdminNotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  unread: boolean;
+  createdAt?: Timestamp;
 };

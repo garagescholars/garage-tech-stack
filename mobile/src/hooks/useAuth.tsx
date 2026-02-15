@@ -4,17 +4,14 @@ import {
   signOut,
   PhoneAuthProvider,
   signInWithCredential,
+  signInWithEmailAndPassword,
   User,
 } from "firebase/auth";
 import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import { COLLECTIONS } from "../constants/collections";
+import { ADMIN_EMAILS } from "../constants/config";
 import type { Role, UserProfile, UserStatus, ScholarTier } from "../types";
-
-const ADMIN_EMAILS = [
-  "tylerzsodia@gmail.com",
-  "zach.harmon25@gmail.com",
-].map((e) => e.toLowerCase());
 
 type AuthContextValue = {
   user: User | null;
@@ -23,6 +20,10 @@ type AuthContextValue = {
   authError: string | null;
   signOutUser: () => Promise<void>;
   verifyPhone: (verificationId: string, code: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  viewAsUid: string | null;
+  setViewAsUid: (uid: string | null) => void;
+  effectiveUid: string | null;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -32,6 +33,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [viewAsUid, setViewAsUid] = useState<string | null>(null);
+
+  const effectiveUid = viewAsUid || user?.uid || null;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -196,6 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOutUser = async () => {
     await signOut(auth);
     setProfile(null);
+    setViewAsUid(null);
   };
 
   const verifyPhone = async (verificationId: string, code: string) => {
@@ -203,9 +208,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signInWithCredential(auth, credential);
   };
 
+  const signInWithEmail = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  };
+
   const value = useMemo(
-    () => ({ user, profile, loading, authError, signOutUser, verifyPhone }),
-    [user, profile, loading, authError]
+    () => ({
+      user,
+      profile,
+      loading,
+      authError,
+      signOutUser,
+      verifyPhone,
+      signInWithEmail,
+      viewAsUid,
+      setViewAsUid,
+      effectiveUid,
+    }),
+    [user, profile, loading, authError, viewAsUid]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
