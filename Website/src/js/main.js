@@ -121,11 +121,11 @@ async function handleQuoteSubmit(e) {
             return;
         }
 
-        msg.textContent = 'Processing photos...';
         msg.className = 'form-message';
         msg.style.display = 'block';
 
         for (var j = 0; j < photos.length; j++) {
+            msg.textContent = 'Processing photo ' + (j + 1) + ' of ' + photos.length + '...';
             var base64 = await resizePhoto(photos[j], 1200, 0.7);
             data.photoData.push({ base64: base64, filename: photos[j].name, mimeType: 'image/jpeg' });
         }
@@ -133,16 +133,33 @@ async function handleQuoteSubmit(e) {
         msg.textContent = 'Submitting your request...';
         var functions = firebase.functions();
         var submitQuoteRequest = functions.httpsCallable('submitQuoteRequest');
-        await submitQuoteRequest(data);
 
-        msg.textContent = "Thank you! Your quote request has been submitted. We'll contact you soon.";
+        // Retry once on transient network errors
+        try {
+            await submitQuoteRequest(data);
+        } catch (retryErr) {
+            if (retryErr.code === 'functions/internal' || retryErr.code === 'functions/unavailable') {
+                msg.textContent = 'Retrying submission...';
+                await submitQuoteRequest(data);
+            } else {
+                throw retryErr;
+            }
+        }
+
+        msg.textContent = "Thank you! Your quote request has been submitted. We'll contact you within 24 hours.";
         msg.className = 'form-message success';
-        setTimeout(function() { closeQuoteModal(); }, 3000);
+        setTimeout(function() { closeQuoteModal(); }, 4000);
 
     } catch (error) {
+        console.error('Quote submission error:', error);
         var errMsg = 'There was an error submitting your request. Please try again.';
-        if (error.code === 'invalid-argument') errMsg = 'Please fill in all required fields.';
-        else if (error.message) errMsg = 'Error: ' + error.message;
+        if (error.code === 'functions/invalid-argument') {
+            errMsg = 'Please fill in all required fields.';
+        } else if (error.code === 'functions/internal' || error.code === 'functions/unavailable') {
+            errMsg = 'Our server is temporarily unavailable. Please try again in a moment.';
+        } else if (error.message && error.message !== 'internal') {
+            errMsg = 'Error: ' + error.message;
+        }
         msg.textContent = errMsg;
         msg.className = 'form-message error';
     } finally {
