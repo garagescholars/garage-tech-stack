@@ -38,12 +38,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const effectiveUid = viewAsUid || user?.uid || null;
 
   useEffect(() => {
+    // Track Firestore listeners so we can clean them up on re-auth
+    let liveProfileUnsub: (() => void) | null = null;
+    let liveScholarUnsub: (() => void) | null = null;
+
+    const cleanupListeners = () => {
+      if (liveProfileUnsub) { liveProfileUnsub(); liveProfileUnsub = null; }
+      if (liveScholarUnsub) { liveScholarUnsub(); liveScholarUnsub = null; }
+    };
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("[Auth] onAuthStateChanged:", firebaseUser?.email || "null");
+      cleanupListeners();
+
       setUser(firebaseUser);
-      setProfile(null);
       setAuthError(null);
 
       if (!firebaseUser) {
+        setProfile(null);
         setLoading(false);
         return;
       }
@@ -53,6 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isAdminEmail = ADMIN_EMAILS.includes(email);
       const profileRef = doc(db, COLLECTIONS.PROFILES, firebaseUser.uid);
       const scholarRef = doc(db, COLLECTIONS.SCHOLAR_PROFILES, firebaseUser.uid);
+
+      console.log("[Auth] isAdmin:", isAdminEmail, "uid:", firebaseUser.uid);
 
       // Admin by email
       if (isAdminEmail) {
@@ -66,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setProfile(adminProfile);
         setLoading(false);
+        console.log("[Auth] Admin profile set, loading=false");
         setDoc(profileRef, {
           role: "admin",
           fullName: adminProfile.name,
@@ -73,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone,
           isActive: true,
           createdAt: serverTimestamp(),
-        }, { merge: true }).catch(() => {});
+        }, { merge: true }).catch((e) => console.warn("[Auth] Admin profile write failed:", e));
         return;
       }
 
@@ -81,7 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let profileSnap;
       try {
         profileSnap = await getDoc(profileRef);
-      } catch {
+      } catch (e) {
+        console.error("[Auth] Failed to load profile:", e);
         setAuthError("Unable to load profile. Please try again.");
         setLoading(false);
         return;
@@ -89,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // New user — create profile as scholar in BOTH collections
       if (!profileSnap.exists()) {
+        console.log("[Auth] New user — creating scholar profile");
         const name = firebaseUser.displayName || phone || "Scholar";
         const newProfile: UserProfile = {
           uid: firebaseUser.uid,
@@ -107,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone,
           isActive: true,
           createdAt: serverTimestamp(),
-        }).catch(() => {});
+        }).catch((e) => console.warn("[Auth] Scholar profile write failed:", e));
 
         // Write gs_scholarProfiles doc
         await setDoc(scholarRef, {
@@ -123,15 +140,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           monthlyMoneyGoal: 0,
           showOnLeaderboard: true,
           createdAt: serverTimestamp(),
-        }).catch(() => {});
+        }).catch((e) => console.warn("[Auth] Scholar extended profile write failed:", e));
 
         setProfile(newProfile);
         setLoading(false);
+        console.log("[Auth] New scholar profile set, loading=false");
         return;
       }
 
+      console.log("[Auth] Existing user — attaching live listeners");
+
       // Existing user — subscribe to live updates from BOTH collections
-      const liveProfileUnsub = onSnapshot(profileRef, (profileDoc) => {
+      liveProfileUnsub = onSnapshot(profileRef, (profileDoc) => {
         if (!profileDoc.exists()) {
           setProfile(null);
           return;
@@ -151,7 +171,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           pushToken: pData.pushToken as string | undefined,
         };
 
-        // Merge with current state (scholar data may already be set)
         setProfile((prev) => {
           if (prev && prev.uid === firebaseUser.uid) {
             return { ...prev, ...baseProfile };
@@ -164,8 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      // Subscribe to gs_scholarProfiles for scholar-specific data
-      const liveScholarUnsub = onSnapshot(scholarRef, (scholarDoc) => {
+      liveScholarUnsub = onSnapshot(scholarRef, (scholarDoc) => {
         if (!scholarDoc.exists()) return;
         const sData = scholarDoc.data() as Record<string, unknown>;
 
@@ -188,13 +206,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       setLoading(false);
-      return () => {
-        liveProfileUnsub();
-        liveScholarUnsub();
-      };
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      cleanupListeners();
+    };
   }, []);
 
   const signOutUser = async () => {

@@ -9,7 +9,6 @@ import {
   updateDoc,
   serverTimestamp,
   runTransaction,
-  Timestamp,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { COLLECTIONS } from "../constants/collections";
@@ -21,6 +20,7 @@ import type { ServiceJob, GsRecentClaim } from "../types";
 export function useOpenJobs() {
   const [jobs, setJobs] = useState<ServiceJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -29,29 +29,38 @@ export function useOpenJobs() {
       orderBy("scheduledDate", "asc")
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as ServiceJob[];
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const items = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as ServiceJob[];
 
-      // Sort: same_day first, then rush, then standard, then by date
-      items.sort((a, b) => {
-        const urgencyOrder: Record<string, number> = { same_day: 0, rush: 1, standard: 2 };
-        const aUrg = urgencyOrder[a.urgencyLevel || "standard"] ?? 2;
-        const bUrg = urgencyOrder[b.urgencyLevel || "standard"] ?? 2;
-        if (aUrg !== bUrg) return aUrg - bUrg;
-        return (a.scheduledDate || "").localeCompare(b.scheduledDate || "");
-      });
+        // Sort: same_day first, then rush, then standard, then by date
+        items.sort((a, b) => {
+          const urgencyOrder: Record<string, number> = { same_day: 0, rush: 1, standard: 2 };
+          const aUrg = urgencyOrder[a.urgencyLevel || "standard"] ?? 2;
+          const bUrg = urgencyOrder[b.urgencyLevel || "standard"] ?? 2;
+          if (aUrg !== bUrg) return aUrg - bUrg;
+          return (a.scheduledDate || "").localeCompare(b.scheduledDate || "");
+        });
 
-      setJobs(items);
-      setLoading(false);
-    });
+        setJobs(items);
+        setError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.warn("[useOpenJobs] Listener error:", err.message);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, []);
 
-  return { jobs, loading };
+  return { jobs, loading, error };
 }
 
 /**
@@ -60,6 +69,7 @@ export function useOpenJobs() {
 export function useMyJobs(scholarId: string | undefined) {
   const [jobs, setJobs] = useState<ServiceJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!scholarId) {
@@ -73,19 +83,28 @@ export function useMyJobs(scholarId: string | undefined) {
       orderBy("scheduledDate", "asc")
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as ServiceJob[];
-      setJobs(items);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const items = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as ServiceJob[];
+        setJobs(items);
+        setError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.warn("[useMyJobs] Listener error:", err.message);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, [scholarId]);
 
-  return { jobs, loading };
+  return { jobs, loading, error };
 }
 
 /**
@@ -137,14 +156,20 @@ export function useRecentClaims() {
       orderBy("claimedAt", "desc")
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as GsRecentClaim[];
-      setClaims(items);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const items = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as GsRecentClaim[];
+        setClaims(items);
+        setLoading(false);
+      },
+      () => {
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, []);

@@ -404,6 +404,80 @@ export const approveSignup = onCall(async (request) => {
   return { ok: true };
 });
 
+export const createAccount = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+
+  await requireAdmin(request.auth.uid, request.auth.token.email);
+
+  const { fullName, email, password, role } = request.data as {
+    fullName?: string;
+    email?: string;
+    password?: string;
+    role?: "scholar" | "admin";
+  };
+
+  if (!fullName?.trim() || !email?.trim() || !password) {
+    throw new HttpsError("invalid-argument", "Full name, email, and password are required.");
+  }
+  if (password.length < 6) {
+    throw new HttpsError("invalid-argument", "Password must be at least 6 characters.");
+  }
+  if (role !== "scholar" && role !== "admin") {
+    throw new HttpsError("invalid-argument", "Role must be 'scholar' or 'admin'.");
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Create user in Firebase Auth via Admin SDK (doesn't affect caller's session)
+  let uid: string;
+  try {
+    const userRecord = await adminAuth.createUser({
+      email: normalizedEmail,
+      password,
+      displayName: fullName.trim(),
+    });
+    uid = userRecord.uid;
+  } catch (err: any) {
+    if (err.code === "auth/email-already-exists") {
+      throw new HttpsError("already-exists", "A user with this email already exists.");
+    }
+    throw new HttpsError("internal", err.message || "Failed to create auth user.");
+  }
+
+  // Create gs_profiles document
+  await db.collection("gs_profiles").doc(uid).set({
+    email: normalizedEmail,
+    fullName: fullName.trim(),
+    phone: "",
+    role,
+    isActive: true,
+    createdAt: FieldValue.serverTimestamp(),
+    createdBy: request.auth.uid,
+  });
+
+  // If scholar, also create gs_scholarProfiles
+  if (role === "scholar") {
+    await db.collection("gs_scholarProfiles").doc(uid).set({
+      scholarId: uid,
+      scholarName: fullName.trim(),
+      monthlyJobGoal: 10,
+      monthlyMoneyGoal: 3000,
+      totalJobsCompleted: 0,
+      totalEarnings: 0,
+      payScore: 5.0,
+      cancellationRate: 0,
+      acceptanceRate: 100,
+      tier: "new",
+      showOnLeaderboard: true,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  }
+
+  return { ok: true, uid, email: normalizedEmail, role };
+});
+
 export const declineSignup = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Authentication required.");

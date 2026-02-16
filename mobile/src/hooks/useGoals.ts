@@ -7,7 +7,6 @@ import {
   onSnapshot,
   doc,
   setDoc,
-  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -38,14 +37,20 @@ export function useCurrentGoals(scholarId: string | undefined) {
       where("year", "==", year)
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as ScholarGoal[];
-      setGoals(items);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const items = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as ScholarGoal[];
+        setGoals(items);
+        setLoading(false);
+      },
+      () => {
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, [scholarId]);
@@ -72,14 +77,20 @@ export function useAchievements(scholarId: string | undefined) {
       orderBy("createdAt", "desc")
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as ScholarAchievement[];
-      setAchievements(items);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const items = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as ScholarAchievement[];
+        setAchievements(items);
+        setLoading(false);
+      },
+      () => {
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, [scholarId]);
@@ -134,20 +145,26 @@ export function useLeaderboard() {
       orderBy("totalJobsCompleted", "desc")
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          uid: d.id,
-          name: (data.scholarName as string) || "Scholar",
-          payScore: (data.payScore as number) || 0,
-          tier: (data.tier as string) || "new",
-          totalJobsCompleted: (data.totalJobsCompleted as number) || 0,
-        };
-      });
-      setScholars(items);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const items = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            uid: d.id,
+            name: (data.scholarName as string) || "Scholar",
+            payScore: (data.payScore as number) || 0,
+            tier: (data.tier as string) || "new",
+            totalJobsCompleted: (data.totalJobsCompleted as number) || 0,
+          };
+        });
+        setScholars(items);
+        setLoading(false);
+      },
+      () => {
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, []);

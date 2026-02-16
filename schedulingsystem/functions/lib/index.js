@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.approveSignup = exports.generateSopForJob = exports.gsExportPaymentData = exports.gsGeneratePaymentReport = exports.gsMarkPayoutPaid = exports.gsResalePayout = exports.gsCreateRetentionSubscription = exports.gsCreateCustomerPayment = exports.gsStripeWebhook = exports.gsCreateStripeAccount = exports.gsReleaseCompletionPayouts = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
+exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.createAccount = exports.approveSignup = exports.generateSopForJob = exports.gsExportPaymentData = exports.gsGeneratePaymentReport = exports.gsMarkPayoutPaid = exports.gsResalePayout = exports.gsCreateRetentionSubscription = exports.gsCreateCustomerPayment = exports.gsStripeWebhook = exports.gsCreateStripeAccount = exports.gsReleaseCompletionPayouts = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const app_1 = require("firebase-admin/app");
@@ -378,6 +378,67 @@ exports.approveSignup = (0, https_1.onCall)(async (request) => {
         approvedByUid: request.auth.uid
     }, { merge: true });
     return { ok: true };
+});
+exports.createAccount = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Authentication required.");
+    }
+    await requireAdmin(request.auth.uid, request.auth.token.email);
+    const { fullName, email, password, role } = request.data;
+    if (!fullName?.trim() || !email?.trim() || !password) {
+        throw new https_1.HttpsError("invalid-argument", "Full name, email, and password are required.");
+    }
+    if (password.length < 6) {
+        throw new https_1.HttpsError("invalid-argument", "Password must be at least 6 characters.");
+    }
+    if (role !== "scholar" && role !== "admin") {
+        throw new https_1.HttpsError("invalid-argument", "Role must be 'scholar' or 'admin'.");
+    }
+    const normalizedEmail = email.trim().toLowerCase();
+    // Create user in Firebase Auth via Admin SDK (doesn't affect caller's session)
+    let uid;
+    try {
+        const userRecord = await adminAuth.createUser({
+            email: normalizedEmail,
+            password,
+            displayName: fullName.trim(),
+        });
+        uid = userRecord.uid;
+    }
+    catch (err) {
+        if (err.code === "auth/email-already-exists") {
+            throw new https_1.HttpsError("already-exists", "A user with this email already exists.");
+        }
+        throw new https_1.HttpsError("internal", err.message || "Failed to create auth user.");
+    }
+    // Create gs_profiles document
+    await db.collection("gs_profiles").doc(uid).set({
+        email: normalizedEmail,
+        fullName: fullName.trim(),
+        phone: "",
+        role,
+        isActive: true,
+        createdAt: firestore_2.FieldValue.serverTimestamp(),
+        createdBy: request.auth.uid,
+    });
+    // If scholar, also create gs_scholarProfiles
+    if (role === "scholar") {
+        await db.collection("gs_scholarProfiles").doc(uid).set({
+            scholarId: uid,
+            scholarName: fullName.trim(),
+            monthlyJobGoal: 10,
+            monthlyMoneyGoal: 3000,
+            totalJobsCompleted: 0,
+            totalEarnings: 0,
+            payScore: 5.0,
+            cancellationRate: 0,
+            acceptanceRate: 100,
+            tier: "new",
+            showOnLeaderboard: true,
+            createdAt: firestore_2.FieldValue.serverTimestamp(),
+        });
+    }
+    return { ok: true, uid, email: normalizedEmail, role };
 });
 exports.declineSignup = (0, https_1.onCall)(async (request) => {
     if (!request.auth) {

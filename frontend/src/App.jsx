@@ -39,6 +39,9 @@ function AppContent() {
   // Job detail drawer
   const [drawerItem, setDrawerItem] = useState(null);
 
+  // Hover image preview
+  const [hoveredItemId, setHoveredItemId] = useState(null);
+
   // Inventory filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -459,7 +462,7 @@ function AppContent() {
 
                         return (
                           <div key={item.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-800/50 transition-colors cursor-pointer group">
-                            <div className="col-span-4 flex items-center gap-3" onClick={() => { setEditingItem(item); setIsModalOpen(true); }}>
+                            <div className="col-span-4 flex items-center gap-3 relative" onClick={() => { setEditingItem(item); setIsModalOpen(true); }} onMouseEnter={() => setHoveredItemId(item.id)} onMouseLeave={() => setHoveredItemId(null)}>
                               <div className="w-12 h-12 rounded bg-slate-800 flex-shrink-0 overflow-hidden border border-slate-700">
                                 {item.imageUrls?.length > 0
                                   ? <img src={item.imageUrls.find(u => !u.toLowerCase().includes('.heic')) || item.imageUrls[0]} alt={item.title} className="w-full h-full object-cover" />
@@ -467,6 +470,16 @@ function AppContent() {
                                 }
                               </div>
                               <span className="font-medium text-white group-hover:text-teal-400 transition-colors truncate">{item.title}</span>
+                              {hoveredItemId === item.id && item.imageUrls?.find(u => !u.toLowerCase().includes('.heic')) && (
+                                <div className="absolute left-0 top-16 z-50 w-64 p-2 bg-slate-950 border border-slate-700 rounded-lg shadow-2xl pointer-events-none">
+                                  <div className="aspect-square rounded overflow-hidden bg-slate-900">
+                                    <img src={item.imageUrls.find(u => !u.toLowerCase().includes('.heic')) || item.imageUrls[0]} alt="Preview" className="w-full h-full object-cover" />
+                                  </div>
+                                  {item.imageUrls.some(u => u.toLowerCase().includes('.heic')) && (
+                                    <div className="mt-1 text-xs text-yellow-500 text-center bg-yellow-500/10 py-1 rounded">Includes HEIC files</div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <div className="col-span-2 font-mono text-teal-400" onClick={() => { setEditingItem(item); setIsModalOpen(true); }}>${item.price}</div>
                             <div className="col-span-2 text-slate-400 text-sm" onClick={() => { setEditingItem(item); setIsModalOpen(true); }}>{item.dateListed}</div>

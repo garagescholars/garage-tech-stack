@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, getDoc, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, Timestamp, arrayUnion } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { db, storage } from "../../../../src/lib/firebase";
@@ -35,7 +36,9 @@ export default function CheckOutScreen() {
   const [afterPhotos, setAfterPhotos] = useState<string[]>([]);
 
   // Checklist
-  const [checklist, setChecklist] = useState<{ id: string; text: string; completed: boolean }[]>([]);
+  const [checklist, setChecklist] = useState<{ id: string; text: string; completed: boolean; approvalStatus?: string }[]>([]);
+  const [showAdhocInput, setShowAdhocInput] = useState(false);
+  const [adhocText, setAdhocText] = useState("");
 
   useEffect(() => {
     loadJob();
@@ -64,6 +67,30 @@ export default function CheckOutScreen() {
     setChecklist((prev) =>
       prev.map((c) => (c.id === itemId ? { ...c, completed: !c.completed } : c))
     );
+  };
+
+  const handleAddAdhocTask = async () => {
+    if (!adhocText.trim() || !id) return;
+    const newItem = {
+      id: `adhoc-${Date.now()}`,
+      text: adhocText.trim(),
+      completed: false,
+      approvalStatus: "pending" as const,
+    };
+    // Add to local state immediately
+    setChecklist((prev) => [...prev, newItem]);
+    setAdhocText("");
+    setShowAdhocInput(false);
+    // Persist to Firestore
+    try {
+      await updateDoc(doc(db, COLLECTIONS.JOBS, id), {
+        checklist: arrayUnion(newItem),
+      });
+    } catch {
+      // Revert on failure
+      setChecklist((prev) => prev.filter((c) => c.id !== newItem.id));
+      Alert.alert("Error", "Failed to add task. Please try again.");
+    }
   };
 
   const uploadFile = async (uri: string, path: string): Promise<string> => {
@@ -203,30 +230,81 @@ export default function CheckOutScreen() {
         {checklist.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Completion Checklist</Text>
-            {checklist.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.checkItem}
-                onPress={() => toggleChecklist(item.id)}
-              >
-                <Ionicons
-                  name={item.completed ? "checkbox" : "square-outline"}
-                  size={22}
-                  color={item.completed ? "#10b981" : "#64748b"}
-                />
-                <Text
-                  style={[
-                    styles.checkText,
-                    item.completed && styles.checkTextDone,
-                  ]}
+            {checklist.map((item) => {
+              const isRejected = item.approvalStatus === "rejected";
+              const isPending = item.approvalStatus === "pending";
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.checkItem}
+                  onPress={() => !isRejected && toggleChecklist(item.id)}
+                  disabled={isRejected}
                 >
-                  {item.text}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Ionicons
+                    name={item.completed ? "checkbox" : "square-outline"}
+                    size={22}
+                    color={isRejected ? "#475569" : item.completed ? "#10b981" : "#64748b"}
+                  />
+                  <Text
+                    style={[
+                      styles.checkText,
+                      item.completed && styles.checkTextDone,
+                      isRejected && styles.checkTextRejected,
+                    ]}
+                  >
+                    {item.text}
+                  </Text>
+                  {isPending && (
+                    <View style={styles.pendingBadge}>
+                      <Text style={styles.pendingBadgeText}>Pending</Text>
+                    </View>
+                  )}
+                  {isRejected && (
+                    <View style={styles.rejectedBadge}>
+                      <Text style={styles.rejectedBadgeText}>Rejected</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
             <Text style={styles.checkSummary}>
               {checklist.filter((c) => c.completed).length}/{checklist.length} completed
             </Text>
+
+            {/* Add adhoc task */}
+            {showAdhocInput ? (
+              <View style={styles.adhocRow}>
+                <TextInput
+                  style={styles.adhocInput}
+                  value={adhocText}
+                  onChangeText={setAdhocText}
+                  placeholder="Describe additional task..."
+                  placeholderTextColor="#475569"
+                  autoFocus
+                />
+                <TouchableOpacity
+                  style={[styles.adhocSubmit, !adhocText.trim() && { opacity: 0.4 }]}
+                  onPress={handleAddAdhocTask}
+                  disabled={!adhocText.trim()}
+                >
+                  <Ionicons name="checkmark" size={18} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.adhocCancel}
+                  onPress={() => { setShowAdhocInput(false); setAdhocText(""); }}
+                >
+                  <Ionicons name="close" size={18} color="#94a3b8" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.addTaskBtn}
+                onPress={() => setShowAdhocInput(true)}
+              >
+                <Ionicons name="add-circle-outline" size={16} color="#14b8a6" />
+                <Text style={styles.addTaskText}>Request Additional Task</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -310,6 +388,62 @@ const styles = StyleSheet.create({
   },
   checkText: { fontSize: 15, color: "#f8fafc", flex: 1 },
   checkTextDone: { color: "#64748b", textDecorationLine: "line-through" },
+  checkTextRejected: { color: "#475569", textDecorationLine: "line-through" },
+  pendingBadge: {
+    backgroundColor: "#78350f",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  pendingBadgeText: { fontSize: 9, fontWeight: "700", color: "#fbbf24", textTransform: "uppercase" },
+  rejectedBadge: {
+    backgroundColor: "#7f1d1d",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  rejectedBadgeText: { fontSize: 9, fontWeight: "700", color: "#f87171", textTransform: "uppercase" },
+  adhocRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  adhocInput: {
+    flex: 1,
+    backgroundColor: "#0f1b2d",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: "#f8fafc",
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  adhocSubmit: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: "#14b8a6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  adhocCancel: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: "#1e293b",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addTaskBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 6,
+  },
+  addTaskText: { fontSize: 13, fontWeight: "600", color: "#14b8a6" },
   checkSummary: {
     color: "#64748b",
     fontSize: 12,

@@ -16,6 +16,7 @@ import type { JobQualityScore } from "../types";
 export function useScoreHistory(scholarId: string | undefined) {
   const [scores, setScores] = useState<JobQualityScore[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!scholarId) {
@@ -29,17 +30,26 @@ export function useScoreHistory(scholarId: string | undefined) {
       orderBy("createdAt", "desc")
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as JobQualityScore[];
-      setScores(items);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const items = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as JobQualityScore[];
+        setScores(items);
+        setError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.warn("[useScoreHistory] Listener error:", err.message);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, [scholarId]);
 
-  return { scores, loading };
+  return { scores, loading, error };
 }

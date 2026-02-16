@@ -10,6 +10,8 @@ export default function Index() {
   useEffect(() => {
     if (loading) return;
 
+    console.log("[Index] Routing — user:", !!user, "role:", profile?.role || "none");
+
     if (!user) {
       if (Platform.OS === "web") {
         router.replace("/(auth)/email-login");
@@ -20,7 +22,7 @@ export default function Index() {
     }
 
     if (profile?.role === "admin") {
-      router.replace("/(admin)/jobs");
+      router.replace("/(admin)/home");
     } else if (profile?.role === "scholar" && profile.onboardingComplete !== true) {
       router.replace("/(auth)/onboarding");
     } else {

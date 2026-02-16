@@ -88,50 +88,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Resale Concierge — backend automation collections
-    match /rateLimits/{docId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
-    }
-
-    match /postingHistory/{docId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
-    }
-
-    match /integrations/{docId} {
-      allow read: if isAdminByEmail();
-      allow write: if isAdminByEmail();
-    }
-
-    // Resale conversations + messages
-    match /conversations/{conversationId} {
-      allow read, write: if isSignedIn();
-
-      match /messages/{messageId} {
-        allow read, write: if isSignedIn();
-      }
-    }
-
-    match /sold_inventory/{itemId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Website public forms
-    match /contactSubmissions/{docId} {
-      allow create: if true;
-      allow read: if isAdminByEmail();
-    }
-
-    match /newsletterSubscriptions/{docId} {
-      allow create: if true;
-      allow read: if isAdminByEmail();
-    }
-
-    match /quoteRequests/{docId} {
-      allow read, write: if isSignedIn();
-    }
-
     // Scholar recruitment applications - allow public submissions
     match /scholarApplications/{applicationId} {
       allow create: if true;  // Anyone can submit an application

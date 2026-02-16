@@ -13,10 +13,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "../../src/hooks/useAuth";
 
 export default function VerifyScreen() {
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { phone, verificationId } = useLocalSearchParams<{ phone: string; verificationId: string }>();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
-  const [verificationId, setVerificationId] = useState<string | null>(null);
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const { verifyPhone } = useAuth();
   const router = useRouter();
@@ -54,13 +53,13 @@ export default function VerifyScreen() {
     }
 
     if (!verificationId) {
-      Alert.alert("Error", "Verification session expired. Please go back and try again.");
+      Alert.alert("Error", "No verification session. Please go back and try again.");
       return;
     }
 
     setLoading(true);
     try {
-      await verifyPhone(verificationId, fullCode);
+      await verifyPhone(verificationId as string, fullCode);
       // Auth state change will redirect via index.tsx
     } catch (error: any) {
       Alert.alert("Verification Failed", error.message || "Invalid code. Please try again.");

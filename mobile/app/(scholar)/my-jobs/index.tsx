@@ -5,11 +5,17 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Alert,
+  Modal,
+  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
+import { db } from "../../../src/lib/firebase";
 import { useAuth } from "../../../src/hooks/useAuth";
 import { useMyJobs } from "../../../src/hooks/useJobs";
+import { COLLECTIONS } from "../../../src/constants/collections";
 import JobCard from "../../../src/components/JobCard";
 import { StaggeredItem, SkeletonBox, FadeInView } from "../../../src/components/AnimatedComponents";
 import type { ServiceJob } from "../../../src/types";
@@ -26,6 +32,9 @@ export default function MyJobsScreen() {
   const { jobs, loading } = useMyJobs(user?.uid);
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("active");
+  const [cancelJob, setCancelJob] = useState<ServiceJob | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
 
   const activeStatuses = ["UPCOMING", "IN_PROGRESS", "REVIEW_PENDING"];
   const active = jobs.filter((j) => activeStatuses.includes(j.status));
@@ -41,6 +50,42 @@ export default function MyJobsScreen() {
       router.push(`/(scholar)/my-jobs/${job.id}/checkout` as any);
     } else {
       router.push(`/(scholar)/jobs/${job.id}` as any);
+    }
+  };
+
+  const onJobLongPress = (job: ServiceJob) => {
+    if (job.status !== "UPCOMING") return;
+    Alert.alert("Job Actions", `${job.title}`, [
+      { text: "Check In", onPress: () => router.push(`/(scholar)/my-jobs/${job.id}/checkin` as any) },
+      {
+        text: "Cancel Job",
+        style: "destructive",
+        onPress: () => {
+          setCancelJob(job);
+          setCancelReason("");
+        },
+      },
+      { text: "Close", style: "cancel" },
+    ]);
+  };
+
+  const handleCancelJob = async () => {
+    if (!cancelJob || !cancelReason.trim() || !user) return;
+    setCancelling(true);
+    try {
+      await updateDoc(doc(db, COLLECTIONS.JOBS, cancelJob.id), {
+        status: "CANCELLED",
+        cancellationReason: cancelReason.trim(),
+        cancelledAt: serverTimestamp(),
+        cancelledBy: user.uid,
+        updatedAt: serverTimestamp(),
+      });
+      setCancelJob(null);
+      Alert.alert("Cancelled", "The job has been cancelled.");
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to cancel job.");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -106,12 +151,50 @@ export default function MyJobsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
             <StaggeredItem index={index}>
-              <JobCard job={item} onPress={() => onJobPress(item)} showStatus />
+              <JobCard
+                job={item}
+                onPress={() => onJobPress(item)}
+                onLongPress={() => onJobLongPress(item)}
+                showStatus
+              />
             </StaggeredItem>
           )}
           contentContainerStyle={styles.list}
         />
       )}
+
+      {/* Cancel Job Modal */}
+      <Modal visible={!!cancelJob} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Cancel Job</Text>
+            <Text style={styles.modalSub}>{cancelJob?.title}</Text>
+            <Text style={styles.modalLabel}>Reason for cancellation <Text style={{ color: "#ef4444" }}>*</Text></Text>
+            <TextInput
+              style={styles.cancelInput}
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              placeholder="Please explain why you need to cancel..."
+              placeholderTextColor="#475569"
+              multiline
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setCancelJob(null)}>
+                <Text style={styles.modalCancelText}>Go Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, (!cancelReason.trim() || cancelling) && { opacity: 0.5 }]}
+                onPress={handleCancelJob}
+                disabled={!cancelReason.trim() || cancelling}
+              >
+                <Text style={styles.modalConfirmText}>{cancelling ? "Cancelling..." : "Cancel Job"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -168,4 +251,60 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: "center",
   },
+
+  // Cancel Modal
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalSheet: {
+    backgroundColor: "#1e293b",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#475569",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "800", color: "#f8fafc", marginBottom: 4 },
+  modalSub: { fontSize: 14, color: "#94a3b8", marginBottom: 16 },
+  modalLabel: { fontSize: 13, fontWeight: "600", color: "#94a3b8", marginBottom: 8 },
+  cancelInput: {
+    backgroundColor: "#0f1b2d",
+    borderRadius: 10,
+    padding: 12,
+    color: "#f8fafc",
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: "#334155",
+    minHeight: 80,
+    textAlignVertical: "top",
+    marginBottom: 16,
+  },
+  modalActions: { flexDirection: "row", gap: 8 },
+  modalCancelBtn: {
+    flex: 1,
+    backgroundColor: "#0f1b2d",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  modalCancelText: { color: "#94a3b8", fontSize: 15, fontWeight: "700" },
+  modalConfirmBtn: {
+    flex: 2,
+    backgroundColor: "#ef4444",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  modalConfirmText: { color: "#fff", fontSize: 15, fontWeight: "700" },
 });
