@@ -531,7 +531,7 @@ export const generateSopForJob = onCall({ timeoutSeconds: 300, memory: "1GiB", s
     throw new HttpsError("failed-precondition", "ANTHROPIC_API_KEY is not configured. Run: firebase functions:secrets:set ANTHROPIC_API_KEY");
   }
 
-  const jobRef = db.collection("serviceJobs").doc(jobId);
+  const jobRef = db.collection("gs_jobs").doc(jobId);
   const jobSnap = await jobRef.get();
   if (!jobSnap.exists) {
     throw new HttpsError("not-found", "Job not found.");

@@ -204,7 +204,7 @@ exports.generateSopForJob = (0, https_1.onCall)({ timeoutSeconds: 300, memory: "
         console.log(`SOP generation starting...`);
         const response = await anthropic.messages.create({
             model: "claude-sonnet-4-5-20250929",
-            max_tokens: 4096,
+            max_tokens: 16384,
             system: SOP_SYSTEM_PROMPT,
             messages: [{ role: "user", content: userContent }]
         });

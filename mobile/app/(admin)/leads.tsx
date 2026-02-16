@@ -20,6 +20,7 @@ import {
   orderBy,
   onSnapshot,
   updateDoc,
+  getDoc,
   doc,
   serverTimestamp,
 } from "firebase/firestore";
@@ -378,15 +379,43 @@ export default function AdminLeadsScreen() {
       setSopEditText(data.generatedSOP);
       setConvertingLead(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to generate SOP.";
-      setSopError(message);
-
-      // Reset status back to LEAD on failure
+      // The Cloud Function may have succeeded even though the browser lost connection
+      // (e.g. ERR_NETWORK_CHANGED during the ~60s Claude API call).
+      // Check Firestore before resetting to LEAD.
       if (db && convertingLead) {
+        try {
+          const jobSnap = await getDoc(doc(db, COLLECTIONS.JOBS, convertingLead.id));
+          const jobData = jobSnap.data();
+          if (jobData?.generatedSOP && jobData?.status === "SOP_NEEDS_REVIEW") {
+            // Function succeeded server-side — show the review modal
+            const intakeUrls = convertingLead.intakeImageUrls || convertingLead.intakeMediaPaths || [];
+            setSopReviewData({
+              jobId: convertingLead.id,
+              sopText: jobData.generatedSOP,
+              clientName: convertFormData.clientName.trim(),
+              address: convertFormData.address.trim(),
+              packageTier: convertFormData.selectedPackage,
+              date: convertFormData.scheduledDate,
+              intakeImageUrls: intakeUrls,
+            });
+            setSopEditText(jobData.generatedSOP);
+            setConvertingLead(null);
+            return; // SOP was generated — skip reset
+          }
+        } catch (_) {
+          // Firestore check failed too — fall through to reset
+        }
+
+        // SOP was NOT generated — reset to LEAD
+        const message = err instanceof Error ? err.message : "Failed to generate SOP.";
+        setSopError(message);
         await updateDoc(doc(db, COLLECTIONS.JOBS, convertingLead.id), {
           status: "LEAD",
           updatedAt: serverTimestamp(),
         }).catch(() => {});
+      } else {
+        const message = err instanceof Error ? err.message : "Failed to generate SOP.";
+        setSopError(message);
       }
     } finally {
       setBusyId(null);
