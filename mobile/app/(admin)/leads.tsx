@@ -65,6 +65,7 @@ type LeadJob = {
   package?: string;
   garageSize?: string;
   intakeMediaPaths?: string[];
+  intakeImageUrls?: string[];
   generatedSOP?: string;
   status: string;
   createdAt?: any;
@@ -364,7 +365,7 @@ export default function AdminLeadsScreen() {
       }
 
       // Step 3: Open SOP Review Modal
-      const intakeUrls = convertingLead.intakeMediaPaths || [];
+      const intakeUrls = convertingLead.intakeImageUrls || convertingLead.intakeMediaPaths || [];
       setSopReviewData({
         jobId: convertingLead.id,
         sopText: data.generatedSOP,
@@ -578,6 +579,35 @@ export default function AdminLeadsScreen() {
     [],
   );
 
+  // ── Bold series select options ──
+  const boldSeriesOptions = useMemo(() => {
+    const credit =
+      convertFormData.selectedPackage === "doctorate"
+        ? 500
+        : convertFormData.selectedPackage === "graduate"
+          ? 300
+          : 0;
+    return [
+      { label: "None", value: "" },
+      ...BOLD_SERIES_SETS.map((b) => {
+        const clientPays = Math.max(0, b.retail - credit);
+        return {
+          label: `${b.name} (${b.dims}) - $${b.retail}${credit > 0 ? ` -> $${clientPays}` : ""}`,
+          value: b.id,
+        };
+      }),
+    ];
+  }, [convertFormData.selectedPackage]);
+
+  const flooringOptions = useMemo(
+    () =>
+      FLOORING_OPTIONS.map((f) => ({
+        label: `${f.name}${f.price > 0 ? ` - $${f.price}` : f.id !== "none" ? " - Price TBD" : ""}`,
+        value: f.id,
+      })),
+    [],
+  );
+
   // ══════════════════════════════════════════════════
   // Skeleton loading
   // ══════════════════════════════════════════════════
@@ -709,35 +739,6 @@ export default function AdminLeadsScreen() {
         </TouchableOpacity>
       </View>
     </View>
-  );
-
-  // ── Bold series select options ──
-  const boldSeriesOptions = useMemo(() => {
-    const credit =
-      convertFormData.selectedPackage === "doctorate"
-        ? 500
-        : convertFormData.selectedPackage === "graduate"
-          ? 300
-          : 0;
-    return [
-      { label: "None", value: "" },
-      ...BOLD_SERIES_SETS.map((b) => {
-        const clientPays = Math.max(0, b.retail - credit);
-        return {
-          label: `${b.name} (${b.dims}) - $${b.retail}${credit > 0 ? ` -> $${clientPays}` : ""}`,
-          value: b.id,
-        };
-      }),
-    ];
-  }, [convertFormData.selectedPackage]);
-
-  const flooringOptions = useMemo(
-    () =>
-      FLOORING_OPTIONS.map((f) => ({
-        label: `${f.name}${f.price > 0 ? ` - $${f.price}` : f.id !== "none" ? " - Price TBD" : ""}`,
-        value: f.id,
-      })),
-    [],
   );
 
   // ══════════════════════════════════════════════════
@@ -877,13 +878,13 @@ export default function AdminLeadsScreen() {
                   ) : null}
 
                   {/* Photos */}
-                  {selectedLead.intakeMediaPaths && selectedLead.intakeMediaPaths.length > 0 ? (
+                  {(selectedLead.intakeImageUrls || selectedLead.intakeMediaPaths)?.length ? (
                     <>
                       <Text style={[styles.sectionHeader, { marginTop: 20 }]}>
-                        PHOTOS ({selectedLead.intakeMediaPaths.length})
+                        PHOTOS ({(selectedLead.intakeImageUrls || selectedLead.intakeMediaPaths)!.length})
                       </Text>
                       <View style={styles.photoGrid}>
-                        {selectedLead.intakeMediaPaths.map((url, idx) => (
+                        {(selectedLead.intakeImageUrls || selectedLead.intakeMediaPaths)!.map((url, idx) => (
                           <Image
                             key={idx}
                             source={{ uri: url }}
@@ -968,8 +969,8 @@ export default function AdminLeadsScreen() {
 
                 {/* No photos warning */}
                 {convertingLead &&
-                (!convertingLead.intakeMediaPaths ||
-                  convertingLead.intakeMediaPaths.length === 0) ? (
+                (!convertingLead.intakeImageUrls?.length &&
+                  !convertingLead.intakeMediaPaths?.length) ? (
                   <View style={styles.warningBanner}>
                     <Ionicons name="camera-outline" size={14} color="#fbbf24" />
                     <Text style={styles.warningText}>
