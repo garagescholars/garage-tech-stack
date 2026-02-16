@@ -14,6 +14,7 @@ export type ChecklistEntry = {
   text: string;
   isCompleted: boolean;
   status: "pending" | "approved";
+  subItems?: ChecklistEntry[];
 };
 
 export type SopSection = {
@@ -23,24 +24,69 @@ export type SopSection = {
 
 /**
  * Extract numbered items from the "## 3. PHASE SEQUENCE" section of a SOP
- * and return them as a checklist array.
+ * and return them as a checklist array with nested sub-steps.
  *
- * Lines matching /^\d+\.\s/ inside the phase-sequence block become items.
+ * Lines matching /^\d+\.\s/ become top-level items.
+ * Lines matching /^[a-z]\.\s/ (indented) become sub-items of the preceding top-level item.
  */
 export function parsePhaseSequenceToChecklist(sopText: string): ChecklistEntry[] {
   const phaseMatch = sopText.match(/## 3\. PHASE SEQUENCE[\s\S]*?(?=## \d|$)/i);
   if (!phaseMatch) return [];
 
-  const lines = phaseMatch[0]
-    .split("\n")
-    .filter((l) => /^\d+\.\s/.test(l.trim()));
+  const lines = phaseMatch[0].split("\n");
+  const entries: ChecklistEntry[] = [];
+  let currentEntry: ChecklistEntry | null = null;
+  let subIndex = 0;
 
-  return lines.map((line, i) => ({
-    id: `sop-phase-${i + 1}`,
-    text: line.replace(/^\d+\.\s*/, "").trim(),
-    isCompleted: false,
-    status: "approved" as const,
-  }));
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Top-level numbered phase: "1. Full pull-out (60-90 min)"
+    if (/^\d+\.\s/.test(trimmed)) {
+      currentEntry = {
+        id: `sop-phase-${entries.length + 1}`,
+        text: trimmed.replace(/^\d+\.\s*/, "").trim(),
+        isCompleted: false,
+        status: "approved" as const,
+        subItems: [],
+      };
+      entries.push(currentEntry);
+      subIndex = 0;
+      continue;
+    }
+
+    // Lettered sub-step: "a. Move vehicles to street" or "- Move vehicles to street"
+    if (currentEntry && /^[a-z]\.\s/.test(trimmed)) {
+      subIndex++;
+      currentEntry.subItems!.push({
+        id: `${currentEntry.id}-sub-${subIndex}`,
+        text: trimmed.replace(/^[a-z]\.\s*/, "").trim(),
+        isCompleted: false,
+        status: "approved" as const,
+      });
+      continue;
+    }
+
+    // Also support "- " bullet sub-steps under a numbered phase
+    if (currentEntry && /^[-•]\s/.test(trimmed) && trimmed.length > 2) {
+      subIndex++;
+      currentEntry.subItems!.push({
+        id: `${currentEntry.id}-sub-${subIndex}`,
+        text: trimmed.replace(/^[-•]\s*/, "").trim(),
+        isCompleted: false,
+        status: "approved" as const,
+      });
+    }
+  }
+
+  // Clean up: remove empty subItems arrays
+  for (const entry of entries) {
+    if (entry.subItems && entry.subItems.length === 0) {
+      delete entry.subItems;
+    }
+  }
+
+  return entries;
 }
 
 /**

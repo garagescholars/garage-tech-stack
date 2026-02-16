@@ -401,7 +401,8 @@ export default function AdminLeadsScreen() {
       const finalSOP = sopEditMode ? sopEditText : sopReviewData.sopText;
       const checklist = parsePhaseSequenceToChecklist(finalSOP);
 
-      const gsChecklist = (
+      // Flatten top-level phases + sub-items into a single checklist for Firestore
+      const sourceItems =
         checklist.length > 0
           ? checklist
           : [
@@ -417,13 +418,38 @@ export default function AdminLeadsScreen() {
                 isCompleted: false,
                 status: "approved" as const,
               },
-            ]
-      ).map((item) => ({
-        id: item.id,
-        text: item.text,
-        completed: false,
-        approvalStatus: (item.status || "approved").toLowerCase(),
-      }));
+            ];
+
+      const gsChecklist: Array<{
+        id: string;
+        text: string;
+        completed: boolean;
+        approvalStatus: string;
+        isSubItem?: boolean;
+        parentId?: string;
+      }> = [];
+
+      for (const item of sourceItems) {
+        gsChecklist.push({
+          id: item.id,
+          text: item.text,
+          completed: false,
+          approvalStatus: (item.status || "approved").toLowerCase(),
+        });
+        // Include sub-steps as indented checklist items
+        if (item.subItems && item.subItems.length > 0) {
+          for (const sub of item.subItems) {
+            gsChecklist.push({
+              id: sub.id,
+              text: sub.text,
+              completed: false,
+              approvalStatus: (sub.status || "approved").toLowerCase(),
+              isSubItem: true,
+              parentId: item.id,
+            });
+          }
+        }
+      }
 
       await updateDoc(doc(db, COLLECTIONS.JOBS, sopReviewData.jobId), {
         sopContent: finalSOP,

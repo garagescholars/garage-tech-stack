@@ -185,14 +185,14 @@ export default function AdminJobDetailScreen() {
       {/* Checklist */}
       {job.checklist && job.checklist.length > 0 && (
         <Section title="Checklist">
-          {job.checklist.map((item) => (
-            <View key={item.id} style={styles.checkItem}>
+          {job.checklist.map((item: any) => (
+            <View key={item.id} style={[styles.checkItem, item.isSubItem && { marginLeft: 24 }]}>
               <Ionicons
                 name={item.completed ? "checkbox" : "square-outline"}
-                size={18}
+                size={item.isSubItem ? 16 : 18}
                 color={item.completed ? "#10b981" : "#64748b"}
               />
-              <Text style={styles.checkText}>{item.text}</Text>
+              <Text style={[styles.checkText, item.isSubItem && { fontSize: 13, color: "#94a3b8" }]}>{item.text}</Text>
             </View>
           ))}
         </Section>
