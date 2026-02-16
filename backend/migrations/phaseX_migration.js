@@ -99,7 +99,7 @@ async function createClientsCollection(serviceJobs) {
   });
 
   // Create client documents
-  const batch = db.batch();
+  let batch = db.batch();
   let batchCount = 0;
 
   for (const [normalizedName, clientData] of clientsMap.entries()) {
@@ -110,6 +110,7 @@ async function createClientsCollection(serviceJobs) {
     // Commit in batches of 500 (Firestore limit)
     if (batchCount >= 500) {
       await batch.commit();
+      batch = db.batch();
       batchCount = 0;
     }
   }
@@ -166,7 +167,7 @@ async function createPropertiesCollection(serviceJobs) {
   });
 
   // Create property documents
-  const batch = db.batch();
+  let batch = db.batch();
   let batchCount = 0;
 
   for (const [normalizedAddress, propertyData] of propertiesMap.entries()) {
@@ -176,6 +177,7 @@ async function createPropertiesCollection(serviceJobs) {
 
     if (batchCount >= 500) {
       await batch.commit();
+      batch = db.batch();
       batchCount = 0;
     }
   }
@@ -213,7 +215,7 @@ async function migrateServiceJobs(serviceJobs) {
   });
 
   // Migrate each service job
-  const batch = db.batch();
+  let batch = db.batch();
   let batchCount = 0;
 
   for (const job of serviceJobs) {
@@ -241,6 +243,7 @@ async function migrateServiceJobs(serviceJobs) {
 
     if (batchCount >= 500) {
       await batch.commit();
+      batch = db.batch();
       stats.serviceJobsMigrated += batchCount;
       console.log(`   ⏳ Migrated ${stats.serviceJobsMigrated} service jobs...`);
       batchCount = 0;
@@ -261,7 +264,7 @@ async function migrateServiceJobs(serviceJobs) {
 async function migrateAutomationJobs(automationJobs) {
   console.log('\n🤖 STEP 5: Migrating automation jobs collection...\n');
 
-  const batch = db.batch();
+  let batch = db.batch();
   let batchCount = 0;
 
   for (const job of automationJobs) {
@@ -271,6 +274,7 @@ async function migrateAutomationJobs(automationJobs) {
 
     if (batchCount >= 500) {
       await batch.commit();
+      batch = db.batch();
       stats.automationJobsMigrated += batchCount;
       console.log(`   ⏳ Migrated ${stats.automationJobsMigrated} automation jobs...`);
       batchCount = 0;
@@ -300,7 +304,7 @@ async function enhanceInventoryCollection() {
     clientsByName.set(clientData.name.toLowerCase(), doc.id);
   });
 
-  const batch = db.batch();
+  let batch = db.batch();
   let batchCount = 0;
   let itemsUpdated = 0;
 
@@ -322,6 +326,7 @@ async function enhanceInventoryCollection() {
 
       if (batchCount >= 500) {
         await batch.commit();
+        batch = db.batch();
         console.log(`   ⏳ Updated ${itemsUpdated} inventory items...`);
         batchCount = 0;
       }
@@ -342,7 +347,7 @@ async function enhanceUsersCollection() {
   console.log('\n👤 STEP 7: Enhancing users collection with app access controls...\n');
 
   const usersSnapshot = await db.collection('users').get();
-  const batch = db.batch();
+  let batch = db.batch();
   let batchCount = 0;
 
   for (const doc of usersSnapshot.docs) {
@@ -359,6 +364,7 @@ async function enhanceUsersCollection() {
 
     if (batchCount >= 500) {
       await batch.commit();
+      batch = db.batch();
       batchCount = 0;
     }
   }

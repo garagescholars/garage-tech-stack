@@ -292,12 +292,19 @@ async function retryStep(stepFn, { maxRetries = 2, stepName = 'unknown', page = 
  */
 async function detectCaptcha(page) {
     const captchaIndicators = await page.evaluate(() => {
-        const html = document.documentElement.innerHTML.toLowerCase();
         const indicators = {
-            recaptcha: !!document.querySelector('iframe[src*="recaptcha"]') || html.includes('recaptcha'),
-            hcaptcha: !!document.querySelector('iframe[src*="hcaptcha"]') || html.includes('hcaptcha'),
-            fbCheckpoint: html.includes('checkpoint') && html.includes('verify'),
-            clCaptcha: html.includes('captcha') || !!document.querySelector('img[src*="captcha"]')
+            recaptcha: !!document.querySelector('iframe[src*="recaptcha"]') ||
+                       !!document.querySelector('.g-recaptcha') ||
+                       !!document.querySelector('script[src*="recaptcha"]'),
+            hcaptcha: !!document.querySelector('iframe[src*="hcaptcha"]') ||
+                      !!document.querySelector('.h-captcha') ||
+                      !!document.querySelector('script[src*="hcaptcha"]'),
+            fbCheckpoint: !!document.querySelector('form[action*="checkpoint"]') ||
+                          (document.title.toLowerCase().includes('security check') ||
+                           document.title.toLowerCase().includes('checkpoint')),
+            clCaptcha: !!document.querySelector('img[src*="captcha"]') ||
+                       !!document.querySelector('#captcha') ||
+                       !!document.querySelector('input[name*="captcha"]')
         };
         return indicators;
     });
