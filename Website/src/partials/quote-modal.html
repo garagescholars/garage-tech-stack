@@ -41,15 +41,33 @@
                         <label for="quote-package">Package</label>
                         <select id="quote-package" name="package">
                             <option value="">Select a package</option>
-                            <option value="undergraduate">The Undergraduate</option>
-                            <option value="graduate">The Graduate</option>
-                            <option value="doctorate">The Doctorate</option>
+                            <optgroup label="Garage Organization">
+                                <option value="undergraduate">The Undergraduate</option>
+                                <option value="graduate">The Graduate</option>
+                                <option value="doctorate">The Doctorate</option>
+                            </optgroup>
+                            <optgroup label="Home Gym Installation">
+                                <option value="warmup">Warm Up</option>
+                                <option value="superset">Super Set</option>
+                                <option value="1repmax">1 Rep Max</option>
+                            </optgroup>
+                            <optgroup label="Bundle Packages">
+                                <option value="deans-list">The Dean's List</option>
+                                <option value="valedictorian">The Valedictorian</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="quote-size">Garage Size (optional)</label>
-                    <input type="text" id="quote-size" name="garageSize" placeholder="e.g., 2-car garage">
+                    <select id="quote-size" name="garageSizeSelect">
+                        <option value="">Select garage size</option>
+                        <option value="1-car">1-Car Garage</option>
+                        <option value="2-car">2-Car Garage</option>
+                        <option value="3-car">3-Car Garage</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <input type="text" id="quote-size-other" name="garageSizeOther" placeholder="Describe your space..." style="display: none; margin-top: 8px;">
                 </div>
                 <div class="form-group">
                     <label for="quote-description">Description (optional)</label>

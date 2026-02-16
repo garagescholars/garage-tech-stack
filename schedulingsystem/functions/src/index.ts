@@ -130,7 +130,7 @@ export const generateSopForJob = onCall({ timeoutSeconds: 300, memory: "1GiB", s
     throw new HttpsError("failed-precondition", "ANTHROPIC_API_KEY is not configured. Run: firebase functions:secrets:set ANTHROPIC_API_KEY");
   }
 
-  const jobRef = db.collection("serviceJobs").doc(jobId);
+  const jobRef = db.collection("gs_jobs").doc(jobId);
   const jobSnap = await jobRef.get();
   if (!jobSnap.exists) {
     throw new HttpsError("not-found", "Job not found.");
@@ -230,8 +230,8 @@ const requireAdmin = async (uid: string, email?: string) => {
     return;
   }
 
-  // Fallback to checking Firestore role (for backward compatibility)
-  const userSnap = await db.collection("users").doc(uid).get();
+  // Fallback to checking Firestore role
+  const userSnap = await db.collection("gs_profiles").doc(uid).get();
   const role = userSnap.exists ? userSnap.data()?.role : null;
   if (role !== "admin") {
     throw new HttpsError("permission-denied", "Admin role required.");
@@ -853,8 +853,9 @@ export const submitQuoteRequest = onCall(
 
     console.log(`Quote request created: ${quoteRequestRef.id}`);
 
-    // Step 3: Create draft job with LEAD status (before photo upload so we have jobId for path)
-    const draftJobRef = await db.collection('serviceJobs').add({
+    // Step 3: Create draft job with LEAD status in gs_jobs (canonical jobs collection)
+    const draftJobRef = await db.collection('gs_jobs').add({
+      title: name,
       clientName: name,
       clientEmail: email,
       clientPhone: phone,
@@ -863,18 +864,26 @@ export const submitQuoteRequest = onCall(
       address: zipcode ? `ZIP: ${zipcode}` : 'Address TBD',
       zipcode: zipcode,
       description: description || 'New lead from website quote form',
-      date: new Date().toISOString(),
-      scheduledEndTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
-      pay: 0,
+      scheduledDate: new Date().toISOString(),
+      scheduledTimeStart: '',
+      scheduledTimeEnd: '',
+      payout: 0,
       clientPrice: 0,
       status: 'LEAD',
-      locationLat: 0,
-      locationLng: 0,
+      lat: 0,
+      lng: 0,
+      urgencyLevel: 'standard',
+      rushBonus: 0,
+      currentViewers: 0,
+      viewerFloor: 0,
+      totalViews: 0,
+      reopenCount: 0,
       checklist: [],
       serviceType,
       package: packageTier || null,
       garageSize: garageSize || null,
       intakeMediaPaths: [],
+      intakeImageUrls: [],
       quoteRequestId: quoteRequestRef.id,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
@@ -921,9 +930,9 @@ export const submitQuoteRequest = onCall(
         }
       }
 
-      // Update job and quote request with storage paths
+      // Update job and quote request with storage paths + display URLs
       if (intakeMediaPaths.length > 0) {
-        await draftJobRef.update({ intakeMediaPaths });
+        await draftJobRef.update({ intakeMediaPaths, intakeImageUrls: photoEmailUrls });
         await quoteRequestRef.update({ photoStoragePaths: intakeMediaPaths });
         console.log(`${intakeMediaPaths.length} photo paths saved`);
       }
@@ -944,7 +953,12 @@ export const submitQuoteRequest = onCall(
     const packageLabels: { [key: string]: string } = {
       'undergraduate': 'Undergraduate',
       'graduate': 'Graduate',
-      'doctorate': 'Doctorate'
+      'doctorate': 'Doctorate',
+      'warmup': 'Warm Up',
+      'superset': 'Super Set',
+      '1repmax': '1 Rep Max',
+      'deans-list': "The Dean's List",
+      'valedictorian': 'The Valedictorian'
     };
 
     const emailHtml = `

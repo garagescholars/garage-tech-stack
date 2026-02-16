@@ -42,12 +42,28 @@ document.addEventListener('DOMContentLoaded', function() {
     if (quoteForm) {
         quoteForm.addEventListener('submit', handleQuoteSubmit);
     }
+
+    // Garage size: show/hide "other" text field
+    var garageSizeSelect = document.getElementById('quote-size');
+    if (garageSizeSelect) {
+        garageSizeSelect.addEventListener('change', function() {
+            var otherInput = document.getElementById('quote-size-other');
+            if (otherInput) {
+                otherInput.style.display = this.value === 'other' ? 'block' : 'none';
+                if (this.value !== 'other') otherInput.value = '';
+            }
+        });
+    }
 });
 
 // ===== Quote Modal =====
-function openQuoteModal(packageType) {
+function openQuoteModal(serviceType, packageType) {
     document.getElementById('quoteModal').classList.add('open');
     document.body.style.overflow = 'hidden';
+    if (serviceType) {
+        var svc = document.getElementById('quote-service');
+        if (svc) svc.value = serviceType;
+    }
     if (packageType) {
         var pkg = document.getElementById('quote-package');
         if (pkg) pkg.value = packageType;
@@ -59,6 +75,8 @@ function closeQuoteModal() {
     document.body.style.overflow = 'auto';
     var form = document.getElementById('quoteForm');
     if (form) form.reset();
+    var otherInput = document.getElementById('quote-size-other');
+    if (otherInput) otherInput.style.display = 'none';
     var msg = document.getElementById('formMessage');
     if (msg) {
         msg.textContent = '';
@@ -107,7 +125,10 @@ async function handleQuoteSubmit(e) {
             zipcode: fd.get('zipcode'),
             serviceType: fd.get('serviceType'),
             package: fd.get('package'),
-            garageSize: fd.get('garageSize') || '',
+            garageSize: (function() {
+                var sel = fd.get('garageSizeSelect') || '';
+                return sel === 'other' ? (fd.get('garageSizeOther') || 'other') : sel;
+            })(),
             description: fd.get('description') || '',
             photoData: []
         };

@@ -110,6 +110,11 @@ export const PACKAGE_LABELS: Record<string, string> = {
   undergraduate: "Undergraduate",
   graduate: "Graduate",
   doctorate: "Doctorate",
+  warmup: "Warm Up",
+  superset: "Super Set",
+  "1repmax": "1 Rep Max",
+  "deans-list": "The Dean's List",
+  valedictorian: "The Valedictorian",
 };
 
 export const SERVICE_TYPE_LABELS: Record<string, string> = {
@@ -117,4 +122,8 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   "get-organized": "Get Organized",
   "get-strong": "Get Strong",
   resale: "Resale Concierge",
+  cleaning: "Garage Cleaning",
+  organization: "Organization",
+  gym: "Gym Setup",
+  full: "Full Transformation",
 };

@@ -90,7 +90,7 @@
                 <div class="service-detail-text">
                     <h3>Declutter &amp; Remove</h3>
                     <p>We clear out every corner, removing unwanted items quickly and responsibly under one flat fee. No dumpster rental, no hauling trips, no weekend wasted. Our insured team handles the heavy lifting, the sorting, and the disposal &mdash; so you reclaim your garage without lifting a finger.</p>
-                    <button class="btn btn-primary mt-2" onclick="openQuoteModal()">Get Your Free Quote</button>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal('cleaning')">Get Your Free Quote</button>
                 </div>
                 <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80')"></div>
             </div>
@@ -98,7 +98,7 @@
                 <div class="service-detail-text">
                     <h3>Organization &amp; Storage Systems</h3>
                     <p>Our team micro-sorts your belongings, installs commercial-grade shelving and cabinet systems, and creates labeled zones so every item has a home. Overhead racks, wall-mounted cabinets, clear bins with printed labels &mdash; your garage becomes the most organized room in your house.</p>
-                    <button class="btn btn-primary mt-2" onclick="openQuoteModal()">Get Your Free Quote</button>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal('organization')">Get Your Free Quote</button>
                 </div>
                 <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80')"></div>
             </div>
@@ -106,7 +106,7 @@
                 <div class="service-detail-text">
                     <h3>Home Gym Installation &mdash; Designed by a DPT</h3>
                     <p>This isn't a handyman bolting a pull-up bar to the wall. Our co-founder is a Doctor of Physical Therapy who designs every gym layout with ergonomic positioning, safe equipment spacing, and evidence-based training flow. From squat racks to full rigs &mdash; we build the gym your body actually needs.</p>
-                    <button class="btn btn-primary mt-2" onclick="openQuoteModal()">Get Your Free Quote</button>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal('gym')">Get Your Free Quote</button>
                 </div>
                 <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80')"></div>
             </div>
@@ -114,7 +114,7 @@
                 <div class="service-detail-text">
                     <h3>Resale Concierge &mdash; We Sell, You Earn</h3>
                     <p>That old Peloton, the weight set you never use, the tools from projects that never happened &mdash; they're worth money. We identify valuable items, photograph them, list them on marketplace platforms, and handle the entire sale. You approve every listing and split the proceeds 50/50. Zero effort on your end, cash back in your pocket.</p>
-                    <button class="btn btn-primary mt-2" onclick="openQuoteModal()">Get Your Free Quote</button>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal('resale')">Get Your Free Quote</button>
                 </div>
                 <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80')"></div>
             </div>
@@ -195,7 +195,7 @@
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>1 shelving unit installed</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Sweep &amp; blow out cleaning</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Standard clean guarantee</span></div>
-                    <button class="btn btn-primary" onclick="openQuoteModal('undergraduate')">Get Your Free Quote</button>
+                    <button class="btn btn-primary" onclick="openQuoteModal('organization', 'undergraduate')">Get Your Free Quote</button>
                 </div>
                 <div class="pricing-card featured">
                     <span class="pricing-badge">Most Popular</span>
@@ -209,7 +209,7 @@
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Deep degrease &amp; power wash floor cleaning</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Resale concierge &mdash; 50/50 split on sold items</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>30-day Clutter-Free Guarantee</span></div>
-                    <button class="btn btn-primary" onclick="openQuoteModal('graduate')">Get Your Free Quote</button>
+                    <button class="btn btn-primary" onclick="openQuoteModal('organization', 'graduate')">Get Your Free Quote</button>
                 </div>
                 <div class="pricing-card">
                     <h3>The Doctorate</h3>
@@ -223,7 +223,7 @@
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Resale concierge &mdash; 50/50 split + listing management</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Seasonal swap service with scheduled return visit</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>White-glove photo documentation</span></div>
-                    <button class="btn btn-primary" onclick="openQuoteModal('doctorate')">Get Your Free Quote</button>
+                    <button class="btn btn-primary" onclick="openQuoteModal('organization', 'doctorate')">Get Your Free Quote</button>
                 </div>
             </div>
 
@@ -237,7 +237,7 @@
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>2-person crew</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Up to 2 pieces of equipment assembled &amp; placed</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Basic equipment positioning</span></div>
-                    <button class="btn btn-primary" onclick="openQuoteModal('warmup')">Get Your Free Quote</button>
+                    <button class="btn btn-primary" onclick="openQuoteModal('gym', 'warmup')">Get Your Free Quote</button>
                 </div>
                 <div class="pricing-card featured">
                     <span class="pricing-badge">Most Popular</span>
@@ -247,7 +247,7 @@
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>2-person crew</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Up to 3 pieces of equipment assembled &amp; placed</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>DPT-designed gym layout for safe training flow</span></div>
-                    <button class="btn btn-primary" onclick="openQuoteModal('superset')">Get Your Free Quote</button>
+                    <button class="btn btn-primary" onclick="openQuoteModal('gym', 'superset')">Get Your Free Quote</button>
                 </div>
                 <div class="pricing-card">
                     <h3>1 Rep Max</h3>
@@ -259,7 +259,7 @@
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Full DPT-designed layout with ergonomic flow</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Wall storage: hooks, bar holders &amp; band pegs</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Deadlift &amp; Olympic lifting platform build</span></div>
-                    <button class="btn btn-primary" onclick="openQuoteModal('1repmax')">Get Your Free Quote</button>
+                    <button class="btn btn-primary" onclick="openQuoteModal('gym', '1repmax')">Get Your Free Quote</button>
                 </div>
             </div>
 
@@ -274,7 +274,7 @@
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Everything in The Graduate (3-crew, 2 haul-aways, micro-sort, labeled bins, power wash)</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Everything in 1 Rep Max (5 equipment pieces, full flooring, DPT layout, wall storage, platform build)</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-star" style="color: var(--color-accent);"></i><span>Bundle discount included</span></div>
-                    <button class="btn btn-primary" onclick="openQuoteModal('deans-list')">Get Your Free Quote</button>
+                    <button class="btn btn-primary" onclick="openQuoteModal('full', 'deans-list')">Get Your Free Quote</button>
                 </div>
                 <div class="pricing-card featured">
                     <span class="pricing-badge">Ultimate Package</span>
@@ -284,7 +284,7 @@
                     <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Everything in The Doctorate (4-crew, 3 haul-aways, premium bins, seasonal swap, white-glove photos)</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Everything in 1 Rep Max (5 equipment pieces, full flooring, DPT layout, wall storage, platform build)</span></div>
                     <div class="pricing-feature"><i class="fa-solid fa-star" style="color: var(--color-accent);"></i><span>Largest bundle discount</span></div>
-                    <button class="btn btn-primary" onclick="openQuoteModal('valedictorian')">Get Your Free Quote</button>
+                    <button class="btn btn-primary" onclick="openQuoteModal('full', 'valedictorian')">Get Your Free Quote</button>
                 </div>
             </div>
 
