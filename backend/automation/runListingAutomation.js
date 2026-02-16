@@ -137,18 +137,22 @@ const CL_SELECTORS = {
 // IMAGE DOWNLOAD
 // ============================
 
-const downloadImage = (url, filepath) => {
+const downloadImage = (url, filepath, redirectsLeft = 5) => {
     return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(filepath);
-        https.get(url, (response) => {
-            if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-                file.close();
-                fs.unlink(filepath, () => {});
-                downloadImage(response.headers.location, filepath).then(resolve).catch(reject);
+        const protocol = url.startsWith('https') ? https : require('http');
+        protocol.get(url, (response) => {
+            if ([301, 302, 307, 308].includes(response.statusCode) && response.headers.location) {
+                if (redirectsLeft <= 0) return reject(new Error('Too many redirects'));
+                downloadImage(response.headers.location, filepath, redirectsLeft - 1).then(resolve).catch(reject);
                 return;
             }
+            if (response.statusCode !== 200) {
+                return reject(new Error(`HTTP ${response.statusCode} for ${url}`));
+            }
+            const file = fs.createWriteStream(filepath);
             response.pipe(file);
             file.on('finish', () => { file.close(); resolve(filepath); });
+            file.on('error', (err) => { fs.unlink(filepath, () => {}); reject(err); });
         }).on('error', (err) => { fs.unlink(filepath, () => {}); reject(err); });
     });
 };
@@ -269,6 +273,16 @@ async function runListingAutomation(docId, item, db, admin) {
     const updateListing = (data) => listingRef.update(cleanData({ ...data, lastUpdated: admin.firestore.FieldValue.serverTimestamp() }));
 
     const debugDir = path.join(__dirname, '..', 'debug_screenshots');
+    // Clean screenshots older than 48 hours
+    try {
+        if (fs.existsSync(debugDir)) {
+            const cutoff = Date.now() - (48 * 60 * 60 * 1000);
+            for (const file of fs.readdirSync(debugDir)) {
+                const filePath = path.join(debugDir, file);
+                if (fs.statSync(filePath).mtimeMs < cutoff) fs.unlinkSync(filePath);
+            }
+        }
+    } catch (_) {}
     const screenshots = [];
     const captureScreenshot = async (step, page) => {
         const safeStep = (step || 'unknown').replace(/[^a-z0-9_-]/gi, '-');
@@ -298,6 +312,25 @@ async function runListingAutomation(docId, item, db, admin) {
                 try {
                     const destPath = path.join(tempDir, `img_${docId}_${i}.jpg`);
                     await downloadImage(item.imageUrls[i], destPath);
+
+                    // Validate downloaded file is a real image
+                    const stats = fs.statSync(destPath);
+                    if (stats.size < 1024) {
+                        log.warn('Downloaded file too small, skipping', { index: i, size: stats.size });
+                        fs.unlinkSync(destPath);
+                        continue;
+                    }
+                    const fd = fs.openSync(destPath, 'r');
+                    const magicBuf = Buffer.alloc(4);
+                    fs.readSync(fd, magicBuf, 0, 4, 0);
+                    fs.closeSync(fd);
+                    const isJPEG = magicBuf[0] === 0xFF && magicBuf[1] === 0xD8;
+                    const isPNG = magicBuf[0] === 0x89 && magicBuf[1] === 0x50 && magicBuf[2] === 0x4E && magicBuf[3] === 0x47;
+                    if (!isJPEG && !isPNG) {
+                        log.warn('Downloaded file is not valid JPEG/PNG, skipping', { index: i });
+                        fs.unlinkSync(destPath);
+                        continue;
+                    }
                     downloadedPaths.push(destPath);
                 } catch (e) { log.warn('Image download failed', { index: i, error: e.message }); }
             }
@@ -342,7 +375,18 @@ async function runListingAutomation(docId, item, db, admin) {
             });
             openBrowsers.add(browser);
 
+            // Detect browser crashes — fail fast instead of hanging on timeouts
+            let browserDisconnected = false;
+            browser.on('disconnected', () => {
+                browserDisconnected = true;
+                log.error('Browser disconnected unexpectedly');
+            });
+            const ensureBrowserAlive = () => {
+                if (browserDisconnected) throw new Error('Browser disconnected unexpectedly');
+            };
+
             if (shouldRunCraigslist) {
+                ensureBrowserAlive();
                 pageCL = await browser.newPage();
                 await applyStealthPatches(pageCL);
                 await injectFingerprint(pageCL);
@@ -351,6 +395,7 @@ async function runListingAutomation(docId, item, db, admin) {
                 pageCL.setDefaultNavigationTimeout(90000);
             }
             if (shouldRunFacebook) {
+                ensureBrowserAlive();
                 pageFB = await browser.newPage();
                 await applyStealthPatches(pageFB);
                 await injectFingerprint(pageFB);
@@ -365,13 +410,15 @@ async function runListingAutomation(docId, item, db, admin) {
         // ============================
         const runCraigslist = async (page) => {
             if (!shouldRunCraigslist) return 'skipped';
+            ensureBrowserAlive();
             await updateListing({ 'progress.craigslist': 'running' });
             log.info('Starting Craigslist automation', { platform: 'CL' });
 
             try {
                 // Step 1: Navigate
                 await retryStep(async () => {
-                    await page.goto('https://post.craigslist.org/c/den', { waitUntil: 'domcontentloaded' });
+                    const clPostUrl = process.env.CL_POST_URL || 'https://post.craigslist.org/c/den';
+                    await page.goto(clPostUrl, { waitUntil: 'domcontentloaded' });
                     const captcha = await detectCaptcha(page);
                     if (captcha.detected) {
                         log.warn('CAPTCHA on CL', { type: captcha.type });
@@ -388,29 +435,61 @@ async function runListingAutomation(docId, item, db, admin) {
                         }
                     }
                     if (page.url().includes('login')) {
-                        log.warn('CL login required, waiting 60s', { platform: 'CL' });
-                        await delay(60000);
-                        await page.goto('https://post.craigslist.org/c/den', { waitUntil: 'domcontentloaded' });
+                        log.warn('CL login required — waiting for manual login (up to 120s)', { platform: 'CL' });
+                        await page.waitForFunction(
+                            () => !window.location.href.includes('login'),
+                            { timeout: 120000 }
+                        ).catch(() => { throw new Error('CL login timed out after 120 seconds'); });
+                        log.info('CL login detected, continuing', { platform: 'CL' });
+                        await page.goto(clPostUrl, { waitUntil: 'domcontentloaded' });
                     }
                 }, { maxRetries: 2, stepName: 'cl_navigate', page, captureScreenshot, log });
 
                 // Step 2: Location
                 try {
-                    await page.waitForSelector('input[value="fsd"]', { timeout: 3000 });
+                    const clLocationCode = process.env.CL_LOCATION_CODE || 'fsd';
+                    await page.waitForSelector(`input[value="${clLocationCode}"]`, { timeout: 3000 });
                     await humanDelay(300, 700);
-                    await page.click('input[value="fsd"]');
+                    await page.click(`input[value="${clLocationCode}"]`);
                     const goBtn = await trySelectors(page, CL_SELECTORS.goButton, 2000);
                     if (goBtn) await humanClick(page, goBtn);
                 } catch (_) {}
 
-                // Step 3: Category
+                // Step 3: Category — find by label text instead of hardcoded index
                 await retryStep(async () => {
                     try {
                         await page.waitForSelector('.picker', { timeout: 5000 });
-                        const radios = await page.$$('input[type="radio"]');
-                        const TARGET_INDEX = 24;
-                        if (radios.length > TARGET_INDEX) await radios[TARGET_INDEX].click();
-                        else if (radios.length > 0) await radios[radios.length - 1].click();
+
+                        const categoryText = process.env.CL_CATEGORY || 'for sale by owner';
+                        const categoryClicked = await page.evaluate((target) => {
+                            const labels = Array.from(document.querySelectorAll('label'));
+                            const match = labels.find(l =>
+                                l.textContent.trim().toLowerCase().includes(target.toLowerCase())
+                            );
+                            if (match) {
+                                const radio = match.querySelector('input[type="radio"]')
+                                    || document.getElementById(match.getAttribute('for'));
+                                if (radio) { radio.click(); return true; }
+                                match.click(); return true;
+                            }
+                            // Fallback: check radio parent text
+                            const radios = Array.from(document.querySelectorAll('input[type="radio"]'));
+                            for (const radio of radios) {
+                                const parent = radio.closest('label') || radio.parentElement;
+                                if (parent && parent.textContent.toLowerCase().includes(target.toLowerCase())) {
+                                    radio.click(); return true;
+                                }
+                            }
+                            return false;
+                        }, categoryText);
+
+                        if (!categoryClicked) {
+                            log.warn('Could not find category by text, falling back to index 24', { target: categoryText });
+                            const radios = await page.$$('input[type="radio"]');
+                            if (radios.length > 24) await radios[24].click();
+                            else if (radios.length > 0) await radios[radios.length - 1].click();
+                        }
+
                         await humanDelay(500, 1000);
                         try { await page.waitForNavigation({ timeout: 3000 }); }
                         catch (_) {
@@ -425,11 +504,12 @@ async function runListingAutomation(docId, item, db, admin) {
 
                 // Step 4: Subarea
                 try {
-                    await page.evaluate(() => {
+                    const clSubarea = process.env.CL_SUBAREA || 'city of denver';
+                    await page.evaluate((subarea) => {
                         const labels = Array.from(document.querySelectorAll('label'));
-                        const den = labels.find(el => el.textContent.toLowerCase().includes('city of denver'));
+                        const den = labels.find(el => el.textContent.toLowerCase().includes(subarea));
                         if (den) den.click();
-                    });
+                    }, clSubarea);
                     await humanDelay(300, 600);
                     const goBtn = await trySelectors(page, CL_SELECTORS.goButton, 2000);
                     if (goBtn) { await Promise.all([page.waitForNavigation({ timeout: 5000 }).catch(() => {}), humanClick(page, goBtn)]); }
@@ -449,7 +529,7 @@ async function runListingAutomation(docId, item, db, admin) {
                     const emailField = await trySelectors(page, CL_SELECTORS.email, 2000);
                     if (emailField) {
                         const emailValue = await page.evaluate(el => el.value, emailField);
-                        if (!emailValue) await humanType(page, emailField, 'garagescholars@gmail.com', { typoChance: 0 });
+                        if (!emailValue) await humanType(page, emailField, process.env.CL_EMAIL || 'garagescholars@gmail.com', { typoChance: 0 });
                     }
 
                     await humanType(page, titleField, publicTitle, { typoChance: 0 });
@@ -459,7 +539,7 @@ async function runListingAutomation(docId, item, db, admin) {
                     if (priceField) { await humanType(page, priceField, item.price.replace(/[^0-9.]/g, ''), { typoChance: 0 }); await humanDelay(200, 500); }
 
                     const postalField = await trySelectors(page, CL_SELECTORS.postal, 3000);
-                    if (postalField) { await humanType(page, postalField, '80202', { typoChance: 0 }); await humanDelay(200, 500); }
+                    if (postalField) { await humanType(page, postalField, process.env.CL_POSTAL || '80202', { typoChance: 0 }); await humanDelay(200, 500); }
 
                     const bodyField = await trySelectors(page, CL_SELECTORS.postingBody, 3000);
                     if (bodyField) await humanType(page, bodyField, finalBody, { typoChance: 0 });
@@ -501,7 +581,16 @@ async function runListingAutomation(docId, item, db, admin) {
                         const fileInput = await trySelectors(page, CL_SELECTORS.fileInput, 10000);
                         if (fileInput) {
                             await fileInput.uploadFile(...downloadedPaths);
-                            await humanDelay(4000, 7000);
+                            // Poll for upload completion instead of fixed delay
+                            await page.waitForFunction((expectedCount) => {
+                                const thumbs = document.querySelectorAll('.imgthumb, .thumb img, [id^="imgPrev"]');
+                                if (thumbs.length >= expectedCount) return true;
+                                const spinners = document.querySelectorAll('.uploading, .upload-progress, .spinner');
+                                return spinners.length === 0 && thumbs.length > 0;
+                            }, { timeout: 20000 }, downloadedPaths.length).catch(() => {
+                                log.warn('CL image upload verification timed out, proceeding', { platform: 'CL' });
+                            });
+                            await humanDelay(1000, 2000);
                             const doneBtn = await trySelectors(page, CL_SELECTORS.doneImagesButton, 5000);
                             if (doneBtn) { await humanClick(page, doneBtn); await page.waitForNavigation({ timeout: 5000 }).catch(() => {}); }
                         }
@@ -520,25 +609,65 @@ async function runListingAutomation(docId, item, db, admin) {
                     }
 
                     log.info('Filling payment info', { platform: 'CL' });
+                    // Find payment iframe
                     let paymentFrame = null;
-                    let nameField = null;
                     for (const frame of page.frames()) {
-                        nameField = await trySelectors(frame, CL_SELECTORS.paymentNameField, 1500);
-                        if (nameField) { paymentFrame = frame; break; }
+                        const hasCardField = await frame.$('input[name="cardName"], input[name="cardNumber"]').catch(() => null);
+                        if (hasCardField) { paymentFrame = frame; break; }
                     }
-                    if (paymentFrame && nameField) {
-                        await nameField.click({ clickCount: 3 });
-                        await humanDelay(100, 300);
-                        await nameField.type(paymentInfo.name);
-                        const pressTab = async (text) => { await page.keyboard.press('Tab'); await humanDelay(100, 300); if (text) await page.keyboard.type(text); await humanDelay(100, 300); };
-                        await pressTab(paymentInfo.cardNumber);
-                        await pressTab(`${paymentInfo.expMonth}${paymentInfo.expYear}`);
-                        await pressTab(paymentInfo.cvc);
-                        await pressTab(paymentInfo.address);
-                        await pressTab(paymentInfo.city);
-                        await pressTab(paymentInfo.state);
-                        await pressTab(paymentInfo.zip);
-                        log.info('Payment info filled', { platform: 'CL' });
+                    if (!paymentFrame) {
+                        // Fallback: try first iframe on page
+                        const iframeEl = await page.$('iframe');
+                        if (iframeEl) paymentFrame = await iframeEl.contentFrame();
+                    }
+
+                    if (paymentFrame) {
+                        // Named selectors (from watcher.py — field names confirmed in CL payment iframe)
+                        const fieldMap = {
+                            'cardName': paymentInfo.name,
+                            'cardNumber': paymentInfo.cardNumber,
+                            'expMonth': paymentInfo.expMonth,
+                            'expYear': paymentInfo.expYear,
+                            'cvCode': paymentInfo.cvc,
+                            'billingAddress': paymentInfo.address,
+                            'billingCity': paymentInfo.city,
+                            'billingState': paymentInfo.state,
+                            'billingPostal': paymentInfo.zip,
+                        };
+
+                        let filledCount = 0;
+                        for (const [fieldName, value] of Object.entries(fieldMap)) {
+                            try {
+                                const field = await paymentFrame.$(`input[name="${fieldName}"]`);
+                                if (field) {
+                                    await field.click({ clickCount: 3 });
+                                    await humanDelay(50, 150);
+                                    await field.type(value);
+                                    await humanDelay(80, 200);
+                                    filledCount++;
+                                }
+                            } catch (e) { log.warn(`Failed to fill ${fieldName}`, { error: e.message }); }
+                        }
+
+                        if (filledCount === 0) {
+                            // Fallback: Tab-based navigation if named selectors not found
+                            log.warn('Named payment selectors failed, falling back to Tab navigation', { platform: 'CL' });
+                            const nameField = await trySelectors(paymentFrame, CL_SELECTORS.paymentNameField, 1500);
+                            if (nameField) {
+                                await nameField.click({ clickCount: 3 });
+                                await humanDelay(100, 300);
+                                await nameField.type(paymentInfo.name);
+                                const pressTab = async (text) => { await page.keyboard.press('Tab'); await humanDelay(100, 300); if (text) await page.keyboard.type(text); await humanDelay(100, 300); };
+                                await pressTab(paymentInfo.cardNumber);
+                                await pressTab(`${paymentInfo.expMonth}${paymentInfo.expYear}`);
+                                await pressTab(paymentInfo.cvc);
+                                await pressTab(paymentInfo.address);
+                                await pressTab(paymentInfo.city);
+                                await pressTab(paymentInfo.state);
+                                await pressTab(paymentInfo.zip);
+                            }
+                        }
+                        log.info('Payment info filled', { platform: 'CL', filledByName: filledCount });
                     }
                 }, { maxRetries: 2, stepName: 'cl_payment', page, captureScreenshot, log });
 
@@ -560,6 +689,7 @@ async function runListingAutomation(docId, item, db, admin) {
         // ============================
         const runFacebook = async (page) => {
             if (!shouldRunFacebook) return 'skipped';
+            ensureBrowserAlive();
             await updateListing({ 'progress.facebook': 'running' });
             log.info('Starting FB Marketplace automation', { platform: 'FB' });
 
@@ -586,8 +716,12 @@ async function runListingAutomation(docId, item, db, admin) {
 
                     const loginField = await trySelectors(page, FB_SELECTORS.loginField, 3000);
                     if (loginField) {
-                        log.warn('FB login required, waiting 60s', { platform: 'FB' });
-                        await delay(60000);
+                        log.warn('FB login required — waiting for manual login (up to 120s)', { platform: 'FB' });
+                        await page.waitForFunction(
+                            () => !document.querySelector('input[name="email"]'),
+                            { timeout: 120000 }
+                        ).catch(() => { throw new Error('FB login timed out after 120 seconds'); });
+                        log.info('FB login detected, continuing', { platform: 'FB' });
                         await page.goto('https://www.facebook.com/marketplace/create/item', { waitUntil: 'domcontentloaded' });
                         await humanDelay(2000, 4000);
                     }
@@ -606,10 +740,27 @@ async function runListingAutomation(docId, item, db, admin) {
                 if (downloadedPaths.length > 0) {
                     await retryStep(async () => {
                         log.info('Uploading images to FB', { count: downloadedPaths.length });
+
+                        // Count images before upload for accurate verification
+                        const imgCountBefore = await page.evaluate(() => {
+                            const uploadArea = document.querySelector('div[aria-label="Add photos"]');
+                            const container = uploadArea ? uploadArea.closest('div') : document;
+                            return container.querySelectorAll('img').length;
+                        });
+
                         const fileInput = await trySelectors(page, FB_SELECTORS.imageUpload, 10000);
                         if (fileInput) {
                             await fileInput.uploadFile(...downloadedPaths);
-                            await page.waitForFunction(() => document.querySelectorAll('img').length > 0, { timeout: 15000 }).catch(() => {});
+
+                            // Wait for uploaded image count to increase by expected amount
+                            const expectedTotal = imgCountBefore + downloadedPaths.length;
+                            await page.waitForFunction((expected) => {
+                                const uploadArea = document.querySelector('div[aria-label="Add photos"]');
+                                const container = uploadArea ? uploadArea.closest('div') : document;
+                                return container.querySelectorAll('img').length >= expected;
+                            }, { timeout: 20000 }, expectedTotal).catch(() => {
+                                log.warn('Image upload verification timed out', { expected: expectedTotal, before: imgCountBefore });
+                            });
                             await humanDelay(1000, 2000);
                         }
                         await page.keyboard.press('Escape').catch(() => {});
@@ -639,14 +790,39 @@ async function runListingAutomation(docId, item, db, admin) {
                     if (catBtn) { await humanClick(page, catBtn); await humanDelay(500, 1000); }
                 } catch (_) {}
 
-                // Step 6: Condition (Used = 3rd option)
+                // Step 6: Condition — find by text instead of arrow-key counting
                 try {
                     const condDrop = await trySelectors(page, FB_SELECTORS.conditionDropdown, 3000);
                     if (condDrop) {
                         await humanClick(page, condDrop);
-                        await humanDelay(300, 600);
-                        for (let i = 0; i < 3; i++) { await page.keyboard.press("ArrowDown"); await humanDelay(50, 150); }
-                        await page.keyboard.press("Enter");
+                        await humanDelay(400, 800);
+
+                        const targetCondition = process.env.FB_CONDITION || 'Used';
+                        const clicked = await page.evaluate((target) => {
+                            // Try role="option" elements first (FB dropdown pattern)
+                            const options = Array.from(document.querySelectorAll(
+                                '[role="option"], [role="listbox"] [role="option"], [role="menu"] [role="menuitem"]'
+                            ));
+                            const match = options.find(el =>
+                                el.textContent.trim().toLowerCase().includes(target.toLowerCase())
+                            );
+                            if (match) { match.click(); return true; }
+
+                            // Fallback: visible spans matching the target text
+                            const spans = Array.from(document.querySelectorAll('span'));
+                            const spanMatch = spans.find(el =>
+                                el.textContent.trim().toLowerCase() === target.toLowerCase()
+                                && el.offsetParent !== null
+                            );
+                            if (spanMatch) { spanMatch.click(); return true; }
+                            return false;
+                        }, targetCondition);
+
+                        if (!clicked) {
+                            log.warn('Could not find condition by text, falling back to ArrowDown', { target: targetCondition });
+                            for (let i = 0; i < 3; i++) { await page.keyboard.press("ArrowDown"); await humanDelay(50, 150); }
+                            await page.keyboard.press("Enter");
+                        }
                         await humanDelay(300, 600);
                     }
                 } catch (_) {}
@@ -659,27 +835,66 @@ async function runListingAutomation(docId, item, db, admin) {
                     if (nextBtn) { await humanClick(page, nextBtn); await humanDelay(1500, 3000); }
                 }, { maxRetries: 2, stepName: 'fb_next', page, captureScreenshot, log });
 
-                // Step 8: Public meetup
+                // Step 8: Public meetup — case-insensitive with fallback terms
                 try {
-                    await page.waitForFunction(() => {
-                        return Array.from(document.querySelectorAll('span')).some(el => el.textContent.includes('Public meetup'));
-                    }, { timeout: 10000 });
+                    const meetupTerms = ['public meetup', 'meet up', 'public meet', 'meetup spot'];
+                    await page.waitForFunction((terms) => {
+                        const spans = Array.from(document.querySelectorAll('span'));
+                        return spans.some(el =>
+                            terms.some(term => el.textContent.toLowerCase().includes(term))
+                        );
+                    }, { timeout: 10000 }, meetupTerms);
                     await humanDelay(500, 1000);
-                    await page.evaluate(() => {
-                        const t = Array.from(document.querySelectorAll('span')).find(el => el.textContent.includes('Public meetup'));
-                        if (t) t.click();
-                    });
+                    await page.evaluate((terms) => {
+                        const spans = Array.from(document.querySelectorAll('span'));
+                        const target = spans.find(el =>
+                            terms.some(term => el.textContent.toLowerCase().includes(term))
+                        );
+                        if (target) target.click();
+                    }, meetupTerms);
                     await humanDelay(500, 1000);
                 } catch (_) { log.warn('Could not find Public meetup toggle', { platform: 'FB' }); }
 
-                // Step 9: Finalize / Publish
+                // Step 9: Finalize / Publish + Verification
                 await retryStep(async () => {
                     log.info('Finalizing FB listing', { platform: 'FB' });
                     const nextBtn = await trySelectors(page, FB_SELECTORS.nextButton, 5000);
                     if (nextBtn) { await humanClick(page, nextBtn); await humanDelay(1500, 3000); }
 
                     const publishBtn = await trySelectors(page, FB_SELECTORS.publishButton, 5000);
-                    if (publishBtn) { await humanClick(page, publishBtn); await humanDelay(2000, 4000); log.info('Clicked Publish', { platform: 'FB' }); }
+                    if (publishBtn) {
+                        await humanClick(page, publishBtn);
+                        await humanDelay(2000, 4000);
+                        log.info('Clicked Publish', { platform: 'FB' });
+
+                        // Verify publish succeeded
+                        const publishResult = await page.waitForFunction(() => {
+                            const body = document.body.innerText.toLowerCase();
+                            if (body.includes('your listing is published') ||
+                                body.includes('listed on marketplace') ||
+                                body.includes('your item is listed')) {
+                                return { success: true };
+                            }
+                            const alerts = document.querySelectorAll('[role="alert"]');
+                            for (const alert of alerts) {
+                                const text = alert.textContent.trim();
+                                if (text.length > 5) return { success: false, error: text.slice(0, 300) };
+                            }
+                            return null; // keep waiting
+                        }, { timeout: 30000 }).catch(() => null);
+
+                        if (publishResult) {
+                            const result = await publishResult.jsonValue();
+                            if (result && result.success) {
+                                log.info('Listing confirmed published', { platform: 'FB' });
+                            } else if (result && !result.success) {
+                                throw new Error(`FB publish failed: ${result.error}`);
+                            }
+                        } else {
+                            await captureScreenshot('FB_publish_uncertain', page);
+                            log.warn('Publish verification timed out — may have succeeded', { platform: 'FB' });
+                        }
+                    }
                 }, { maxRetries: 2, stepName: 'fb_finalize', page, captureScreenshot, log });
 
                 await recordPost(db, 'facebook', WORKER_ID);

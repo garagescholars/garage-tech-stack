@@ -82,6 +82,15 @@ async function humanType(page, element, text, { clearFirst = true, typoChance = 
  * @param {import('puppeteer').ElementHandle} element
  */
 async function humanClick(page, element) {
+    // Scroll element into view before interacting
+    try {
+        await page.evaluate(el => {
+            if (el.scrollIntoViewIfNeeded) el.scrollIntoViewIfNeeded();
+            else el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }, element);
+        await humanDelay(150, 400);
+    } catch (_) {}
+
     const box = await element.boundingBox();
     if (!box) {
         await element.click();
@@ -236,13 +245,25 @@ async function injectFingerprint(page) {
  * @returns {import('puppeteer').ElementHandle|null}
  */
 async function trySelectors(page, selectors, timeout = 3000) {
+    // Race all selectors in parallel — first match wins
+    try {
+        const result = await Promise.race([
+            ...selectors.map(selector =>
+                page.waitForSelector(selector, { timeout, visible: true })
+                    .then(el => el || Promise.reject('null'))
+                    .catch(() => new Promise(() => {})) // never resolves on failure
+            ),
+            new Promise((_, reject) => setTimeout(() => reject('timeout'), timeout + 500))
+        ]);
+        if (result) return result;
+    } catch (_) {}
+
+    // Fallback: sequential try (handles edge cases where parallel race fails)
     for (const selector of selectors) {
         try {
-            const element = await page.waitForSelector(selector, { timeout, visible: true });
+            const element = await page.waitForSelector(selector, { timeout: Math.min(timeout, 1500), visible: true });
             if (element) return element;
-        } catch (_) {
-            // Selector not found, try next
-        }
+        } catch (_) {}
     }
     return null;
 }
