@@ -286,12 +286,12 @@ ul, ol {
    ============================================ */
 .hero {
     position: relative;
-    min-height: 90vh;
+    min-height: 75vh;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 120px 24px 80px;
+    padding: 120px 24px 60px;
     overflow: hidden;
 }
 
@@ -322,10 +322,10 @@ ul, ol {
 }
 
 .hero-logo {
-    width: 240px;
-    max-width: 240px;
+    width: 320px;
+    max-width: 320px;
     height: auto;
-    margin: 0 auto 24px;
+    margin: 0 auto 28px;
     display: block;
     -webkit-filter: none;
     filter: none;
@@ -353,7 +353,7 @@ ul, ol {
     font-size: 1.35rem;
     color: var(--color-white);
     font-weight: 600;
-    margin-bottom: 32px;
+    margin-bottom: 48px;
 }
 
 .hero-sub {
@@ -377,8 +377,8 @@ ul, ol {
     }
 
     .hero-logo {
-        width: 200px;
-        max-width: 200px;
+        width: 260px;
+        max-width: 260px;
     }
 
     .hero-headline {
