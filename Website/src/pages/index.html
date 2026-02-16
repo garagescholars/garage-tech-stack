@@ -1,0 +1,204 @@
+<!-- config title: Garage Scholars Denver - Home -->
+<!-- config description: Denver's Premier Garage Transformation Service. Cleaning, organization, gym setup, and resale services. -->
+<!-- config ogTitle: Garage Scholars Denver - Home -->
+<!-- config activeNav: index -->
+<!-- config firebase: app,firestore,storage,functions -->
+<!-- config hasQuoteModal: true -->
+
+{{head}}
+{{header}}
+
+    <!-- ========== HERO ========== -->
+    <section class="hero">
+        <div class="hero-bg" style="background-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1920&q=80')"></div>
+        <div class="hero-content">
+            <img src="images/hero-logo.png?v=5" alt="Garage Scholars" class="hero-logo">
+            <h1 class="hero-headline">Denver's Premier Garage Transformation Service</h1>
+            <p class="hero-motto">Clear Space, Calm Mind, Confident Life.</p>
+            <p class="hero-tagline">The smartest investment in your space.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary btn-lg" onclick="openQuoteModal()">Get Your Free Quote</button>
+                <a href="#services" class="btn btn-outline btn-lg">View Services</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== SERVICES ========== -->
+    <section class="section section-dark" id="services">
+        <div class="container">
+            <div class="services-intro fade-up">
+                <h2>More Space. More Strength. More Value.</h2>
+                <p>Converting cluttered garages into organized spaces, building functional home gyms, and offering resale concierge services.</p>
+            </div>
+            <div class="services-grid fade-up">
+                <div class="service-tab active" onclick="showService('declutter', event)">
+                    <div class="tab-header">
+                        <div class="tab-title"><i class="fa-solid fa-check check-icon"></i><h3>Get Clean</h3></div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Flat fee, responsible removal.</p>
+                </div>
+                <div class="service-tab" onclick="showService('organize', event)">
+                    <div class="tab-header">
+                        <div class="tab-title"><i class="fa-solid fa-check check-icon"></i><h3>Get Organized</h3></div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Shelving, totes, neat space.</p>
+                </div>
+                <div class="service-tab" onclick="showService('gym', event)">
+                    <div class="tab-header">
+                        <div class="tab-title"><i class="fa-solid fa-check check-icon"></i><h3>Get Healthy</h3></div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Full Gym Installation</p>
+                </div>
+                <div class="service-tab" onclick="showService('resale', event)">
+                    <div class="tab-header">
+                        <div class="tab-title"><i class="fa-solid fa-check check-icon"></i><h3>Get Cash</h3></div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Turn your clutter into cash</p>
+                </div>
+            </div>
+            <div class="service-detail active fade-up" id="service-declutter">
+                <div class="service-detail-text">
+                    <h3>Declutter &amp; Remove</h3>
+                    <p>We clear out every corner, removing unwanted items quickly and responsibly under one flat fee. Reclaim your garage space and unlock its potential today!</p>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-organize">
+                <div class="service-detail-text">
+                    <h3>Organized Space Solutions: Maximize Your Garage</h3>
+                    <p>Our team sorts and arranges your belongings, offering optional upgrades like shelving and totes to keep your space neat and accessible. Get organized today!</p>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-gym">
+                <div class="service-detail-text">
+                    <h3>Garage Gyms</h3>
+                    <p>Transform your garage into a personal fitness haven with our custom gym setups. We design and install functional gyms tailored to your needs.</p>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-resale">
+                <div class="service-detail-text">
+                    <h3>Resale &amp; Value Recovery: Earn Cash Back</h3>
+                    <p>We identify valuable items, prepare them for resale, and handle listings to help you earn cash back while reducing waste. Start earning today!</p>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80')"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== PRICING ========== -->
+    <section class="section section-darker" id="pricing">
+        <div class="container">
+            <div class="pricing-header fade-up">
+                <h2>Your Garage, Your Curriculum</h2>
+                <p>Pick the plan that fits your lifestyle. Graduate to a smarter garage.</p>
+            </div>
+            <div class="pricing-cards fade-up">
+                <div class="pricing-card">
+                    <h3>The Undergraduate</h3>
+                    <p class="subtitle">The Basics, Done Right</p>
+                    <p class="what-you-get">What you get:</p>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Sort into keep/donate/trash</span></div>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>One storage zone installed</span></div>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Sweep and blow out</span></div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('undergraduate')">Get Started</button>
+                </div>
+                <div class="pricing-card featured">
+                    <span class="pricing-badge">Most Popular</span>
+                    <h3>The Graduate</h3>
+                    <p class="subtitle">Leveling Up Your Space</p>
+                    <p class="what-you-get">What you get:</p>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Everything in The Undergraduate, plus:</span></div>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Detailed categorization + Haul away + Storage upgrades</span></div>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Deep cleaning + 30-day clutter-free guarantee</span></div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('graduate')">Get Started</button>
+                </div>
+                <div class="pricing-card">
+                    <h3>The Doctorate</h3>
+                    <p class="subtitle">The Complete Scholar Treatment</p>
+                    <p class="what-you-get">What you get:</p>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Everything in The Graduate, plus:</span></div>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Third premium storage zone + 16 premium bins</span></div>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Floor power wash + Double haul away</span></div>
+                    <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Seasonal swap service with return visit</span></div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('doctorate')">Get Started</button>
+                </div>
+            </div>
+            <p class="pricing-note fade-up">All packages come with resale services</p>
+        </div>
+    </section>
+
+    <!-- ========== GUARANTEE ========== -->
+    <section class="guarantee">
+        <div class="guarantee-badge fade-up">
+            <div class="guarantee-icon"><i class="fa-solid fa-check"></i></div>
+            <div class="guarantee-text">
+                <h2>Love your garage or we come back &mdash; free.</h2>
+                <p>Your satisfaction is our guarantee. No questions asked.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FAQ ========== -->
+    <section class="section section-dark">
+        <div class="container">
+            <div class="faq-header fade-up"><h2>FAQ</h2></div>
+            <div class="faq-list fade-up">
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>What services do you offer?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>We offer garage cleaning, organization, gym setup, decluttering, and resale services. We transform cluttered garages into functional spaces and help you maximize your property value.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>How much does it cost?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Our pricing varies depending on the size and scope of the project. Contact us for a free consultation and estimate tailored to your needs.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>How long does a garage transformation take?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>The timeline depends on the project's complexity. We'll provide an estimated timeframe during the consultation. We work efficiently to minimize disruption.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>Do you offer resale?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Yes, we identify valuable items, prepare them for resale, and handle listings to help you earn cash back while reducing waste. It's a win-win!</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== TEAM ========== -->
+    <section class="section section-darker">
+        <div class="container">
+            <div class="team-header fade-up">
+                <h2>Meet Our Scholars</h2>
+                <p>Experts in garage transformation and gym design.</p>
+            </div>
+            <div class="team-grid fade-up">
+                <div class="team-card"><h3>Zach Harmon, PT, DPT</h3><span class="role">Co-Founder</span></div>
+                <div class="team-card"><h3>Tyler Sodia, PhD</h3><span class="role">Co-Founder</span></div>
+            </div>
+        </div>
+    </section>
+
+{{quote-modal}}
+{{footer}}
+{{scripts}}
+
+    <script>
+        // Initialize Firebase
+        firebase.initializeApp(window.firebaseConfig);
+
+        // Service Tabs
+        function showService(service, e) {
+            document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.service-detail').forEach(d => d.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            document.getElementById('service-' + service).classList.add('active');
+        }
+    </script>
+
+</body>
+</html>
