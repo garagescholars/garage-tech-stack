@@ -40,7 +40,8 @@ export default function EmailLoginScreen() {
     setLoading(true);
     try {
       await signInWithEmail(email.trim().toLowerCase(), password);
-      // Auth state listener in useAuth handles navigation automatically
+      // Navigate to index which routes based on role
+      router.replace("/");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed.";
       // Clean up Firebase error messages for display

@@ -74,6 +74,8 @@ export default function ScholarLayout() {
       <Tabs.Screen name="my-jobs/[id]/reschedule" options={{ href: null, headerTitle: "Reschedule Job" }} />
       <Tabs.Screen name="goals/set-goal" options={{ href: null, headerTitle: "Set Goal" }} />
       <Tabs.Screen name="profile/score-history" options={{ href: null, headerTitle: "Score History" }} />
+      <Tabs.Screen name="profile/payments" options={{ href: null, headerTitle: "Payment History" }} />
+      <Tabs.Screen name="profile/payment-setup" options={{ href: null, headerTitle: "Bank Setup" }} />
     </Tabs>
   );
 }

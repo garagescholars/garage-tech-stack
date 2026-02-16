@@ -22,7 +22,7 @@ export default function Index() {
     }
 
     if (profile?.role === "admin") {
-      router.replace("/(admin)/home");
+      router.replace("/(admin)/jobs");
     } else if (profile?.role === "scholar" && profile.onboardingComplete !== true) {
       router.replace("/(auth)/onboarding");
     } else {
