@@ -76,6 +76,9 @@ export default function ScholarLayout() {
       <Tabs.Screen name="profile/score-history" options={{ href: null, headerTitle: "Score History" }} />
       <Tabs.Screen name="profile/payments" options={{ href: null, headerTitle: "Payment History" }} />
       <Tabs.Screen name="profile/payment-setup" options={{ href: null, headerTitle: "Bank Setup" }} />
+      <Tabs.Screen name="my-jobs/[id]/escalate" options={{ href: null, headerTitle: "Report Issue" }} />
+      <Tabs.Screen name="my-jobs/[id]/escalations" options={{ href: null, headerTitle: "Escalations" }} />
+      <Tabs.Screen name="my-jobs/[id]/prep" options={{ href: null, headerTitle: "Video Homework" }} />
     </Tabs>
   );
 }

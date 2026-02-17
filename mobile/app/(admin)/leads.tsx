@@ -44,6 +44,8 @@ import {
   PACKAGE_LABELS,
   SERVICE_TYPE_LABELS,
   EMPTY_SELECTIONS,
+  GYM_EQUIPMENT_CATALOG,
+  GYM_EQUIPMENT_CATEGORIES,
   type ProductSelections,
 } from "../../src/constants/productCatalog";
 import {
@@ -607,6 +609,55 @@ export default function AdminLeadsScreen() {
     },
     [],
   );
+
+  // Gym equipment quantity helper
+  const updateGymEquipmentQty = useCallback(
+    (id: string, delta: number) => {
+      setProductSelections((prev) => {
+        const existing = prev.gymEquipment.find((g) => g.id === id);
+        const currentQty = existing?.qty || 0;
+        const newQty = Math.max(0, currentQty + delta);
+        const filtered = prev.gymEquipment.filter((g) => g.id !== id);
+        if (newQty > 0) filtered.push({ id, qty: newQty, customName: existing?.customName });
+        return { ...prev, gymEquipment: filtered };
+      });
+    },
+    [],
+  );
+
+  // Add custom equipment entry
+  const [customEquipmentName, setCustomEquipmentName] = useState("");
+  const addCustomEquipment = useCallback(() => {
+    if (!customEquipmentName.trim()) return;
+    setProductSelections((prev) => {
+      const customId = `custom-${Date.now()}`;
+      return {
+        ...prev,
+        gymEquipment: [
+          ...prev.gymEquipment,
+          { id: customId, qty: 1, customName: customEquipmentName.trim() },
+        ],
+      };
+    });
+    setCustomEquipmentName("");
+  }, [customEquipmentName]);
+
+  // Remove custom equipment
+  const removeCustomEquipment = useCallback((id: string) => {
+    setProductSelections((prev) => ({
+      ...prev,
+      gymEquipment: prev.gymEquipment.filter((g) => g.id !== id),
+    }));
+  }, []);
+
+  // Check if gym section should show (gym-related service or package)
+  const showGymSection = useMemo(() => {
+    const gymPackages = ["warmup", "superset", "1repmax", "deans-list", "valedictorian"];
+    const gymServices = ["get-strong", "gym", "full"];
+    const pkg = convertFormData.selectedPackage?.toLowerCase() || "";
+    const svc = selectedLead?.serviceType?.toLowerCase() || "";
+    return gymPackages.includes(pkg) || gymServices.includes(svc) || productSelections.gymEquipment.length > 0;
+  }, [convertFormData.selectedPackage, selectedLead?.serviceType, productSelections.gymEquipment.length]);
 
   // ── Bold series select options ──
   const boldSeriesOptions = useMemo(() => {
@@ -1322,6 +1373,139 @@ export default function AdminLeadsScreen() {
                   multiline
                   numberOfLines={3}
                 />
+
+                {/* ── Gym Equipment ── */}
+                {showGymSection && (
+                  <>
+                    <Text style={styles.formSectionTitle}>Gym Equipment</Text>
+                    <Text style={styles.hintText}>
+                      Select equipment for assembly. Cable systems (ARES, Athena, Slinger) include detailed routing instructions in the SOP.
+                    </Text>
+
+                    {/* Catalog equipment with qty controls */}
+                    {GYM_EQUIPMENT_CATEGORIES.map((cat) => {
+                      const items = GYM_EQUIPMENT_CATALOG.filter(
+                        (e) => e.category === cat.value && e.id !== "gym-custom",
+                      );
+                      if (items.length === 0) return null;
+                      return (
+                        <View key={cat.value}>
+                          <Text style={styles.subSectionLabel}>{cat.label}</Text>
+                          {items.map((equip) => {
+                            const existing = productSelections.gymEquipment.find(
+                              (g) => g.id === equip.id,
+                            );
+                            const qty = existing?.qty || 0;
+                            return (
+                              <View key={equip.id} style={styles.qtyRow}>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={styles.qtyItemName}>
+                                    {equip.name}
+                                    {equip.brand !== "other" ? ` (${equip.brand === "rep" ? "Rep" : "Rogue"})` : ""}
+                                  </Text>
+                                  <Text style={styles.qtyItemDims}>
+                                    {equip.dims} — {equip.assemblyTime}
+                                  </Text>
+                                </View>
+                                <View style={styles.qtyControls}>
+                                  <TouchableOpacity
+                                    style={styles.qtyBtnMinus}
+                                    onPress={() => updateGymEquipmentQty(equip.id, -1)}
+                                    activeOpacity={0.7}
+                                  >
+                                    <Ionicons name="remove" size={16} color="#94a3b8" />
+                                  </TouchableOpacity>
+                                  <Text style={styles.qtyValue}>{qty}</Text>
+                                  <TouchableOpacity
+                                    style={styles.qtyBtnPlus}
+                                    onPress={() => updateGymEquipmentQty(equip.id, 1)}
+                                    activeOpacity={0.7}
+                                  >
+                                    <Ionicons name="add" size={16} color="#14b8a6" />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      );
+                    })}
+
+                    {/* Custom equipment entries */}
+                    {productSelections.gymEquipment
+                      .filter((g) => g.id.startsWith("custom-"))
+                      .map((g) => (
+                        <View key={g.id} style={styles.qtyRow}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.qtyItemName}>{g.customName || "Custom"}</Text>
+                            <Text style={styles.qtyItemDims}>Customer-supplied — qty: {g.qty}</Text>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => removeCustomEquipment(g.id)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="close-circle" size={22} color="#ef4444" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+
+                    {/* Add custom equipment */}
+                    <Text style={styles.subSectionLabel}>Add Custom Equipment</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <View style={{ flex: 1 }}>
+                        <FormInput
+                          label=""
+                          value={customEquipmentName}
+                          onChangeText={setCustomEquipmentName}
+                          placeholder="e.g. Customer's Peloton Bike"
+                        />
+                      </View>
+                      <TouchableOpacity
+                        onPress={addCustomEquipment}
+                        style={{
+                          backgroundColor: customEquipmentName.trim() ? "#14b8a6" : "#334155",
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          borderRadius: 8,
+                        }}
+                        activeOpacity={0.7}
+                        disabled={!customEquipmentName.trim()}
+                      >
+                        <Ionicons name="add" size={18} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Gym Flooring */}
+                    <FormSelect
+                      label="Gym Flooring Type"
+                      value={productSelections.gymFlooringType}
+                      onValueChange={(v) =>
+                        setProductSelections((p) => ({
+                          ...p,
+                          gymFlooringType: v as ProductSelections["gymFlooringType"],
+                        }))
+                      }
+                      options={[
+                        { label: "None", value: "none" },
+                        { label: "Rubber Stall Mats (3/4\")", value: "stall-mats" },
+                        { label: "Click-In Plate Flooring", value: "click-in" },
+                        { label: "Polyaspartic Floor Coating", value: "polyaspartic" },
+                      ]}
+                    />
+
+                    {/* Gym Notes */}
+                    <FormInput
+                      label="Gym Notes"
+                      value={productSelections.gymNotes}
+                      onChangeText={(t) =>
+                        setProductSelections((p) => ({ ...p, gymNotes: t.slice(0, 500) }))
+                      }
+                      placeholder="e.g. Customer already has barbell, needs Olympic platform, wall-mount storage for bands..."
+                      multiline
+                      numberOfLines={3}
+                    />
+                  </>
+                )}
 
                 {/* ── Additional Information ── */}
                 <Text style={styles.formSectionTitle}>Additional Information</Text>

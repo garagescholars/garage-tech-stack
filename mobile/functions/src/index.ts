@@ -24,6 +24,13 @@ export {
   gsSendPush,
 } from "./gs-functions";
 
+// ── Garage Scholars Notification functions ──
+export {
+  gsMultiNotify,
+  gsOnEscalationCreated,
+  gsJobPrepReminders,
+} from "./gs-notifications";
+
 // ── Garage Scholars Payment functions ──
 export {
   gsReleaseCompletionPayouts,
@@ -394,10 +401,568 @@ In your SOP, PROACTIVELY warn about these common beginner mistakes:
 - Not introducing yourself to the client — first impressions matter. "Hi, I'm [name] from Garage Scholars. We're going to transform your garage today"
 
 ═══════════════════════════════════════
+  GYM-SPECIFIC TOOL HOW-TO GUIDE
+═══════════════════════════════════════
+
+Only include these instructions when the job involves gym equipment assembly. These supplement the general tool guides above.
+
+HOW TO USE A SOCKET WRENCH:
+1. A socket wrench (also called a ratchet) has a square drive head that accepts different-size sockets. It ratchets — meaning it tightens in one direction and free-spins in the other so you don't have to lift it off the bolt each turn
+2. The switch on the back of the ratchet head controls direction: flip it one way for tighten (clockwise), the other way for loosen (counter-clockwise). Test which direction is which BEFORE you put it on a bolt
+3. To attach a socket: push it onto the square drive until it clicks. To remove it: press the release button on the back and pull it off
+4. Common gym equipment bolt sizes: METRIC — 10mm, 13mm, 15mm, 17mm, 19mm. SAE (American) — 3/8", 7/16", 1/2", 9/16", 5/8", 3/4"
+5. If a socket almost fits but is slightly loose, you have the WRONG SIZE — do not use it, it will strip the bolt head. Try the next size down
+6. For tight spaces where the ratchet won't fit, use a combination wrench (open end + box end) instead
+7. GOLDEN RULE: "finger-tight first." Thread every bolt by hand at least 3-4 full turns before using the wrench. If it won't thread by hand, it's cross-threaded — STOP, back it out, realign, try again
+
+HOW TO USE ALLEN (HEX) WRENCHES:
+1. Allen wrenches are L-shaped tools with a hexagonal tip. They fit into hex-shaped holes in bolt heads (called socket head cap screws or set screws)
+2. Rep Fitness uses metric Allen keys: 4mm, 5mm, 6mm are the most common. Rogue sometimes uses SAE: 5/32", 3/16", 7/32"
+3. Use the SHORT end for tight spaces (insert short end into bolt, turn with the long end for leverage). Use the LONG end for fast spinning when you don't need much torque
+4. If an Allen key spins freely inside the bolt but the bolt isn't turning, the bolt is STRIPPED — flag for admin, do not continue forcing it
+5. NEVER use pliers on an Allen wrench for extra leverage — you'll round the bolt head. If it's too tight, use a longer Allen key or a ball-end version
+
+HOW TO SAFELY USE A STEP LADDER (for overhead pulleys, cable routing):
+1. Open the ladder fully until the spreader bars LOCK into position. If the spreaders don't lock, the ladder is broken — do not use it
+2. Place on FLAT ground only. On a garage floor that slopes toward the door, position the ladder so it faces the slope (not sideways to it)
+3. NEVER stand on the top 2 steps. The highest safe step is usually marked — stay at or below that mark
+4. Keep your belt buckle between the side rails at all times — if you're leaning so far that your belt buckle is past the rail, you WILL fall. Get down and move the ladder instead
+5. Have your partner hold the base whenever you're on the ladder. This is non-negotiable on gym installs
+6. NEVER reach overhead with both hands while standing on a ladder with a heavy part — hand the part up from the ground, or have your partner hand it to you while you're stable
+
+HOW TO IDENTIFY BOLT SIZES — METRIC vs SAE:
+Gym equipment from Rep Fitness is primarily METRIC. Rogue uses a mix of METRIC and SAE.
+1. The hardware bags should be labeled. If they're not, use the included manual's hardware chart — it lists every bolt by step number, size, and quantity
+2. NEVER guess a bolt size. If you're not sure, try fitting a socket BEFORE tightening. The socket should slide on snugly with zero play
+3. Common confusion: M8 metric ≈ 5/16" SAE, M10 metric ≈ 3/8" SAE, M12 metric ≈ 1/2" SAE — but they are NOT interchangeable. Cross-threading metric into SAE holes (or vice versa) will destroy the threads
+4. If a bolt is getting hard to turn after only 1-2 threads, STOP — you may be cross-threading. Back it out completely, check that the bolt and hole are aligned straight, and try again by hand
+
+HOW TO READ A CABLE ROUTING DIAGRAM:
+Cable routing diagrams show the path a steel cable must follow through a series of pulleys inside a machine. This is the #1 thing scholars get wrong on gym installs, and getting it wrong means disassembling and starting over.
+1. The diagram shows numbered pulleys (P1, P2, P3... or 1, 2, 3...) and a line representing the cable path
+2. Pay attention to which SIDE of each pulley the cable wraps around — some pulleys the cable goes OVER the top, others it goes UNDER. The diagram shows this with the line going above or below the pulley circle
+3. At each pulley, the cable must sit INSIDE the groove (the V-shaped or U-shaped channel around the outside of the pulley wheel). If the cable is sitting on the flat surface next to the groove, it will jump off under load
+4. The cable has two ends: one end attaches to the HANDLE or CARABINER, the other end attaches to the WEIGHT STACK selector mechanism (or terminates at a fixed point)
+5. Start routing from the handle end (it's easier to feed the cable through each pulley from this end)
+6. After routing through each pulley, give the cable a gentle tug to make sure it's seated in the groove. The cable should move freely — if it catches, the cable isn't properly seated in that pulley's groove
+7. PHOTOGRAPH your completed routing from multiple angles BEFORE tensioning. If something goes wrong later, you'll have a reference
+
+═══════════════════════════════════════
+  GYM JOB TRUCK LOADOUT
+═══════════════════════════════════════
+
+In addition to the standard truck loadout, gym installation jobs require:
+
+ALL gym jobs:
+- Socket wrench set with metric sockets (10mm, 13mm, 15mm, 17mm, 19mm) AND SAE (3/8", 1/2", 9/16", 5/8", 3/4")
+- Allen/hex wrench set — BOTH metric (3mm, 4mm, 5mm, 6mm, 8mm) AND SAE (5/32", 3/16", 7/32", 1/4")
+- Adjustable wrench (12" minimum)
+- Level (4ft preferred for rack uprights — longer is better)
+- Rubber mallet
+- Step ladder (6ft minimum)
+- Moving blankets / furniture pads (6+ for protecting flooring during assembly)
+- Blue painter's tape (for labeling parts, marking pulley positions)
+- Ziplock bags + Sharpie (for sorting hardware by step number)
+- Headlamp or work light (for seeing inside rack frames and behind pulleys)
+- 3-in-1 oil (for barbell sleeves)
+- Electrical tape (for wrapping cable ends during threading)
+- Wire cutters / cable cutters (ONLY if specified for cable trimming)
+- Concrete drill bit set + hammer drill (if floor-bolting rack — confirm with admin before job)
+- 3/8" concrete wedge anchors (if floor-bolting — confirm count with admin)
+- Shop vac (for cleaning concrete dust after drilling)
+
+Cable system jobs (ARES, Athena, Slinger) — add:
+- Extra headlamp (for seeing cable routing behind weight stack columns)
+- Needle-nose pliers (for threading cable through tight spaces)
+- Cable lubricant or silicone spray (light coat on cable before threading — reduces friction)
+- Ratchet straps (2x, for temporarily holding heavy assemblies in position during mounting)
+- Extra ziplock bags (cable systems have 100+ pieces of hardware)
+
+Gym flooring jobs — add:
+- Utility knife + 10 extra blades (stall mats eat blades fast — change blade after every 2 cuts)
+- 4ft steel straight edge or T-square (for straight cuts on mats)
+- Chalk line (for marking long cut lines on mats)
+- Hand truck or furniture dolly (each stall mat weighs ~100 lbs — do NOT carry by hand if avoidable)
+
+═══════════════════════════════════════
+  GYM EQUIPMENT ASSEMBLY GUIDE
+═══════════════════════════════════════
+
+Only include gym equipment sections if the job involves gym setup (Get Strong service, Warm Up / Super Set / 1 Rep Max / Dean's List / Valedictorian packages, or gym equipment in the product selections).
+
+UNIVERSAL ASSEMBLY PROTOCOL — BEFORE TOUCHING ANY EQUIPMENT:
+Every gym install follows these steps FIRST, regardless of what's being built:
+1. READ THE ENTIRE MANUAL FRONT TO BACK before unboxing anything. Yes, the entire thing. Flip through every page. Look at every diagram. Understand the full assembly sequence before you pick up a single bolt. This takes 10-15 minutes and will save you 1-2 HOURS of mistakes
+2. CLEAR THE SPACE: You need a flat area at least 10ft x 10ft for a rack assembly, 8ft x 6ft for a bench. Move everything out of the way — you need room to lay parts out and walk around them
+3. INVENTORY ALL PARTS: Open every box. Lay parts on moving blankets or cardboard (NEVER directly on concrete — it scratches powder coating). Match every part to the manual's parts list. Count every bolt, washer, and nut. If ANYTHING is missing, STOP and call admin before starting assembly — do not improvise with different hardware
+4. SORT HARDWARE BY STEP: Use ziplock bags and a Sharpie. Write "Step 1", "Step 2", etc. on each bag. Put the bolts needed for that step into the bag. This prevents the #1 beginner mistake: grabbing the wrong bolt and cross-threading it into the wrong hole
+5. PHOTOGRAPH THE PARTS LAYOUT: Take a photo of all parts laid out before you start. If something goes wrong mid-assembly and you need to call admin, this photo is your reference
+6. CHECK THE FLOOR: Use the level on the floor where the equipment will sit. Note which direction the floor slopes — you'll need to compensate with shims or adjustable feet. Most garage floors slope 1/8" to 1/4" per foot toward the garage door for drainage
+
+POSITIONING THE EQUIPMENT IN THE GARAGE:
+Before assembling, decide EXACTLY where the final position will be:
+- Power rack: needs minimum 4ft clearance on ALL sides for loading plates and walking around. Keep at least 6" from any wall (you need space to bolt to the floor or wall if needed). If a garage door is behind the rack, make sure the bar won't hit the door when racked (measure: rack depth + bar overhang + 6" clearance)
+- Functional trainer: needs 6ft clearance in front for cable exercises at full extension. Side clearance: 3ft minimum per side
+- Bench: position so it can be slid into and out of the rack without lifting. Leave 3ft walkway on each side
+- Stall mats: plan the layout BEFORE cutting. Measure the total floor area, divide by 4'x6' mats, figure out how many you need and where the cuts go. Sketch it on paper first
+- Ceiling clearance: measure from floor to ceiling. Standard pull-up bar height on a 90" rack is 90" — that means you need at least 100" (8'4") of ceiling height for someone to hang, or they'll hit the ceiling. If ceiling is under 8'6", flag this for admin
+
+POWER RACKS — FULL STEP-BY-STEP (Rep PR-4000, PR-5000 / Rogue RML-490):
+1. PREP (15 min):
+   a. Follow Universal Assembly Protocol above — read manual, inventory parts, sort hardware
+   b. Identify the 4 uprights. They may be labeled (Front Left, Front Right, Back Left, Back Right). If not labeled, check the manual for which holes face which direction — the numbered holes typically face INWARD on Rep racks
+   c. Lay two uprights parallel on the floor, with moving blankets underneath
+   d. Check that all uprights are the same length and the holes are in the same positions — if one looks different, check the manual before proceeding
+
+2. ASSEMBLE FRAME ON THE GROUND (30-45 min):
+   a. Attach the bottom cross-members to the two uprights lying on the ground. Thread bolts BY HAND — finger-tight only (3-4 full turns by hand minimum before using any tool)
+   b. STOP AND CHECK: look down the length of both uprights. Are they parallel? Are the holes aligned? If one upright is rotated so the holes face the wrong way, fix it NOW — this is the easiest time to correct
+   c. Attach the top cross-members the same way — finger-tight only
+   d. Attach any middle cross-members or diagonal braces — finger-tight only
+   e. You now have a flat rectangular frame on the ground. EVERYTHING should be finger-tight only at this point
+
+3. RAISE THE FRAME (10 min — MINIMUM 2 PEOPLE, 3 IS BETTER):
+   a. SAFETY: This frame weighs 150-300 lbs. Position yourselves at opposite ends
+   b. Communicate: "Ready? Lifting on 3. 1... 2... 3... lift"
+   c. One team lifts from the top cross-member while the other team guides the bottom to stay in place
+   d. Walk the frame up gradually — don't try to muscle it up in one motion. One person pushes from underneath while the other pulls from the top
+   e. Once vertical, have someone hold it steady while another person checks it's not going to tip
+   f. For a 6-post rack (needed for ARES/Athena): repeat this process for the rear 2 uprights, then connect front frame to rear frame with side cross-members
+
+4. LEVEL AND SQUARE (15 min):
+   a. Place the 4ft level against each upright, top to bottom. The bubble should be centered. If it's not, the upright is leaning — adjust the bolt positions or place shims (flat washers work as shims) under the foot pad on the low side
+   b. CRITICAL: check that the frame is SQUARE (not racked/rhombus-shaped). Measure diagonally from top-left to bottom-right, then top-right to bottom-left. These two measurements should be within 1/8" of each other. If they're not, loosen the cross-member bolts slightly and push the frame square, then re-tighten
+   c. Check level on every cross-member (front-to-back AND side-to-side)
+
+5. FINAL TIGHTEN — TORQUE SEQUENCE (15 min):
+   a. NOW you tighten everything — in this specific order:
+   b. First: all BOTTOM bolts (where uprights meet the floor plates / bottom cross-members). These anchor the whole frame
+   c. Second: all TOP bolts (top cross-members and pull-up bar)
+   d. Third: all MIDDLE bolts (mid cross-members, diagonal braces)
+   e. Tighten firmly with the socket wrench — snug plus 1/4 turn. Do NOT over-torque. If you hear metal creaking, you're going too far
+   f. STOP AND CHECK AGAIN: re-check level on all 4 uprights after final tightening. Tightening can shift things slightly. If anything moved, loosen and adjust
+
+6. INSTALL ACCESSORIES (15-30 min):
+   a. J-hooks: slide into the holes from the INSIDE of the rack. The J-cups should face inward (toward each other). Set both at the same height — pick a hole number (they're numbered on Rep racks) and set both J-hooks to the same number. Typical bench press height: roughly nipple height when standing
+   b. Safety arms/straps: install these BELOW the J-hooks. The safety should catch the bar if you fail a rep. Set them at a height where the bar would rest just above your chest when you're lying on the bench. Test by lying on the bench and checking clearance
+   c. Pull-up bar: usually already installed as the top rear cross-member. If separate, bolt it into the designated holes at the top
+   d. Plate storage horns: bolt to the outside of the uprights at waist height. Put heaviest plates closest to the uprights (weight distribution)
+   e. Band pegs: insert into the bottom holes of the uprights. These are for resistance bands — make sure they're secure and won't pop out under tension
+
+7. SHAKE TEST AND FINAL CHECK (5 min):
+   a. Grab the top of the rack with both hands and try to shake it side-to-side and front-to-back. Apply real force — don't be gentle
+   b. ZERO movement = correct. Any wobble means something is loose — go back and re-tighten
+   c. Hang from the pull-up bar (one person). The rack should not shift, creak, or move AT ALL
+   d. Place an empty barbell on the J-hooks. It should sit level and not roll. If it rolls, the J-hooks are at different heights — adjust
+   e. Time check: you should be at approximately 90-120 minutes here for a 4-post rack, 120-150 for a 6-post
+
+8. FLOOR BOLTING (optional — 20 min, only if specified):
+   a. Once rack is positioned in its FINAL location (you cannot move it after this), mark through the foot plate holes onto the concrete with a pencil
+   b. Move the rack aside temporarily
+   c. Using a hammer drill with a 3/8" concrete bit: drill into each mark to a depth of 2.5". WEAR SAFETY GLASSES — concrete dust and chips will fly. Hold the drill firmly with BOTH hands — it will vibrate aggressively
+   d. Vacuum out each hole with the shop vac (debris in the hole will prevent the anchor from seating)
+   e. Slide the rack back into position, aligning foot plate holes with drilled holes
+   f. Insert 3/8" x 3" concrete wedge anchors through the foot plate holes into the concrete. Tighten with a socket wrench — they expand as you tighten
+   g. STOP AND CHECK: each anchor should be flush with the foot plate and completely tight. If one spins freely, the hole may be too large — flag for admin
+
+SQUAT STANDS (Rogue SML-2):
+1. Simpler than a full rack — each upright is independent
+2. Assemble each upright separately: bolt the feet/base plate to the bottom of the upright. Finger-tight first, check level, then final tighten
+3. Connect the two uprights with the rear cross-member (if included). This keeps them from spreading apart when you rack weight
+4. Level each foot independently — twist the adjustable feet like screws (clockwise = shorter, counter-clockwise = taller). Check with level in both directions
+5. Wall-mount stabilizer kit: if included, bolt the bracket to the rear of the uprights, then lag bolt into wall studs. This prevents the stand from tipping backward. If not bolting to the wall, STRONGLY recommend floor bolting (see floor bolting steps above)
+6. Install J-hooks (match height on both sides) and safety arms
+7. Estimated time: 30-45 minutes
+
+═══════════════════════════════════════
+CABLE SYSTEMS — THE MOST COMPLEX INSTALLS
+═══════════════════════════════════════
+
+Cable systems are the #1 source of assembly errors. A mistake in cable routing means FULL disassembly and starting over. Follow these instructions EXACTLY. Do NOT rush. Do NOT skip steps.
+
+CABLE SYSTEMS — ARES (Rep Fitness, for PR-4000/5000):
+The ARES attaches to a 6-post PR-4000 or PR-5000 configuration and adds dual adjustable cable columns with weight stacks.
+
+PREREQUISITES:
+- Rack MUST already be fully assembled in 6-POST configuration (4 main uprights + 2 rear uprights). If the rack is 4-post, you need to add the rear extension kit FIRST
+- All rack bolts must be final-tightened. The ARES mounts to the rack frame — if the rack shifts during ARES install, everything goes out of alignment
+
+STEP-BY-STEP:
+1. PREP (20 min):
+   a. Read the ENTIRE ARES manual. Note: ARES v1 and ARES 2.0 have DIFFERENT cable routing diagrams. Verify which version you have by checking the model number on the box
+   b. Inventory all parts. ARES has 100+ individual pieces of hardware. Sort into ziplock bags by step number
+   c. Identify the cable routing diagram in the manual — BOOKMARK THIS PAGE. You will reference it 20+ times
+   d. Identify each cable. There should be 2 identical cables (one per side). Each cable has a ball/stopper on one end and a connector on the other
+
+2. MOUNT THE FRAME ASSEMBLIES (30 min):
+   a. Assemble the side plates / frame brackets per the manual. These mount to the rear uprights of the rack
+   b. Bolt the frame assemblies to the rack uprights — finger-tight only at first
+   c. Check that the frame assembly is level and plumb (vertical). The weight stack guide rods MUST be perfectly vertical or the weight stack will bind
+   d. Use the 4ft level against the guide rod channels — adjust until plumb in both directions
+   e. Final-tighten the mounting bolts once everything is plumb
+
+3. INSTALL PULLEYS (20 min):
+   a. The manual shows where each pulley mounts — top, bottom, and redirect pulleys
+   b. Each pulley has a bolt, spacers, and a nut. The pulley must SPIN FREELY on the bolt — do not over-tighten. Tighten the nut until the pulley has zero lateral play (doesn't wobble side to side) but still spins freely when you flick it with your finger
+   c. Check each pulley's groove — run your finger along it. It should be smooth with no burrs. If a groove has a rough spot, it will fray the cable. Sand it lightly with fine sandpaper or flag for admin
+
+4. CABLE ROUTING — THE CRITICAL STEP (30-45 min PER SIDE):
+   a. Open the manual to the cable routing diagram. Place it where BOTH people can see it at all times
+   b. Wrap 2 inches of electrical tape around the leading end of the cable — this creates a stiff tip that's easier to thread through pulleys (like the aglet on a shoelace)
+   c. Optional but recommended: apply a thin coat of silicone spray or cable lubricant to the entire cable. This reduces friction during threading and during use
+   d. Start at Pulley #1 (usually the top pulley). Thread the cable over or under the pulley as shown in the diagram. The cable MUST sit INSIDE the V-groove of the pulley
+   e. PAUSE after each pulley. Tug the cable gently — it should slide freely. If it's tight or catching, the cable is not seated in the groove. Re-seat it before moving to the next pulley
+   f. Continue through each pulley in sequence: P1, P2, P3, etc. DO NOT skip ahead — routing through pulleys out of order will cross the cable and create binding
+   g. At redirect pulleys (where the cable changes direction), the cable wraps partially around the pulley. Make sure it follows the groove for the full wrap — not just touching the pulley at one point
+   h. Once the cable reaches the bottom / terminal pulley, attach the cable end to the weight stack selector mechanism per the manual
+   i. STOP AND CHECK: with NO weight on the stack, pull the handle / carabiner end through the FULL range of motion (bottom to top and back). The cable should move smoothly with consistent resistance (just the friction of the pulleys). If it catches, jerks, or has a "dead spot" where it gets tight then loose:
+      - The cable is NOT seated in a pulley groove somewhere
+      - A pulley is misaligned (bracket needs loosening and adjustment)
+      - The cable is wrapped around the wrong side of a pulley
+   j. PHOTOGRAPH the completed cable routing from 3 angles (front, side, close-up of each pulley). If the cable ever needs service, this photo saves hours
+   k. Repeat for the second cable on the other side
+
+5. INSTALL WEIGHT STACKS (20 min):
+   a. ONLY after BOTH cables are routed and verified
+   b. Slide the guide rods through the weight stack plates in order (lightest plate first, working down)
+   c. Insert the selector pin and test — pull it out, drop it into each plate's slot, verify it seats fully
+   d. Connect the cable to the weight stack via the selector mechanism
+   e. FINAL TEST: select the lightest weight. Pull the handle slowly through full range. The weight should lift smoothly and return smoothly. No jerking, no cable slipping, no scraping sounds. If you hear metal-on-metal scraping, the guide rods aren't aligned — loosen the frame and re-plumb
+
+CABLE SYSTEMS — ATHENA / FT-3500 (Rep Fitness side-mount functional trainer):
+THIS IS THE MOST COMPLEX GYM INSTALL. Budget 3-4 hours. Do NOT rush.
+
+The Athena is a dual-stack functional trainer that side-mounts to PR-4000 or PR-5000 uprights. Each side is a completely independent cable machine.
+
+KEY DIFFERENCES FROM ARES:
+- Athena has MORE pulleys per side (more complex routing)
+- Weight stacks are heavier (200+ lbs per side)
+- The cable path is longer, meaning more opportunities for routing errors
+- It's side-mounted (hangs off the side of the rack) so weight distribution matters — MUST be secured or it can tip the rack
+
+STEP-BY-STEP:
+1. Complete ONE side fully before starting the other. Do not partially assemble both sides simultaneously — you'll confuse the hardware and cable routing
+2. Mount the main frame bracket to the rack uprights per the manual. This is the backbone that everything hangs from. It MUST be plumb (use the 4ft level). The weight stack guide rods attach to this frame — if it's not plumb, the stack will bind
+3. Install all pulleys for this side. Verify each spins freely (see ARES pulley instructions above)
+4. Route the cable following the ATHENA-SPECIFIC routing diagram (NOT the ARES diagram — they look similar but are different). Follow the exact same cable routing protocol from the ARES section above — tape the cable end, thread through each pulley in sequence, pause and check after each pulley, test full range before moving on
+5. Install the weight stack for this side. Test with lightest weight
+6. STOP AND CHECK: run the cable through full range of motion 10 times with the lightest weight. It should be smooth and quiet every time. If it's good on rep 1 but catches on rep 5, a pulley is slowly shifting — tighten the pulley bracket bolts
+7. NOW start Side 2. Repeat the entire process
+8. After BOTH sides are complete, check rack stability. The added weight on the sides changes the rack's center of gravity. If the rack was not floor-bolted, consider floor bolting now, or at minimum use a wall stabilizer bracket
+
+CABLE REPLACEMENT (for Athena, ARES, or any cable system):
+If you're replacing a cable (not doing initial install):
+1. BEFORE touching anything: photograph the existing cable routing from every angle. Take at least 6 photos per cable — front, back, left, right, close-up of each pulley junction, and the weight stack connection
+2. Disconnect the cable from the weight stack selector mechanism
+3. Slowly thread the old cable OUT through each pulley, noting which side of each pulley it wraps around
+4. Thread the new cable IN following the exact same path as the old cable (use your photos as reference)
+5. Reconnect to the weight stack. Test with no weight, then lightest weight
+
+CABLE SYSTEMS — ROGUE SLINGER (Monster Lite rack-mount cable):
+The Slinger mounts to Monster Lite rack cross-members and adds a single pulley cable system per side.
+
+STEP-BY-STEP:
+1. Assemble the side slinger plates to the 6" cable pulleys per the manual. DO NOT fully tighten the hardware yet
+2. Slide the assembly onto the rack's cross-member. The slinger mounts FROM THE OUTSIDE of the rack, sliding inward
+3. Mount with the 1" hardware — finger-tight first
+4. CABLE ROUTING (Slinger-specific):
+   a. The cable runs ON TOP of the pulleys (not underneath) — seated in the pulley groove
+   b. Insert the 3/8" spacers into the side plates. The spacers go on TOP of the cable — so the layering is: side plate, then cable on pulley, then spacers on top of cable to hold it in the groove
+   c. The bolt end of the cable passes through the rubber grommet first, then through the tube, then through the center 1" crossmember hole. Secure the rubber grommet into the TOP side of the crossmember — push it firmly until it seats
+   d. The other end of the cable connects to your loading pin or handle
+5. TIGHTEN SEQUENCE: secure all 3/8" hardware FIRST (these hold the spacers and cable in position), THEN tighten all 1" hardware (these hold the assembly to the rack)
+6. STOP AND CHECK: pull the cable through full range. Verify smooth operation with no weight, then with a single plate
+
+ROGUE LAT PULLDOWN + LOW ROW KIT:
+Connects to the Slinger cable setup. This adds a seat for lat pulldowns and a foot plate for low rows.
+1. PREREQUISITE: Slinger must be fully installed and tested first
+2. Assemble the seat frame per the manual — this is usually just bolting the seat pad to the frame
+3. Attach the assembled seat to the rack upright using 5/8" x 5" detent pins. Insert pins at the 4th and 6th holes from the ground (count from the bottom). The pins click into place — push firmly until you hear/feel the detent ball snap into the hole
+4. Connect the lat pulldown cable to the Slinger's cable using the included connector hardware
+5. Install the knee pad (if included) — adjust height so the client's thighs are snug under the pad when seated
+6. SHOW THE CLIENT: demonstrate how to insert and remove the detent pins to disconnect the seat when they want more floor space. The seat is designed to be removed in 30 seconds
+7. Time: 45-60 minutes
+
+STANDALONE FUNCTIONAL TRAINERS (Rep FT-5000):
+1. SAFETY FIRST: this unit weighs 500+ lbs fully assembled. MINIMUM 3 PEOPLE for the entire assembly. No exceptions
+2. Unbox CAREFULLY. The frame pieces are heavy and powder-coated — dropping them will dent the metal and chip the coating. Use moving blankets
+3. Assemble the main frame on its side (lying flat). DO NOT try to stand it up until the frame is fully assembled
+4. The FT-5000 has integrated cable columns — each column needs cable threading. Follow the cable routing diagram EXACTLY (see cable routing protocol in ARES section above). 6mm Allen wrench and 13mm wrench are needed and are often NOT included — bring your own
+5. Stand the unit up with ALL 3 people. One person on each side, one person guiding from behind. Communicate: "Lifting on 3"
+6. Level the unit — adjust the feet (screw in/out). Check with level on every weight stack guide rod. If a guide rod isn't plumb, the weight stack will bind when loaded
+7. WALL ANCHOR IS REQUIRED — this unit has a high center of gravity and WILL tip forward when a person pulls a heavy cable. Bolt a wall bracket to the rear of the unit and into wall studs with 3/8" x 3" lag bolts. Minimum 2 lag bolts into 2 different studs
+8. If wall-mounting isn't possible (no studs in the right position), floor-bolt using concrete anchors
+9. FINAL TEST: select the heaviest weight on each side. Pull the cable to full extension. The unit should NOT shift, rock, or tip. If it moves AT ALL, the wall/floor anchor is insufficient — add more anchor points
+10. Time: 2-3 hours
+
+ADJUSTABLE BENCHES (Rep AB-3000, AB-5000 / Rogue Adjustable 3.0):
+1. Unbox and lay out parts. These are simpler — usually base/legs, seat pad, back pad, and hardware
+2. Attach the base/legs first. Flip the bench upside down to bolt on the legs (easier access). Thread bolts by hand first, then tighten with Allen wrench or socket
+3. Flip the bench right-side up. Attach the seat pad to the frame with the included pins or bolts
+4. Attach the back pad (the adjustable part). This typically connects with a pivot pin that allows the pad to adjust angles
+5. TEST EVERY ANGLE: set the bench to each click position (flat, 15°, 30°, 45°, 60°, 90°). At each position, push down on the back pad with your hand — it should NOT slip to the next angle. If it does, the adjustment pin or ladder mechanism isn't engaging properly — check alignment
+6. AB-5000 SPECIFIC (zero-gap design): the seat pad slides forward/backward to eliminate the gap between seat and back pad. After assembly, set the bench to incline (45°), slide the seat until the gap disappears, and verify the gap stays closed at every incline angle. If there's a gap at certain angles but not others, the seat rail may need adjustment per the manual
+7. Place the bench in its operating position (usually inside the rack). Slide it in and out to verify it clears the rack uprights
+8. Time: 15-30 minutes
+
+FLAT BENCHES (Rep FB-5000 / Rogue Flat Utility 2.0):
+1. Simple assembly — 4-6 bolts attaching legs to the bench pad frame
+2. Flip the bench upside down, bolt on the legs, hand-tighten all bolts first, then final-tighten
+3. Flip right-side up. Push down on each corner — the bench should NOT rock or wobble. If it wobbles, one leg is slightly shorter or the floor is uneven. Fix with rubber feet (usually included) or a shim under the short leg
+4. The pad surface should be flat — press on the center. If it sags significantly, the frame may be bent from shipping — flag for admin
+5. Time: 10-15 minutes
+
+BARBELLS & PLATES:
+No assembly. But scholars need to handle them CORRECTLY:
+1. Unbox barbells carefully — they're 45 lbs and 7 feet long. Don't let the end swing and hit anything. Carry horizontally with two hands or have two people carry it
+2. Inspect barbell: spin each sleeve (the rotating end where plates go). It should spin freely for at least 3-5 seconds. If it grinds or doesn't spin, the barbell may have been damaged in shipping — flag for admin
+3. Apply a thin coat of 3-in-1 oil to each sleeve: put 2-3 drops on the sleeve, spin it, wipe off excess with a rag. This protects against rust
+4. Hang the barbell on the J-hooks inside the rack. It should sit level
+5. PLATES: unbox and sort by weight. Organize on the rack's plate storage horns:
+   - Heaviest plates closest to the upright (45s on the innermost position)
+   - Lighter plates toward the outside (25s, 10s, 5s)
+   - This keeps the center of gravity close to the rack and makes loading/unloading easier
+6. Bumper plates (rubber-coated): these are designed to be dropped from overhead. Stack them on edge (standing up) on the plate horns, not flat/stacked on top of each other on the floor
+
+GYM FLOORING — RUBBER STALL MATS — DETAILED:
+1. MEASURE FIRST: measure the floor area to be covered. Standard stall mats are 4'x6'. Calculate how many full mats you need and where cuts are needed. Sketch the layout on paper — label each mat position and mark where cuts go
+2. CLEAN THE FLOOR: sweep, then degrease any oil spots with degreaser spray. The floor must be dry — moisture trapped under the mats will create mold. If the floor is wet, use a floor fan to dry it before laying mats
+3. TRANSPORT MATS: each mat weighs ~100 lbs. Use the hand truck or furniture dolly to move them from the truck to the garage. Roll the mat and stand it upright on the dolly. TWO PEOPLE to lift and position each mat
+4. LAY THE FIRST MAT: start at the back wall (the wall furthest from the garage door). Position the mat 1/4" from the wall on both sides (use a shim or folded cardboard as a spacer). The flat side goes UP (textured bumpy side faces the concrete, unless client specifically wants the texture on top)
+5. LAY SUBSEQUENT MATS: butt each mat tightly against the previous one. Push the edges together — they should sit flush with no gap. If there's a gap, the concrete is probably uneven underneath. You can leave small gaps (up to 1/8") — they won't affect function
+6. CUTTING MATS: when you reach a wall or obstacle that requires a partial mat:
+   a. Measure the space. Subtract 1/4" for the expansion gap at the wall
+   b. Mark the mat on the TOP surface with chalk or a Sharpie
+   c. Lay the steel straight edge along your mark. Kneel on the mat to hold it steady
+   d. Using a FRESH utility blade, score along the straight edge with firm pressure. The first pass should cut about 1/4 of the way through
+   e. Make 3-4 more passes along the same line, each time cutting deeper
+   f. After 4-5 passes, the mat should cut through. If not, flip the mat and cut from the other side along the same line
+   g. CHANGE YOUR BLADE after every 2 full cuts. Stall mat rubber dulls blades extremely fast. A dull blade = jagged cuts and much harder work
+7. AROUND RACK FEET: cut small notches in the mat to fit around rack foot plates. Measure carefully — cut slightly oversized (you can always trim more, but you can't add material back)
+8. FINAL WALK: walk the entire floor surface. Step on every edge and corner. Any mat that pops up, shifts, or has a raised edge needs to be re-seated. Mats should feel solid and flat under every step
+9. ODOR WARNING: tell the client: "These mats have a strong rubber smell that lasts 1-2 weeks. It's completely normal and not harmful. Keeping the garage door cracked or running a fan will help it dissipate faster"
+10. No adhesive is needed on concrete — gravity and the mat's weight (100 lbs each) holds them in place
+
+DIY DEADLIFT/OLYMPIC LIFTING PLATFORM — DETAILED:
+1. MATERIALS NEEDED: 2 sheets of 4'x8' plywood (3/4" thick), 1 sheet of 4'x8' rubber (3/4" thick), wood screws (2" or 2.5", #8 gauge, box of 50+), wood glue, measuring tape, pencil, circular saw or jigsaw
+2. LAYER 1 (bottom): lay one full sheet of plywood flat on the floor. This is the base
+3. CUT THE PIECES for layers 2 and 3:
+   a. From the second plywood sheet: cut a 4'x4' piece (this is the center of layers 2 and 3)
+   b. From the rubber sheet: cut two pieces, each 2'x4' (these are the side panels for layer 2)
+   c. Cut two more rubber pieces, each 2'x4' (for layer 3 sides)
+4. LAYER 2 (middle): apply wood glue to the top of Layer 1. Place the 4'x4' plywood piece in the CENTER. Place the two 2'x4' rubber pieces on either side — they should complete the 8'x4' rectangle
+5. SCREW LAYERS 1+2 together: drive wood screws through the plywood center piece into the bottom plywood, every 12" in a grid pattern. Do NOT screw through the rubber — it doesn't hold screws well
+6. LAYER 3 (top): apply wood glue to the top of the plywood center piece. Place another 4'x4' plywood piece directly on top (this is the standing/lifting surface). Place the remaining 2'x4' rubber pieces on each side, flush with the layer 2 rubber
+7. SCREW LAYER 3: screw through the top plywood piece into the layer below, every 12"
+8. The finished platform is 8'x4'x2.25" thick. It fits inside most power racks
+9. LET THE GLUE CURE: wait at least 1 hour before anyone stands on it (wood glue takes 24 hours for full cure, but 1 hour is enough for light use)
+10. Time: 45-60 minutes (excluding glue cure)
+
+WALL-MOUNTED GYM STORAGE — DETAILED:
+1. BARBELL HOLDERS (horizontal wall hooks):
+   a. Use stud finder to locate 2 studs (16" apart). Mark the centers
+   b. Mount each holder at 54" from the floor — this is roughly waist height for easy grab-and-go
+   c. Pre-drill pilot holes into each stud mark (1/8" bit, 2.5" deep)
+   d. Drive 3/8" x 3" lag bolts through the holder bracket into the studs. Tighten firmly
+   e. Test: hang a 45 lb barbell on the holders. It should sit securely with no sagging or movement
+   f. Position holders so the barbell sits horizontal and centered on the wall
+
+2. PLATE STORAGE (wall-mounted horns/pegs):
+   a. These MUST go into studs — a fully loaded plate tree can hold 300+ lbs. Drywall anchors WILL fail
+   b. Stud-find and mark. Mount at a height where the lowest peg is at knee height (24-30") — this makes loading and unloading plates easier
+   c. Pre-drill and lag bolt into studs with 3/8" x 3" lag bolts
+   d. After mounting, load plates heaviest first (closest to the wall) and verify the mount doesn't move or pull away from the wall
+
+3. RESISTANCE BAND PEGS:
+   a. 3/8" x 3" lag bolts directly into studs at 3 heights: low (12" from floor), mid (36"), high (60")
+   b. Leave 1" of the bolt sticking out from the wall as a hook for the bands
+   c. Alternatively, use purpose-built band peg mounts if included
+
+═══════════════════════════════════════
+  GYM-SPECIFIC COMMON MISTAKES
+═══════════════════════════════════════
+
+In addition to the general common mistakes, PROACTIVELY warn about these gym-specific errors:
+
+- CROSS-THREADING BOLTS: This is the #1 beginner mistake. It happens when a bolt is not aligned straight with the hole and you force it with a wrench. It DESTROYS the threads. Prevention: ALWAYS thread every bolt by hand for at least 3-4 full turns before using any tool. If it won't turn by hand, it's not aligned — back it out completely and try again
+- USING THE WRONG BOLT: Gym equipment comes with multiple bolt sizes that look similar. Using a slightly wrong bolt can strip threads or fail under load. ALWAYS sort hardware by step number before starting, and verify each bolt against the manual's hardware chart before inserting
+- TIGHTENING TOO EARLY: Do NOT tighten any bolts until the ENTIRE frame or assembly is complete. Tightening early locks parts into misaligned positions that are very hard to correct
+- NOT READING THE FULL MANUAL: The #1 time-waster on gym installs is getting 45 minutes in and realizing you did step 3 wrong because you didn't read ahead to step 7. Read the ENTIRE manual before touching a single part
+- CABLE ROUTING ERRORS: If a cable catches, binds, or doesn't move smoothly, there is a routing error. Do NOT try to force it or "work it in." STOP, find the problem pulley, and fix it. Forcing a misrouted cable can fray or snap it
+- FORGETTING TO CHECK LEVEL: A rack that looks level to your eye is often NOT level. Always use the actual level tool. An un-level rack means J-hooks are at different effective heights, weight plates don't sit evenly, and the rack will slowly walk across the floor under heavy use
+- SKIPPING THE SHAKE TEST: After every rack/stand/functional trainer install, grab it and shake it HARD. If it moves, something is loose. Find it and fix it. A loose bolt under 300+ lbs of dynamic load is a serious safety hazard
+- NOT SECURING TO WALL/FLOOR: Functional trainers (FT-5000, Athena) WILL tip if not anchored. This is not optional. A 500+ lb machine falling on someone is life-threatening
+- HEAVY LIFTING WITHOUT COMMUNICATION: When 2-3 people lift a 200+ lb frame, ALWAYS count aloud: "Lifting on 3... 1... 2... 3... LIFT." Everyone needs to lift at the same moment. Miscommunication = someone holding all the weight = injury
+- CUTTING STALL MATS WITH A DULL BLADE: A dull utility blade on a 3/4" rubber mat turns a 30-second cut into a 5-minute struggle that produces a jagged edge. Change blades after every 2 cuts. Fresh blades = clean cuts = professional finish
+- NOT INVENTORYING PARTS BEFORE STARTING: If you're missing a bolt and don't realize it until step 15, you've wasted an hour. Count EVERYTHING before you start. If anything is missing, STOP and call admin
+- POSITIONING THE RACK TOO CLOSE TO THE WALL: You need access behind the rack for wall anchoring, cable maintenance, and plate loading. Leave at least 6" behind the rack. For cable systems, leave 12"+ behind for cable routing access
+
+═══════════════════════════════════════
+  GYM JOB QUALITY STANDARDS
+═══════════════════════════════════════
+
+ALL gym jobs — must pass these checks before leaving:
+- Every bolt on every piece of equipment has been final-tightened (none left finger-tight)
+- Every piece of equipment has been leveled with the actual level tool (not eyeballed)
+- Rack shake test: ZERO movement when shaken firmly
+- All J-hooks and safety arms are installed at matching heights on both sides
+- All cable systems have been tested through full range of motion with the lightest weight — smooth and quiet
+- All functional trainers and top-heavy equipment are wall-anchored or floor-bolted
+- All plates are organized on storage horns: heaviest closest to uprights
+- Barbell sleeves have been oiled and tested for smooth spin
+- Stall mat flooring (if installed) is flat with no raised edges, 1/4" gap at walls, cuts are clean
+- All packaging, zip ties, protective film, and garbage has been cleaned up and removed
+- BEFORE and AFTER photos taken from the same angles (minimum 6 angles)
+- Client has been shown how to use: the selector pin on cable machines, the J-hook adjustment, the safety arm positions, the bench angle adjustment, the detent pins on removable accessories
+- Client has been warned about stall mat odor (if applicable)
+- All assembly manuals and extra hardware left in a labeled bag on the client's workbench or shelf
+
+GYM JOB — "BEFORE YOU CALL" TROUBLESHOOTING
+══════════════════════════════════════════
+
+IMPORTANT: Admin works a full-time job and may not answer immediately.
+Before texting or calling admin, work through EVERY applicable fix below.
+If NONE of these fixes work, THEN escalate (see escalation tiers below).
+
+BOLT WON'T THREAD:
+1. Stop. Do NOT force it with a wrench — you will cross-thread it
+2. Back the bolt ALL the way out
+3. Look into the hole — is there a paint chip, packing foam, or metal shaving blocking it?
+4. Blow out the hole (or use compressed air if on the truck)
+5. Try the bolt by hand again — if it catches, try rotating it BACKWARDS half a turn first until you feel it "click" into the thread start, then turn forward
+6. Still won't go? Try a different bolt from the same bag — the bolt itself may have damaged threads
+7. If 2+ bolts won't thread into the same hole, the hole's threads are stripped → ESCALATE (this is a warranty issue, not fixable on-site)
+
+CABLE WON'T MOVE SMOOTHLY / CATCHES AT ONE POINT:
+1. Do NOT pull harder — that frays the cable
+2. Identify which pulley it's catching on (run the cable slowly by hand, feel for the snag)
+3. Check: is the cable sitting IN the pulley groove, or has it jumped out and is riding on the edge?
+4. Check: is the pulley spinning freely? Spin it by hand — if it's stiff, it may be installed backwards or missing a washer
+5. Check: is the cable routed OVER or UNDER the pulley correctly per the diagram? (Photograph diagram, compare)
+6. Loosen the pulley mounting bolt, reseat the cable in the groove, retighten
+7. Run cable through full range again — if still catching, check the NEXT pulley in sequence
+8. Still binding after checking every pulley? → ESCALATE with photos of the routing
+
+WEIGHT STACK BINDS / WON'T DROP SMOOTHLY:
+1. Remove ALL weight except the top plate (selector pin in position 1)
+2. Pull and release — does the top plate drop freely?
+3. If yes: add one plate at a time until you find the plate that causes binding. That plate's guide rod hole may be misaligned → remove and inspect
+4. If no: the guide rods are not parallel. Loosen the frame bolts around the stack, verify level, retighten
+5. Check: are the guide rods clean? Wipe with a dry cloth. Do NOT oil guide rods
+6. Still binding? → ESCALATE
+
+RACK WON'T STOP WOBBLING AFTER FULL TIGHTEN:
+1. Loosen ALL bolts back to finger-tight
+2. Place level on each upright — find which one is out
+3. Is the garage floor itself sloped? (Very common — test with level on bare floor)
+4. If floor is sloped: use rubber shim pads under the low-side feet
+5. Retighten in correct sequence: bottom bolts first, then top, then cross-members
+6. Shake test — if still wobbling: check every bolt with the wrench (one may look tight but isn't)
+7. If a bolt spins freely and won't tighten, the nut inside may have fallen off → reach behind the upright and check
+8. Still wobbling? → ESCALATE
+
+CAN'T FIND STUDS FOR WALL ANCHORING:
+1. Try stud finder in multiple spots — some garage walls have metal studs or irregular spacing
+2. Tap method: knock on the wall and listen. Hollow = no stud. Solid thud = stud
+3. Use a small finish nail as a probe — drill a tiny hole where you think the stud is. If the nail hits wood at 1.5", you found it
+4. If wall is concrete block (common in some garages): you need concrete anchors instead of lag bolts. Do you have Tapcon screws on the truck?
+5. If NO studs accessible and no concrete: MARK THE SPOT, photograph it, document in app → ESCALATE. Do NOT anchor into drywall only
+
+EQUIPMENT LOOKS DAMAGED FROM SHIPPING:
+1. Photograph EVERYTHING before touching it (box condition, visible damage, labels)
+2. Minor cosmetic damage (small scuff on powder coat): note it, continue install, mention to client at handoff
+3. Structural damage (bent upright, cracked weld, broken bracket): DO NOT install it. Set it aside, photograph clearly, continue with other tasks → ESCALATE
+4. Missing parts: check ALL boxes (parts are sometimes split across multiple boxes). Check inside the uprights (small hardware bags get wedged inside tubes during shipping). Check the truck — did a bag fall out during unloading?
+5. If truly missing after thorough search → ESCALATE with part number from the manual's hardware list
+
+BENCH WOBBLES AFTER ASSEMBLY:
+1. Flip bench upside down on cardboard
+2. Check: are all 4 feet touching the floor? If one is short, add a rubber foot pad
+3. Check: are all bolts FULLY tightened? Bench bolts need to be very tight
+4. If still wobbles: put bench right-side up on a KNOWN flat surface (not the garage floor). If it doesn't wobble on the flat surface, the floor is uneven — add rubber feet
+
+MANUFACTURER SUPPORT HOTLINES (scholars can call directly):
+- Rep Fitness: (720) 669-5222 — Mon-Fri 8am-5pm MST — ask for assembly support, have model number ready
+- Rogue Fitness: (614) 358-6190 — Mon-Fri 8am-7pm EST, Sat 9am-5pm — ask for technical support, have item number ready
+- NewAge / Bold Series: (877) 306-8930 — Mon-Fri 9am-6pm EST — have model number from cabinet label
+
+═══════════════════════════════════════
+  SAFE STOP POINTS
+═══════════════════════════════════════
+
+If you get stuck and admin hasn't responded yet, DO NOT sit idle or try to force a fix.
+Move to the next SAFE task while waiting. Here's what you CAN safely do while waiting for help:
+
+DURING RACK INSTALL (stuck on rack):
+- Assemble bench(es) — fully independent, no dependency on rack
+- Lay out stall mats in areas away from the rack footprint
+- Assemble wall storage mounts (if studs are already located)
+- Unbox and organize plates, barbells, accessories
+- Sort all remaining hardware by equipment piece
+- Take detailed BEFORE photos of the rest of the garage
+
+DURING CABLE SYSTEM INSTALL (stuck on cables):
+- The rack should already be done — move to bench assembly
+- Lay flooring in non-rack areas
+- Install wall storage
+- Organize plates on rack plate horns (the rack itself is done)
+- Start packaging cleanup — break down boxes, organize trash
+
+DURING FLOORING INSTALL (stuck on flooring):
+- Continue with any unfinished equipment assembly
+- Install wall storage in areas not affected by flooring
+- Take progress photos
+- Pre-stage the client handoff (organize manuals, extra hardware bags, label them)
+
+GENERAL RULE: If you're blocked on Task A, find Task B that:
+1. Doesn't depend on Task A being finished
+2. Won't need to be undone if Task A's solution changes something
+3. Moves the job forward
+
+NEVER:
+- Try to "figure it out" by forcing parts together
+- Skip a step in the manual because it seems optional
+- Use a different bolt size because the right one is missing
+- Leave the job site to buy parts without admin approval
+
+═══════════════════════════════════════
+  GYM JOB ESCALATION — 3-TIER SYSTEM
+═══════════════════════════════════════
+
+TIER 1 — SELF-SERVE (handle yourself, no admin needed):
+- Minor cosmetic damage → note it, continue
+- Bench wobbles → check feet, tighten bolts, add rubber pads
+- Can't find a specific bolt → check all boxes, inside uprights, on the truck
+- Unsure about a manual step → call manufacturer support directly (numbers above)
+- Cable slightly stiff → check pulley seating, reseat cable in groove
+- Floor is uneven → use shims under equipment feet
+- Stall mat won't cut cleanly → change blade (fresh blade every 2 cuts)
+
+TIER 2 — ASYNC ESCALATION (text admin with photos, continue other tasks):
+- Missing parts confirmed after full search → text admin photo of manual hardware list with the missing item circled + photo of all parts laid out. Move to another task while waiting
+- Bolt won't thread after trying all troubleshooting steps → photo of the bolt and hole, text admin. Move to another task
+- Can't find studs where needed → photo of wall area, measurements of where studs SHOULD be, text admin. Install other equipment while waiting
+- Weight stack still binds after troubleshooting → video of the bind, text admin. Assemble other equipment while waiting
+- Unsure about equipment placement (will it fit? enough clearance?) → photos with tape measure visible, text admin with dimensions. Continue with other tasks
+
+Format for async escalation text:
+"[JOB ADDRESS] — [EQUIPMENT NAME] — [PROBLEM IN 1 SENTENCE] — [WHAT I ALREADY TRIED] — [PHOTO/VIDEO ATTACHED] — Moving to [NEXT TASK] while waiting for response."
+
+TIER 3 — STOP WORK (call admin, wait for response before continuing this specific task):
+- Cable frays during routing → STOP cable work immediately. This is a warranty issue. Photo the fray. Work on other tasks
+- Structural damage on equipment → DO NOT install. Photo everything. Work on other tasks
+- Shipping damage to the garage (scratched floor, dented wall during install) → STOP, photo, call admin
+- Client is unhappy or confrontational → STOP all work, be polite, call admin immediately
+- Safety concern (unstable structure, electrical hazard, gas smell) → STOP ALL WORK, leave the area, call admin AND 911 if needed
+- Ceiling height prevents rack installation (measured, not estimated) → call admin for replanning
+
+KEY PRINCIPLE: Tier 3 items mean "stop THIS task" not "stop all work." Unless it's a safety issue, keep working on independent tasks while you wait. Your time on-site is valuable — never sit idle.
+
+═══════════════════════════════════════
   OUTPUT FORMAT
 ═══════════════════════════════════════
 
-Always output exactly these 9 sections. Be EXTREMELY detailed in every section. When in doubt, over-explain — a scholar reading this should never have to wonder "but how do I actually do that?"
+Always output exactly these 10 sections. Be EXTREMELY detailed in every section. When in doubt, over-explain — a scholar reading this should never have to wonder "but how do I actually do that?"
 
 ## 1. PRE-JOB LOADOUT
 [Itemized list of EVERY tool, material, product, bin, hardware piece, and PPE item this job needs. Be specific: "6x 5/16" x 3" lag bolts" not just "lag bolts". Include quantities. A scholar should be able to read this list in the shop and load the truck without missing anything.]
@@ -431,7 +996,19 @@ Include at least 5-8 sub-steps per phase for Graduate and Doctorate jobs. Do not
 [Step-by-step script for the client walkthrough. What to say, what to show, what to hand them. Include the exact words for asking for a Google review. Include what to do if the client is unhappy with something.]
 
 ## 9. ADMIN NOTES
-[Flags for the team lead: timeline risk, unusual conditions, items with resale value, upsell opportunities, scheduling notes, anything that needs a heads-up before the crew arrives.]`;
+[Flags for the team lead: timeline risk, unusual conditions, items with resale value, upsell opportunities, scheduling notes, anything that needs a heads-up before the crew arrives.]
+
+## 10. REFERENCE MANUALS
+[For EVERY piece of equipment being installed on this job — storage AND gym — list:
+- Equipment name and model
+- Direct link to the manufacturer's assembly manual (PDF or web page)
+- If a manual URL was provided in the product context, use that exact URL
+- If the equipment is customer-supplied with no known manual, write: "Customer-supplied — check included manual or search ManualsLib.com"
+- For Bold Series cabinets: link to NewAge Products support hub
+- For Rep Fitness: link to help.repfitness.com or the direct S3 PDF
+- For Rogue: link to roguefitness.com assembly guide or assets PDF
+This section gives scholars a backup reference if they get stuck on any installation step.
+Only include this section if the job involves product installation. If the job is organization-only with no installs, skip this section.]`;
 
 const buildSopUserMessage = (job: FirebaseFirestore.DocumentData, hasImages: boolean, adminNotes?: string) => {
   const tier = job.packageTier || job.package || "graduate";
@@ -510,9 +1087,159 @@ const buildSopUserMessage = (job: FirebaseFirestore.DocumentData, hasImages: boo
     parts.push(`\nAdmin notes from team lead: ${adminNotes}`);
   }
 
-  parts.push("\nGenerate the complete job SOP with all 9 sections.");
+  // Gym equipment context (from structured productSelections)
+  const gymEquipment: Array<{id: string; qty: number; customName?: string}> = job.productSelections?.gymEquipment || [];
+  if (gymEquipment.length > 0) {
+    const gymNotes: string[] = [];
+    // Inline catalog lookup — matches IDs from the GYM_EQUIPMENT_CATALOG in productCatalog.ts
+    const GYM_CATALOG: Record<string, {name: string; brand: string; dims: string; assemblyTime: string; crewSize: number; tools: string[]; manualUrl: string; notes: string}> = {
+      "rep-pr-4000": { name: "PR-4000 Power Rack", brand: "Rep Fitness", dims: '49"W x 48"D x 86"H', assemblyTime: "90-120 min", crewSize: 2, tools: ["socket wrench set", "Allen wrench set", "level", "rubber mallet"], manualUrl: "https://s3.amazonaws.com/helpscout.net/docs/assets/5ac255142c7d3a0e9366ee02/attachments/60d0c8f88556b07a28847fe2/PR-4000-manual-REP-compressed.pdf", notes: "6-post config needed for ARES" },
+      "rep-pr-5000": { name: "PR-5000 Power Rack", brand: "Rep Fitness", dims: '49"W x 48"D x 93"H', assemblyTime: "90-120 min", crewSize: 2, tools: ["socket wrench set", "Allen wrench set", "level", "rubber mallet"], manualUrl: "https://s3.amazonaws.com/helpscout.net/docs/assets/5ac255142c7d3a0e9366ee02/attachments/61291f406c65aa15b87d5157/PR-5000-manual-compressed.pdf", notes: "3x3\" uprights, 1\" hole spacing" },
+      "rep-ares": { name: "ARES Cable Attachment", brand: "Rep Fitness", dims: "6-post rack mount", assemblyTime: "2-3 hours", crewSize: 2, tools: ["socket wrench set", "Allen wrench set (5mm, 6mm)", "step ladder", "cable routing tool"], manualUrl: "https://www.manualslib.com/manual/3391615/Rep-Ares.html", notes: "Cable threading is critical — route BEFORE mounting stacks" },
+      "rep-ares-2": { name: "ARES 2.0 Cable Attachment", brand: "Rep Fitness", dims: "6-post rack mount", assemblyTime: "2-3 hours", crewSize: 2, tools: ["socket wrench set", "Allen wrench set (5mm, 6mm)", "step ladder", "cable routing tool"], manualUrl: "https://repcustomerfiles.blob.core.windows.net/publicfiles/Ares-2.0-Assembly-Instructions%20(1)-compressed.pdf", notes: "Updated cable routing vs v1" },
+      "rep-athena": { name: "Athena Side-Mount Functional Trainer (FT-3500)", brand: "Rep Fitness", dims: "Side-mounts to PR-4000/5000", assemblyTime: "3-4 hours (both sides)", crewSize: 3, tools: ["socket wrench set", "Allen wrench set", "step ladder", "level", "cable routing tool"], manualUrl: "https://repcustomerfiles.blob.core.windows.net/publicfiles/FT-3500-Assembly.pdf", notes: "MOST COMPLEX install. Each side independent. Cable replacement guide: https://repcustomerfiles.blob.core.windows.net/publicfiles/FT-3500-cableReplacementGuide.pdf" },
+      "rep-ft-5000": { name: "FT-5000 Functional Trainer", brand: "Rep Fitness", dims: '60"W x 45"D x 86"H', assemblyTime: "2-3 hours", crewSize: 3, tools: ["6mm Allen wrench", "13mm wrench", "step ladder", "level"], manualUrl: "https://s3.amazonaws.com/helpscout.net/docs/assets/5ac255142c7d3a0e9366ee02/attachments/5ca23c1f0428633d2cf44fc8/Functional-Trainer-Assembly-Instructions-V2.pdf", notes: "500+ lbs, MUST wall-anchor" },
+      "rep-ab-3000": { name: "AB-3000 FID Adjustable Bench", brand: "Rep Fitness", dims: '57"L x 26"W x 18"H', assemblyTime: "15-30 min", crewSize: 1, tools: ["Allen wrench set", "socket wrench"], manualUrl: "https://s3.amazonaws.com/helpscout.net/docs/assets/5ac255142c7d3a0e9366ee02/attachments/605d0d450ad05379b10d0eba/AB-3000-manual-REP.pdf", notes: "" },
+      "rep-ab-5000": { name: "AB-5000 Zero Gap Bench", brand: "Rep Fitness", dims: '59"L x 26"W x 18"H', assemblyTime: "20-30 min", crewSize: 1, tools: ["Allen wrench set", "socket wrench"], manualUrl: "https://s3.amazonaws.com/helpscout.net/docs/assets/5ac255142c7d3a0e9366ee02/attachments/5cffc7c32c7d3a493e798a85/AB-5000-Assembly-Instructions.pdf", notes: "Zero-gap design" },
+      "rep-fb-5000": { name: "FB-5000 Competition Flat Bench", brand: "Rep Fitness", dims: '48"L x 12"W x 17.5"H', assemblyTime: "10-15 min", crewSize: 1, tools: ["Allen wrench set"], manualUrl: "https://help.repfitness.com", notes: "" },
+      "rogue-sml-2": { name: "SML-2 Monster Lite Squat Stand", brand: "Rogue", dims: '49"W x 48"D x 90"H', assemblyTime: "30-45 min", crewSize: 2, tools: ["3/4\" wrench", "socket wrench", "level"], manualUrl: "https://www.roguefitness.com/theindex/gear-how-tos/how-to-assemble-the-rogue-sml-2-monster-lite-squat-stand", notes: "" },
+      "rogue-rml-490": { name: "RML-490 Power Rack", brand: "Rogue", dims: '53"W x 53"D x 90"H', assemblyTime: "90-120 min", crewSize: 2, tools: ["3/4\" wrench", "9/16\" wrench", "socket wrench set", "level", "rubber mallet"], manualUrl: "https://assets.roguefitness.com/image/upload/v1658760997/catalog/Rigs%20and%20Racks/Power%20Racks%20/Monster%20Lite%20Racks/XX10965/RA0478_CUST_INSTR_vrv4gz.pdf", notes: "Monster Lite 3x3\" uprights" },
+      "rogue-ml-slinger": { name: "Monster Lite Slinger Cable", brand: "Rogue", dims: "Rack-mount", assemblyTime: "60-90 min per side", crewSize: 2, tools: ["3/4\" wrench", "9/16\" wrench", "socket wrench set", "step ladder"], manualUrl: "https://assets.roguefitness.com/instructions/IS0484/IS0484_CUST_INSTR_V1", notes: "Cable on TOP of pulleys, below spacers" },
+      "rogue-ml-lat-low-row": { name: "Monster Lite Lat Pulldown + Low Row", brand: "Rogue", dims: "Rack-mount", assemblyTime: "45-60 min", crewSize: 2, tools: ["3/4\" wrench", "socket wrench set", "5/8\" detent pins"], manualUrl: "https://assets.roguefitness.com/instructions/IS0535/IS0535_CUST_INSTR_V1", notes: "Connects to Slinger, detent pins at 4th+6th hole" },
+      "gym-stall-mats": { name: "Rubber Stall Mats", brand: "Generic", dims: "4'x6' x 3/4\" each", assemblyTime: "15-20 min per mat", crewSize: 2, tools: ["utility knife", "straight edge", "tape measure"], manualUrl: "", notes: "~100 lbs each, flat side up, 1/4\" gap at walls" },
+      "gym-platform-diy": { name: "DIY Deadlift Platform", brand: "Generic", dims: "8'x4'", assemblyTime: "45-60 min", crewSize: 2, tools: ["drill", "wood screws", "wood glue", "jigsaw", "tape measure"], manualUrl: "", notes: "2 sheets plywood + 1 sheet rubber" },
+      "gym-wall-storage": { name: "Wall-Mounted Gym Storage", brand: "Generic", dims: "Varies", assemblyTime: "30-45 min", crewSize: 1, tools: ["stud finder", "drill", "lag bolts", "level"], manualUrl: "", notes: "MUST mount into studs" },
+    };
+
+    for (const item of gymEquipment) {
+      const cat = GYM_CATALOG[item.id];
+      if (cat) {
+        gymNotes.push(
+          `- ${item.qty}x ${cat.name} (${cat.brand}) — ${cat.dims}, ${cat.assemblyTime} assembly, ${cat.crewSize}+ crew. Tools: ${cat.tools.join(", ")}. Manual: ${cat.manualUrl || "check included manual"}${cat.notes ? `. ${cat.notes}` : ""}`
+        );
+      } else if (item.customName) {
+        gymNotes.push(`- ${item.qty}x ${item.customName} (customer-supplied — check for included manual, or search ManualsLib.com)`);
+      }
+    }
+    installNotes.push("\nGYM EQUIPMENT TO ASSEMBLE:");
+    installNotes.push(...gymNotes);
+  }
+
+  // Gym flooring type
+  const gymFlooringType = job.productSelections?.gymFlooringType;
+  if (gymFlooringType && gymFlooringType !== "none") {
+    const flooringLabels: Record<string, string> = {
+      "stall-mats": "Rubber Stall Mats (3/4\" thick, 4'x6' each)",
+      "click-in": "Click-In Plate Flooring",
+      "polyaspartic": "Polyaspartic Floor Coating",
+    };
+    installNotes.push(`\nGYM FLOORING: ${flooringLabels[gymFlooringType] || gymFlooringType}`);
+  }
+
+  // Gym notes from admin
+  if (job.productSelections?.gymNotes?.trim()) {
+    installNotes.push(`\nGym Notes: ${job.productSelections.gymNotes.trim()}`);
+  }
+
+  const hasGymEquipment = gymEquipment.length > 0 || (gymFlooringType && gymFlooringType !== "none");
+  const sectionCount = hasGymEquipment || shelvingRaw !== "None specified" ? 10 : 9;
+
+  parts.push(`\nGenerate the complete job SOP with all ${sectionCount} sections.${sectionCount === 10 ? " Include Section 10 (Reference Manuals) with direct links to assembly PDFs for every product being installed." : ""}`);
   return parts.join("\n");
 };
+
+// ── Helper: fetch manufacturer PDF manuals for Claude document context ──
+type DocBlock = { type: "document"; source: { type: "base64"; media_type: "application/pdf"; data: string } };
+
+/**
+ * Fetch up to `maxDocs` manufacturer PDF manuals from the job's product selections.
+ * Returns base64-encoded document blocks ready for Claude API.
+ * Non-blocking: failures are logged and skipped.
+ */
+async function fetchManualPdfs(
+  productSelections: Record<string, any> | undefined,
+  maxDocs = 3,
+): Promise<DocBlock[]> {
+  if (!productSelections) return [];
+
+  const { lookupEquipment } = await import("./gs-catalog");
+
+  // Collect unique manual URLs from all equipment
+  const manualUrls: Array<{ id: string; name: string; url: string }> = [];
+  const seenUrls = new Set<string>();
+
+  const addUrl = (id: string, name: string, url: string) => {
+    if (!url || url === "N/A" || seenUrls.has(url) || !url.endsWith(".pdf")) return;
+    seenUrls.add(url);
+    manualUrls.push({ id, name, url });
+  };
+
+  // Gym equipment
+  if (productSelections.gymEquipment) {
+    for (const item of productSelections.gymEquipment) {
+      const entry = lookupEquipment(item.id);
+      if (entry) addUrl(item.id, entry.name, entry.manualUrl);
+    }
+  }
+  // Bold Series
+  if (productSelections.boldSeriesId) {
+    const entry = lookupEquipment(productSelections.boldSeriesId);
+    if (entry) addUrl(productSelections.boldSeriesId, entry.name, entry.manualUrl);
+  }
+  // Shelving
+  if (productSelections.standardShelving) {
+    for (const item of productSelections.standardShelving) {
+      const entry = lookupEquipment(item.id);
+      if (entry) addUrl(item.id, entry.name, entry.manualUrl);
+    }
+  }
+  // Overhead
+  if (productSelections.overheadStorage) {
+    for (const item of productSelections.overheadStorage) {
+      const entry = lookupEquipment(item.id);
+      if (entry) addUrl(item.id, entry.name, entry.manualUrl);
+    }
+  }
+  // Flooring
+  if (productSelections.flooringId && productSelections.flooringId !== "none") {
+    const entry = lookupEquipment(productSelections.flooringId);
+    if (entry) addUrl(productSelections.flooringId, entry.name, entry.manualUrl);
+  }
+
+  // Fetch PDFs (limit to maxDocs, 10s timeout per fetch)
+  const docBlocks: DocBlock[] = [];
+  for (const { id, name, url } of manualUrls.slice(0, maxDocs)) {
+    try {
+      console.log(`Fetching manual PDF for ${name}: ${url}`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!resp.ok) {
+        console.warn(`Manual fetch failed for ${id}: HTTP ${resp.status}`);
+        continue;
+      }
+
+      const buffer = Buffer.from(await resp.arrayBuffer());
+      // Skip if too large (>10MB would bloat the API call)
+      if (buffer.length > 10 * 1024 * 1024) {
+        console.warn(`Manual PDF too large for ${id}: ${buffer.length} bytes, skipping`);
+        continue;
+      }
+
+      docBlocks.push({
+        type: "document",
+        source: { type: "base64", media_type: "application/pdf", data: buffer.toString("base64") },
+      });
+      console.log(`Loaded manual for ${name}: ${buffer.length} bytes`);
+    } catch (err) {
+      console.warn(`Failed to fetch manual for ${id}:`, err);
+    }
+  }
+
+  return docBlocks;
+}
 
 export const generateSopForJob = onCall({ timeoutSeconds: 300, memory: "1GiB", secrets: ["ANTHROPIC_API_KEY"] }, async (request) => {
   if (!request.auth) {
@@ -579,14 +1306,20 @@ export const generateSopForJob = onCall({ timeoutSeconds: 300, memory: "1GiB", s
     }
   }
 
-  console.log(`Calling Claude API with ${imageBlocks.length} images for job ${jobId}`);
+  // Fetch manufacturer PDF manuals for richer context
+  const docBlocks = await fetchManualPdfs(jobData.productSelections, 3);
+  console.log(`Calling Claude API with ${imageBlocks.length} images + ${docBlocks.length} PDF manuals for job ${jobId}`);
 
   const anthropic = new Anthropic({ apiKey: anthropicKey });
   const userText = buildSopUserMessage(jobData, imageBlocks.length > 0, adminNotes);
 
   const userContent: Array<any> = [
+    ...docBlocks,
     ...imageBlocks,
-    { type: "text", text: userText }
+    { type: "text", text: docBlocks.length > 0
+      ? `${userText}\n\nATTACHED: ${docBlocks.length} manufacturer assembly manual PDF(s) for the equipment in this job. Use these as reference for detailed, accurate installation steps. Quote specific page/step numbers from the manuals when relevant.`
+      : userText
+    }
   ];
 
   let generatedSOP = "";
@@ -624,6 +1357,140 @@ export const generateSopForJob = onCall({ timeoutSeconds: 300, memory: "1GiB", s
   console.log(`SOP successfully saved for job ${jobId}`);
   return { ok: true, generatedSOP };
 });
+
+// ═══════════════════════════════════════════════════════════════
+// Standalone Assembly Guide Generator
+// Fetches a manufacturer PDF (from catalog or custom URL),
+// feeds it to Claude, returns a scholar-friendly assembly guide.
+// ═══════════════════════════════════════════════════════════════
+export const gsGenerateAssemblyGuide = onCall(
+  { timeoutSeconds: 300, memory: "1GiB", secrets: ["ANTHROPIC_API_KEY"] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const { equipmentId, manualUrl, productName } = request.data as {
+      equipmentId?: string;
+      manualUrl?: string;
+      productName?: string;
+    };
+
+    if (!equipmentId && !manualUrl) {
+      throw new HttpsError("invalid-argument", "Provide equipmentId or manualUrl.");
+    }
+
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (!anthropicKey) {
+      throw new HttpsError("failed-precondition", "ANTHROPIC_API_KEY not configured.");
+    }
+
+    // Resolve the manual URL and product name
+    let resolvedUrl = manualUrl || "";
+    let resolvedName = productName || "Unknown Product";
+
+    if (equipmentId) {
+      const { lookupEquipment } = await import("./gs-catalog");
+      const entry = lookupEquipment(equipmentId);
+      if (entry) {
+        resolvedUrl = resolvedUrl || entry.manualUrl;
+        resolvedName = entry.name;
+      }
+    }
+
+    if (!resolvedUrl) {
+      throw new HttpsError("invalid-argument", `No manual URL found for ${resolvedName}. Provide a manualUrl.`);
+    }
+
+    // Fetch the PDF
+    const contentBlocks: Array<any> = [];
+
+    if (resolvedUrl.endsWith(".pdf")) {
+      try {
+        console.log(`Fetching assembly PDF: ${resolvedUrl}`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        const resp = await fetch(resolvedUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const buffer = Buffer.from(await resp.arrayBuffer());
+
+        if (buffer.length > 15 * 1024 * 1024) {
+          throw new Error(`PDF too large: ${buffer.length} bytes`);
+        }
+
+        contentBlocks.push({
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: buffer.toString("base64") },
+        });
+        console.log(`Loaded PDF: ${buffer.length} bytes`);
+      } catch (err) {
+        console.warn(`Failed to fetch PDF: ${resolvedUrl}`, err);
+        // Fall back to text-only guide without the PDF
+      }
+    }
+
+    const systemPrompt = `You are writing assembly instructions for Garage Scholars — a Denver garage transformation company that hires college students ("scholars") who have ZERO trade experience.
+
+YOUR #1 RULE: Write every step as if the reader has never held a wrench or drill before.
+
+Write a complete, step-by-step assembly guide for the product. Include:
+1. WHAT YOU NEED — complete tool list with exact sizes (e.g., "13mm socket wrench", not just "wrench")
+2. ESTIMATED TIME — realistic time for a first-timer
+3. CREW SIZE — minimum people needed and which steps require extra hands
+4. PARTS INVENTORY — list every part the scholar should find in the box, with counts
+5. STEP-BY-STEP ASSEMBLY — tiny sub-steps, "STOP AND CHECK" moments, and "If X happens, do Y" troubleshooting at each step
+6. FINAL QUALITY CHECK — what to verify before calling the job done
+7. COMMON MISTAKES — top 5 things first-timers get wrong and how to avoid them
+
+${contentBlocks.length > 0 ? "A manufacturer assembly manual PDF is attached. Use it as the authoritative reference — quote specific step numbers and diagram references. Translate the manufacturer's terse instructions into beginner-friendly language." : "No manufacturer PDF available — generate the guide from your knowledge of this product type."}
+
+TONE: Direct, friendly, patient. Like a patient older coworker showing you the ropes.`;
+
+    contentBlocks.push({
+      type: "text",
+      text: `Generate a complete beginner-friendly assembly guide for: ${resolvedName}${manualUrl && !resolvedUrl.endsWith(".pdf") ? `\n\nProduct/reference URL: ${manualUrl}` : ""}`,
+    });
+
+    const anthropic = new Anthropic({ apiKey: anthropicKey });
+
+    try {
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 8192,
+        system: systemPrompt,
+        messages: [{ role: "user", content: contentBlocks }],
+      });
+
+      const textBlock = response.content.find((b: any) => b.type === "text");
+      const guide = textBlock ? (textBlock as any).text : "";
+
+      if (!guide) {
+        throw new HttpsError("internal", "Empty response from Claude.");
+      }
+
+      // Save to Firestore for future reference
+      const guideRef = db.collection("gs_assemblyGuides").doc();
+      await guideRef.set({
+        equipmentId: equipmentId || null,
+        productName: resolvedName,
+        manualUrl: resolvedUrl,
+        guide,
+        generatedBy: request.auth.uid,
+        hadPdf: contentBlocks.length > 1,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      console.log(`Assembly guide generated for ${resolvedName}: ${guide.length} chars`);
+      return { ok: true, guide, guideId: guideRef.id };
+    } catch (error) {
+      if ((error as any).code) throw error; // re-throw HttpsError
+      console.error("Assembly guide generation failed:", error);
+      throw new HttpsError("internal", `Failed to generate guide: ${(error as Error).message}`);
+    }
+  },
+);
 
 const requireAdmin = async (uid: string, email?: string) => {
   // Check if user email is in the admin list

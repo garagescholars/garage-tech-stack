@@ -511,3 +511,59 @@ export type AdminNotification = {
   unread: boolean;
   createdAt?: Timestamp;
 };
+
+// ── Escalation System ──
+
+export type EscalationStatus = "open" | "resolved";
+
+export type EscalationResponse = {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorRole: "scholar" | "admin";
+  text: string;
+  createdAt?: Timestamp;
+};
+
+export type GsEscalation = {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  scholarId: string;
+  scholarName: string;
+  status: EscalationStatus;
+  description: string;
+  attemptedSolutions: string;
+  equipmentId?: string;
+  equipmentName?: string;
+  photoUrls: string[];
+  responses: EscalationResponse[];
+  resolvedBy?: string;
+  resolvedByName?: string;
+  resolvedAt?: Timestamp;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+};
+
+// ── Pre-Job Video Homework ──
+
+export type VideoConfirmation = {
+  equipmentId: string;
+  equipmentName: string;
+  manualUrl: string;
+  confirmedAt: Timestamp | null;
+};
+
+export type GsJobPrep = {
+  id: string;
+  jobId: string;
+  scholarId: string;
+  scholarName: string;
+  videoConfirmations: VideoConfirmation[];
+  allConfirmed: boolean;
+  reminder48hSent: boolean;
+  reminder24hSent: boolean;
+  reminder2hSent: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+};

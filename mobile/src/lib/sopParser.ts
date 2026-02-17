@@ -6,6 +6,7 @@ import {
   STANDARD_SHELVING,
   OVERHEAD_STORAGE,
   FLOORING_OPTIONS,
+  GYM_EQUIPMENT_CATALOG,
   type ProductSelections,
 } from "../constants/productCatalog";
 
@@ -170,6 +171,30 @@ export function serializeSelections(
 
   if (sel.notes.trim()) {
     addOnParts.push(`Notes: ${sel.notes.trim()}`);
+  }
+
+  // Gym equipment
+  if (sel.gymEquipment?.length > 0) {
+    const gymParts = sel.gymEquipment.map((item) => {
+      const cat = GYM_EQUIPMENT_CATALOG.find((e) => e.id === item.id);
+      return cat
+        ? `${item.qty}x ${cat.name} (${cat.brand})`
+        : `${item.qty}x ${item.customName || "Custom Equipment"}`;
+    });
+    addOnParts.push(`Gym Equipment: ${gymParts.join(", ")}`);
+  }
+
+  if (sel.gymFlooringType && sel.gymFlooringType !== "none") {
+    const floorLabels: Record<string, string> = {
+      "stall-mats": "Rubber Stall Mats",
+      "click-in": "Click-In Plate Flooring",
+      polyaspartic: "Polyaspartic Floor Coating",
+    };
+    addOnParts.push(`Gym Flooring: ${floorLabels[sel.gymFlooringType] || sel.gymFlooringType}`);
+  }
+
+  if (sel.gymNotes?.trim()) {
+    addOnParts.push(`Gym Notes: ${sel.gymNotes.trim()}`);
   }
 
   const addOns = addOnParts.length > 0 ? addOnParts.join(" | ") : "None selected";

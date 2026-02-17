@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Link } from "expo-router";
 import { doc, getDoc, updateDoc, serverTimestamp, Timestamp, arrayUnion } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +17,7 @@ import { db, storage } from "../../../../src/lib/firebase";
 import { useAuth } from "../../../../src/hooks/useAuth";
 import { COLLECTIONS } from "../../../../src/constants/collections";
 import { getCurrentLocation } from "../../../../src/lib/geofence";
+import { useJobEscalations } from "../../../../src/hooks/useEscalations";
 import VideoRecorder from "../../../../src/components/VideoRecorder";
 import PhotoGrid from "../../../../src/components/PhotoGrid";
 import { MIN_AFTER_PHOTOS } from "../../../../src/constants/urgency";
@@ -39,6 +40,7 @@ export default function CheckOutScreen() {
   const [checklist, setChecklist] = useState<{ id: string; text: string; completed: boolean; approvalStatus?: string }[]>([]);
   const [showAdhocInput, setShowAdhocInput] = useState(false);
   const [adhocText, setAdhocText] = useState("");
+  const { openCount } = useJobEscalations(id);
 
   useEffect(() => {
     loadJob();
@@ -224,6 +226,24 @@ export default function CheckOutScreen() {
               <Text style={styles.durationText}>{durationText}</Text>
             </View>
           )}
+        </View>
+
+        {/* Escalation actions */}
+        <View style={styles.escalationRow}>
+          <Link href={`/(scholar)/my-jobs/${id}/escalate` as any} asChild>
+            <TouchableOpacity style={styles.reportBtn}>
+              <Ionicons name="alert-circle" size={18} color="#ef4444" />
+              <Text style={styles.reportBtnText}>Report Issue</Text>
+            </TouchableOpacity>
+          </Link>
+          <Link href={`/(scholar)/my-jobs/${id}/escalations` as any} asChild>
+            <TouchableOpacity style={styles.escalationsBtn}>
+              <Ionicons name="chatbubbles" size={18} color="#14b8a6" />
+              <Text style={styles.escalationsBtnText}>
+                Escalations{openCount > 0 ? ` (${openCount})` : ""}
+              </Text>
+            </TouchableOpacity>
+          </Link>
         </View>
 
         {/* Checklist */}
@@ -473,4 +493,35 @@ const styles = StyleSheet.create({
   },
   submitDisabled: { opacity: 0.5 },
   submitText: { fontSize: 17, fontWeight: "800", color: "#fff" },
+  escalationRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
+  },
+  reportBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "#1e293b",
+    borderWidth: 1,
+    borderColor: "#ef444440",
+  },
+  reportBtnText: { fontSize: 14, fontWeight: "700", color: "#ef4444" },
+  escalationsBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "#1e293b",
+    borderWidth: 1,
+    borderColor: "#14b8a640",
+  },
+  escalationsBtnText: { fontSize: 14, fontWeight: "700", color: "#14b8a6" },
 });

@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Link } from "expo-router";
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +19,7 @@ import { getCurrentLocation, validateGeofence } from "../../../../src/lib/geofen
 import VideoRecorder from "../../../../src/components/VideoRecorder";
 import PhotoGrid from "../../../../src/components/PhotoGrid";
 import { MIN_BEFORE_PHOTOS, GEOFENCE_RADIUS_METERS } from "../../../../src/constants/urgency";
+import { useJobPrep } from "../../../../src/hooks/useJobPrep";
 import type { ServiceJob } from "../../../../src/types";
 
 export default function CheckInScreen() {
@@ -33,6 +34,9 @@ export default function CheckInScreen() {
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
   const [freightReceiptUri, setFreightReceiptUri] = useState<string | null>(null);
+
+  // Video homework gate
+  const { allConfirmed: prepDone, loading: prepLoading, confirmedCount, totalCount } = useJobPrep(id, user?.uid);
 
   // GPS state
   const [gpsValid, setGpsValid] = useState<boolean | null>(null);
@@ -187,6 +191,39 @@ export default function CheckInScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>Job not found</Text>
+      </View>
+    );
+  }
+
+  // Gate: block check-in if video homework exists and isn't done
+  if (!prepLoading && totalCount > 0 && !prepDone) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.gateCard}>
+          <Ionicons name="videocam" size={48} color="#f59e0b" />
+          <Text style={styles.gateTitle}>Video Homework Required</Text>
+          <Text style={styles.gateSubtitle}>
+            Watch all assembly videos before checking in.{"\n"}
+            {confirmedCount}/{totalCount} confirmed.
+          </Text>
+          <View style={styles.gateProgressBar}>
+            <View
+              style={[
+                styles.gateProgressFill,
+                { width: `${totalCount > 0 ? (confirmedCount / totalCount) * 100 : 0}%` },
+              ]}
+            />
+          </View>
+          <Link href={`/(scholar)/my-jobs/${id}/prep` as any} asChild>
+            <TouchableOpacity style={styles.gateBtn}>
+              <Ionicons name="play-circle" size={20} color="#fff" />
+              <Text style={styles.gateBtnText}>Watch Videos</Text>
+            </TouchableOpacity>
+          </Link>
+          <TouchableOpacity style={styles.gateBackBtn} onPress={() => router.back()}>
+            <Text style={styles.gateBackText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -408,4 +445,55 @@ const styles = StyleSheet.create({
   },
   submitDisabled: { opacity: 0.5 },
   submitText: { fontSize: 17, fontWeight: "800", color: "#fff" },
+  gateCard: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  gateTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#f8fafc",
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  gateSubtitle: {
+    fontSize: 15,
+    color: "#94a3b8",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  gateProgressBar: {
+    width: "80%",
+    height: 8,
+    backgroundColor: "#334155",
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 24,
+  },
+  gateProgressFill: {
+    height: 8,
+    backgroundColor: "#f59e0b",
+    borderRadius: 4,
+  },
+  gateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#14b8a6",
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    marginBottom: 12,
+  },
+  gateBtnText: { fontSize: 17, fontWeight: "800", color: "#fff" },
+  gateBackBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+  },
+  gateBackText: { fontSize: 15, fontWeight: "600", color: "#64748b" },
 });

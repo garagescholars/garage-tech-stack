@@ -24,4 +24,7 @@ export const COLLECTIONS = {
   INVENTORY: 'inventory',
   CLIENTS: 'clients',
   PROPERTIES: 'properties',
+  // Escalation & prep collections
+  ESCALATIONS: 'gs_escalations',
+  JOB_PREP: 'gs_jobPrep',
 } as const;

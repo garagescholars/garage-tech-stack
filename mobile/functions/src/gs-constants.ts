@@ -21,6 +21,9 @@ export const GS_COLLECTIONS = {
   PAYMENT_PERIODS: "gs_paymentPeriods",
   STRIPE_ACCOUNTS: "gs_stripeAccounts",
   PLATFORM_CONFIG: "gs_platformConfig",
+  // Escalation & prep collections
+  ESCALATIONS: "gs_escalations",
+  JOB_PREP: "gs_jobPrep",
 } as const;
 
 /** Quality score weights — must total 1.0 */

@@ -18,6 +18,7 @@ import {
   MAX_RECENT_CLAIMS,
 } from "./gs-constants";
 import { createCheckinPayout, holdCompletionPayout } from "./gs-payments";
+import { buildVideoConfirmations } from "./gs-catalog";
 
 const db = getFirestore();
 
@@ -136,6 +137,31 @@ export const gsOnJobUpdated = onDocumentWritten(
           `You claimed "${after.title}" — $${(after.payout || 0) + (after.rushBonus || 0)}`,
           { screen: "my-jobs", jobId }
         );
+      }
+
+      // Create gs_jobPrep document for pre-job video homework
+      if (after.productSelections) {
+        try {
+          const videoConfirmations = buildVideoConfirmations(after.productSelections);
+          if (videoConfirmations.length > 0) {
+            const prepDocId = `${jobId}_${after.claimedBy}`;
+            await db.collection(GS_COLLECTIONS.JOB_PREP).doc(prepDocId).set({
+              jobId,
+              scholarId: after.claimedBy,
+              scholarName: after.claimedByName || "Scholar",
+              videoConfirmations,
+              allConfirmed: false,
+              reminder48hSent: false,
+              reminder24hSent: false,
+              reminder2hSent: false,
+              createdAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+            console.log(`Created gs_jobPrep/${prepDocId} with ${videoConfirmations.length} items`);
+          }
+        } catch (err) {
+          console.error(`Failed to create gs_jobPrep for job ${jobId}:`, err);
+        }
       }
     }
 
