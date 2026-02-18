@@ -12,6 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useOpenJobs } from "../../../src/hooks/useJobs";
 import JobCard from "../../../src/components/JobCard";
 import RecentClaimsBanner from "../../../src/components/RecentClaimsBanner";
+import FeedStatsBar from "../../../src/components/FeedStatsBar";
+import HotJobsCarousel from "../../../src/components/HotJobsCarousel";
 import { StaggeredItem, SkeletonBox, FadeInView } from "../../../src/components/AnimatedComponents";
 
 export default function JobFeedScreen() {
@@ -83,7 +85,16 @@ export default function JobFeedScreen() {
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
-          ListHeaderComponent={<RecentClaimsBanner />}
+          ListHeaderComponent={
+            <>
+              <FeedStatsBar jobs={jobs} />
+              <HotJobsCarousel
+                jobs={jobs}
+                onJobPress={(jobId) => router.push(`/(scholar)/jobs/${jobId}` as any)}
+              />
+              <RecentClaimsBanner />
+            </>
+          }
           renderItem={({ item, index }) => (
             <StaggeredItem index={index}>
               <JobCard

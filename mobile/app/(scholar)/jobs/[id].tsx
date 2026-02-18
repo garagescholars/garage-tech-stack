@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   ActivityIndicator,
   Linking,
 } from "react-native";
+import ClaimCelebration from "../../../src/components/ClaimCelebration";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, Timestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { db } from "../../../src/lib/firebase";
 import { useAuth } from "../../../src/hooks/useAuth";
@@ -30,6 +31,8 @@ export default function JobDetailScreen() {
   const [job, setJob] = useState<ServiceJob | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [claimedPayout, setClaimedPayout] = useState(0);
 
   // Track viewer count for FOMO social proof
   useViewerCount(id);
@@ -56,10 +59,8 @@ export default function JobDetailScreen() {
     setClaiming(true);
     try {
       await claimJob(job.id, user.uid, profile.name);
-      Alert.alert("Claimed!", "This job is now on your schedule.", [
-        { text: "View My Jobs", onPress: () => router.replace("/(scholar)/my-jobs" as any) },
-        { text: "OK" },
-      ]);
+      setClaimedPayout((job.payout || 0) + (job.rushBonus || 0));
+      setShowCelebration(true);
     } catch (err: any) {
       if (err.message?.includes("just taken")) {
         Alert.alert("Job was just taken!", "Another scholar claimed this job before you. Try another one.");
@@ -117,6 +118,21 @@ export default function JobDetailScreen() {
   const isClaimable =
     ["APPROVED_FOR_POSTING", "REOPENED"].includes(job.status) && !job.claimedBy;
 
+  // Compute claim deadline: job start time minus 2 hours
+  const claimDeadline = useMemo(() => {
+    if (!job.scheduledDate || !job.scheduledTimeStart) return undefined;
+    try {
+      const dateStr = `${job.scheduledDate} ${job.scheduledTimeStart}`;
+      const parsed = new Date(dateStr);
+      if (isNaN(parsed.getTime())) return undefined;
+      const deadline = new Date(parsed.getTime() - 2 * 60 * 60 * 1000);
+      if (deadline.getTime() <= Date.now()) return undefined;
+      return Timestamp.fromDate(deadline);
+    } catch {
+      return undefined;
+    }
+  }, [job.scheduledDate, job.scheduledTimeStart]);
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -159,7 +175,7 @@ export default function JobDetailScreen() {
 
         {/* Countdown + viewers */}
         <View style={styles.urgencyRow}>
-          <CountdownTimer deadline={undefined} />
+          <CountdownTimer deadline={claimDeadline} />
           <ViewerCount count={job.currentViewers || 0} floor={job.viewerFloor || 0} />
         </View>
 
@@ -226,6 +242,18 @@ export default function JobDetailScreen() {
             <Text style={styles.takenText}>This job has been claimed</Text>
           </View>
         </View>
+      )}
+
+      {/* Claim celebration overlay */}
+      {showCelebration && (
+        <ClaimCelebration
+          payout={claimedPayout}
+          jobTitle={job.title}
+          onComplete={() => {
+            setShowCelebration(false);
+            router.replace("/(scholar)/my-jobs" as any);
+          }}
+        />
       )}
     </View>
   );

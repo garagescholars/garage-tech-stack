@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { db } from "../../../src/lib/firebase";
 import { useAuth } from "../../../src/hooks/useAuth";
 import { useMyJobs } from "../../../src/hooks/useJobs";
+import { useScholarAnalytics } from "../../../src/hooks/useScholarAnalytics";
 import { COLLECTIONS } from "../../../src/constants/collections";
 import JobCard from "../../../src/components/JobCard";
 import { StaggeredItem, SkeletonBox, FadeInView } from "../../../src/components/AnimatedComponents";
@@ -30,6 +31,7 @@ const TABS: { key: TabKey; label: string }[] = [
 export default function MyJobsScreen() {
   const { user } = useAuth();
   const { jobs, loading } = useMyJobs(user?.uid);
+  const { analytics } = useScholarAnalytics(user?.uid);
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("active");
   const [cancelJob, setCancelJob] = useState<ServiceJob | null>(null);
@@ -111,6 +113,33 @@ export default function MyJobsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Quick Stats */}
+      {analytics && (
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Ionicons name="briefcase" size={16} color="#14b8a6" />
+            <Text style={styles.statValue}>{analytics.jobsThisMonth ?? 0}</Text>
+            <Text style={styles.statLabel}>Jobs</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Ionicons name="cash" size={16} color="#10b981" />
+            <Text style={styles.statValue}>${Math.round(analytics.earningsThisMonth ?? 0)}</Text>
+            <Text style={styles.statLabel}>Earned</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Ionicons
+              name={analytics.jobsTrend === "increasing" ? "trending-up" : analytics.jobsTrend === "declining" ? "trending-down" : "remove"}
+              size={16}
+              color={analytics.jobsTrend === "increasing" ? "#10b981" : analytics.jobsTrend === "declining" ? "#ef4444" : "#64748b"}
+            />
+            <Text style={styles.statValue}>{analytics.jobsLast30Days ?? 0}</Text>
+            <Text style={styles.statLabel}>30d</Text>
+          </View>
+        </View>
+      )}
+
       {/* Tabs */}
       <View style={styles.tabRow}>
         {TABS.map((t) => (
@@ -201,6 +230,39 @@ export default function MyJobsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0f1b2d" },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-evenly",
+    backgroundColor: "#1e293b",
+    margin: 12,
+    marginBottom: 4,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  statItem: {
+    alignItems: "center",
+    gap: 2,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#f8fafc",
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: "#334155",
+  },
   center: {
     flex: 1,
     justifyContent: "center",

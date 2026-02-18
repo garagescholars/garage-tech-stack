@@ -24,6 +24,8 @@ export const GS_COLLECTIONS = {
   // Escalation & prep collections
   ESCALATIONS: "gs_escalations",
   JOB_PREP: "gs_jobPrep",
+  // Activity feed
+  ACTIVITY_FEED: "gs_activityFeed",
 } as const;
 
 /** Quality score weights — must total 1.0 */

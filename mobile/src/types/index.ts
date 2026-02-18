@@ -567,3 +567,17 @@ export type GsJobPrep = {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
+
+// ── Activity Feed (gs_activityFeed) ──
+
+export type ActivityFeedType = "claim" | "goal_met" | "achievement" | "milestone";
+
+export type GsActivityFeedItem = {
+  id: string;
+  type: ActivityFeedType;
+  scholarName: string;
+  message: string;
+  icon?: string;
+  accentColor?: string;
+  createdAt?: Timestamp;
+};

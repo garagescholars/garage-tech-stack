@@ -235,6 +235,12 @@ export const gsOnJobUpdated = onDocumentWritten(
         { merge: true }
       );
 
+      // Read back updated profile for achievement checks
+      const profileSnap = await profileRef.get();
+      const profileData = profileSnap.data();
+      const totalJobs = (profileData?.totalJobsCompleted as number) || 0;
+      const scholarName = (profileData?.scholarName as string) || "Scholar";
+
       // Update current month goal progress
       const now = new Date();
       const month = now.getMonth() + 1;
@@ -261,8 +267,158 @@ export const gsOnJobUpdated = onDocumentWritten(
       });
       if (!goalsSnap.empty) await goalBatch.commit();
 
-      // Notify scholar
+      // ── Goal milestone notifications (1B) ──
       const token = await getPushToken(scholarId);
+      for (const goalDoc of goalsSnap.docs) {
+        try {
+          // Re-read the goal after increment to get updated progress
+          const updatedGoalSnap = await goalDoc.ref.get();
+          const g = updatedGoalSnap.data();
+          if (!g || g.goalTarget <= 0) continue;
+
+          const progress = g.currentProgress / g.goalTarget;
+          const goalLabel = g.goalType === "jobs" ? "Jobs" : "Earnings";
+
+          // 90% milestone
+          if (progress >= 0.9 && progress < 1.0 && !g.notifiedAt90) {
+            await goalDoc.ref.update({ notifiedAt90: true });
+            if (token) {
+              await sendExpoPush(
+                [token],
+                "Almost There!",
+                `You're 90% to your monthly ${goalLabel} goal! Keep pushing!`,
+                { screen: "goals" }
+              );
+            }
+          }
+
+          // 100% milestone
+          if (progress >= 1.0 && !g.notifiedAt100) {
+            await goalDoc.ref.update({ notifiedAt100: true, goalMet: true });
+
+            // Notify the scholar
+            if (token) {
+              await sendExpoPush(
+                [token],
+                "Goal Crushed!",
+                `You hit your monthly ${goalLabel} goal!`,
+                { screen: "goals" }
+              );
+            }
+
+            // Announce to ALL scholars
+            const allScholars = await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).get();
+            const otherTokens: string[] = [];
+            for (const s of allScholars.docs) {
+              if (s.id === scholarId) continue;
+              const t = await getPushToken(s.id);
+              if (t) otherTokens.push(t);
+            }
+            if (otherTokens.length > 0) {
+              await sendExpoPush(
+                otherTokens,
+                "Goal Achieved!",
+                `${scholarName} just hit their monthly ${goalLabel.toLowerCase()} goal!`,
+                { screen: "goals" }
+              );
+            }
+
+            // Write to activity feed
+            await db.collection(GS_COLLECTIONS.ACTIVITY_FEED).add({
+              type: "goal_met",
+              scholarName,
+              message: `just crushed their monthly ${goalLabel.toLowerCase()} goal!`,
+              icon: "flag",
+              accentColor: "#10b981",
+              createdAt: FieldValue.serverTimestamp(),
+            });
+          }
+        } catch (err) {
+          console.error(`Goal milestone check failed for ${goalDoc.id}:`, err);
+        }
+      }
+
+      // ── Auto-grant achievements (1A) ──
+      try {
+        // Helper: grant achievement if not already earned
+        const grantAchievement = async (
+          type: string, title: string, description: string, checkMonth = true
+        ) => {
+          const achQuery = db.collection(GS_COLLECTIONS.SCHOLAR_ACHIEVEMENTS)
+            .where("scholarId", "==", scholarId)
+            .where("achievementType", "==", type);
+
+          // For monthly achievements, check within this month
+          const existingSnap = checkMonth
+            ? await achQuery.where("month", "==", month).where("year", "==", year).get()
+            : await achQuery.get();
+
+          if (!existingSnap.empty) return; // Already earned
+
+          await db.collection(GS_COLLECTIONS.SCHOLAR_ACHIEVEMENTS).add({
+            scholarId,
+            achievementType: type,
+            title,
+            description,
+            month,
+            year,
+            createdAt: FieldValue.serverTimestamp(),
+          });
+
+          // Write to activity feed
+          await db.collection(GS_COLLECTIONS.ACTIVITY_FEED).add({
+            type: "achievement",
+            scholarName,
+            message: `earned the ${title} badge!`,
+            icon: "trophy",
+            accentColor: "#8b5cf6",
+            createdAt: FieldValue.serverTimestamp(),
+          });
+
+          console.log(`Achievement granted: ${type} for scholar ${scholarId}`);
+        };
+
+        // first_job: totalJobsCompleted reaches 1
+        if (totalJobs === 1) {
+          await grantAchievement("first_job", "First Job", "Complete your first job", false);
+        }
+
+        // Count jobs this month for club achievements
+        const jobsThisMonthSnap = await db.collection(GS_COLLECTIONS.JOBS)
+          .where("claimedBy", "==", scholarId)
+          .where("status", "==", "COMPLETED")
+          .get();
+        const jobsThisMonth = jobsThisMonthSnap.docs.filter((j) => {
+          const ts = j.data().updatedAt;
+          if (!ts) return false;
+          const d = ts.toDate();
+          return d.getMonth() + 1 === month && d.getFullYear() === year;
+        }).length;
+
+        // ten_club: 10 jobs in a single month
+        if (jobsThisMonth >= 10) {
+          await grantAchievement("ten_club", "10 Club", "Complete 10 jobs in a single month");
+        }
+
+        // twenty_five_club: 25 jobs in a single month
+        if (jobsThisMonth >= 25) {
+          await grantAchievement("twenty_five_club", "25 Club", "Complete 25 jobs in a single month");
+        }
+
+        // monthly_goal_met: any goal met this month
+        for (const goalDoc of goalsSnap.docs) {
+          const updatedGoal = await goalDoc.ref.get();
+          const g = updatedGoal.data();
+          if (g && g.goalMet) {
+            await grantAchievement("monthly_goal_met", "Goal Crusher", "Hit your monthly goal");
+            break; // Only grant once per month
+          }
+        }
+      } catch (err) {
+        console.error(`Achievement grant failed for scholar ${scholarId}:`, err);
+      }
+
+      // Notify scholar of job completion
       if (token) {
         await sendExpoPush(
           [token],
@@ -416,7 +572,7 @@ export const gsLockScores = onSchedule("every 1 hours", async () => {
   }
   await commitInChunks(lockOps);
 
-  // Update scholar payScores and tiers
+  // Update scholar payScores and tiers + check perfect_score achievement
   for (const [scholarId, newScores] of Object.entries(scholarScores)) {
     try {
       const allScores = await db
@@ -435,6 +591,41 @@ export const gsLockScores = onSchedule("every 1 hours", async () => {
       });
 
       console.log(`Scholar ${scholarId}: payScore=${avg.toFixed(2)}, tier=${tier}`);
+
+      // perfect_score achievement: any locked score === 5.0
+      const hasPerfect = newScores.some((s) => s === 5.0);
+      if (hasPerfect) {
+        const existingPerfect = await db.collection(GS_COLLECTIONS.SCHOLAR_ACHIEVEMENTS)
+          .where("scholarId", "==", scholarId)
+          .where("achievementType", "==", "perfect_score")
+          .get();
+
+        if (existingPerfect.empty) {
+          const profileSnap = await db.collection(GS_COLLECTIONS.SCHOLAR_PROFILES).doc(scholarId).get();
+          const scholarName = (profileSnap.data()?.scholarName as string) || "Scholar";
+
+          await db.collection(GS_COLLECTIONS.SCHOLAR_ACHIEVEMENTS).add({
+            scholarId,
+            achievementType: "perfect_score",
+            title: "Perfect Score",
+            description: "Score 5.0 on a job",
+            month: now.toDate().getMonth() + 1,
+            year: now.toDate().getFullYear(),
+            createdAt: FieldValue.serverTimestamp(),
+          });
+
+          await db.collection(GS_COLLECTIONS.ACTIVITY_FEED).add({
+            type: "achievement",
+            scholarName,
+            message: "earned the Perfect Score badge!",
+            icon: "star",
+            accentColor: "#f59e0b",
+            createdAt: FieldValue.serverTimestamp(),
+          });
+
+          console.log(`Perfect score achievement granted for scholar ${scholarId}`);
+        }
+      }
     } catch (err) {
       console.error(`Error updating scholar ${scholarId} tier:`, err);
     }

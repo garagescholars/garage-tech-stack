@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Timestamp } from "firebase/firestore";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,15 +12,35 @@ import CountdownTimer from "./CountdownTimer";
 import ViewerCount from "./ViewerCount";
 import type { ServiceJob } from "../types";
 
+/** Compute a claim deadline = job start time minus 2 hours */
+function getClaimDeadline(job: ServiceJob): Timestamp | undefined {
+  if (!job.scheduledDate || !job.scheduledTimeStart) return undefined;
+  try {
+    // scheduledDate format: "2026-02-20" or "Feb 20, 2026"
+    // scheduledTimeStart format: "9:00 AM" or "14:00"
+    const dateStr = `${job.scheduledDate} ${job.scheduledTimeStart}`;
+    const parsed = new Date(dateStr);
+    if (isNaN(parsed.getTime())) return undefined;
+    // Subtract 2 hours as claim buffer
+    const deadline = new Date(parsed.getTime() - 2 * 60 * 60 * 1000);
+    if (deadline.getTime() <= Date.now()) return undefined;
+    return Timestamp.fromDate(deadline);
+  } catch {
+    return undefined;
+  }
+}
+
 type Props = {
   job: ServiceJob;
   onPress: () => void;
+  onLongPress?: () => void;
   showStatus?: boolean;
 };
 
-export default function JobCard({ job, onPress, showStatus }: Props) {
+export default function JobCard({ job, onPress, onLongPress, showStatus }: Props) {
   const payout = (job.payout || 0) + (job.rushBonus || 0);
   const scale = useSharedValue(1);
+  const claimDeadline = useMemo(() => getClaimDeadline(job), [job.scheduledDate, job.scheduledTimeStart]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -37,6 +59,7 @@ export default function JobCard({ job, onPress, showStatus }: Props) {
       <Pressable
         style={styles.card}
         onPress={onPress}
+        onLongPress={onLongPress}
         onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 300 }); }}
         onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
       >
@@ -94,7 +117,7 @@ export default function JobCard({ job, onPress, showStatus }: Props) {
         </View>
 
         <View style={styles.bottomRow}>
-          <CountdownTimer deadline={undefined} />
+          <CountdownTimer deadline={claimDeadline} />
           <ViewerCount count={job.currentViewers || 0} />
         </View>
       </Pressable>
