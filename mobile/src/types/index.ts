@@ -584,7 +584,7 @@ export type GsActivityFeedItem = {
 
 // ── Social Media Content Queue (gs_socialContentQueue) ──
 
-export type SocialContentStatus = "pending" | "posted" | "failed";
+export type SocialContentStatus = "pending" | "processing" | "posted" | "failed" | "permanently_failed";
 
 export type GsSocialContentItem = {
   id: string;
@@ -601,8 +601,10 @@ export type GsSocialContentItem = {
   fbPostId?: string;
   igPostId?: string;
   error?: string;
+  retryCount?: number;
   createdAt?: Timestamp;
   postedAt?: Timestamp;
+  failedAt?: Timestamp;
 };
 
 // ── Google Review Campaign (gs_reviewCampaigns) ──

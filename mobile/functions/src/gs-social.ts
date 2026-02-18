@@ -1,21 +1,23 @@
 /**
  * Garage Scholars — Auto Social Media Content
  *
- * Processes completed job photos into before/after composites,
- * generates AI captions with Claude, and posts to Facebook + Instagram.
+ * Processes completed job photos into premium before/after composites,
+ * auto-enhances images with Sharp, generates AI captions with Gemini,
+ * and posts to Facebook + Instagram — fully automated, zero manual work.
  */
 
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import sharp from "sharp";
 import { GS_COLLECTIONS } from "./gs-constants";
+import { sendEmail } from "./gs-notifications";
 
 const db = getFirestore();
 
-// ─── Default Claude prompt for caption generation ───
+// ─── Default prompt for caption generation ───
 const DEFAULT_CAPTION_PROMPT = `You are the social media manager for Garage Scholars, a Denver-based garage transformation company staffed by college students ("scholars"). Generate an engaging Instagram/Facebook feed post caption for a before-and-after garage transformation photo.
 
 JOB DETAILS:
@@ -44,56 +46,184 @@ Mix of: #GarageOrganization #GarageTransformation #DenverHome #GarageScholars #B
 
 Output ONLY the caption text (including hashtags). No labels, headers, or formatting.`;
 
-// ─── Create before/after composite image with Sharp ───
+// ─── Quality validation constants ───
+const MIN_IMAGE_WIDTH = 400;
+const MIN_IMAGE_HEIGHT = 400;
+const MIN_FILE_SIZE = 10_000;       // 10 KB — reject corrupt/blank images
+const MAX_RETRY_ATTEMPTS = 3;
+const MIN_CAPTION_LENGTH = 50;
+
+// ─── Validate a source photo before processing ───
+async function validatePhoto(
+  buffer: Buffer,
+  label: string,
+): Promise<{ valid: boolean; reason?: string }> {
+  if (buffer.length < MIN_FILE_SIZE) {
+    return { valid: false, reason: `${label} photo too small (${buffer.length} bytes) — likely corrupt` };
+  }
+
+  try {
+    const metadata = await sharp(buffer).metadata();
+    if (!metadata.width || !metadata.height) {
+      return { valid: false, reason: `${label} photo has no dimensions — unreadable format` };
+    }
+    if (metadata.width < MIN_IMAGE_WIDTH || metadata.height < MIN_IMAGE_HEIGHT) {
+      return {
+        valid: false,
+        reason: `${label} photo too low-res (${metadata.width}x${metadata.height}, min ${MIN_IMAGE_WIDTH}x${MIN_IMAGE_HEIGHT})`,
+      };
+    }
+    return { valid: true };
+  } catch {
+    return { valid: false, reason: `${label} photo could not be read by Sharp — invalid format` };
+  }
+}
+
+// ─── Validate a generated caption ───
+function validateCaption(caption: string): { valid: boolean; reason?: string } {
+  if (!caption || caption.trim().length < MIN_CAPTION_LENGTH) {
+    return { valid: false, reason: `Caption too short (${caption?.length || 0} chars, min ${MIN_CAPTION_LENGTH})` };
+  }
+  if (!caption.includes("#")) {
+    return { valid: false, reason: "Caption missing hashtags" };
+  }
+  return { valid: true };
+}
+
+// ─── Alert admin on persistent failures ───
+async function alertAdminFailure(jobId: string, error: string, attempts: number) {
+  try {
+    const adminsSnap = await db.collection(GS_COLLECTIONS.PROFILES)
+      .where("role", "==", "admin")
+      .limit(3)
+      .get();
+    const emails = adminsSnap.docs
+      .map((d) => d.data().email as string)
+      .filter(Boolean);
+
+    if (emails.length > 0) {
+      await sendEmail(
+        emails,
+        `Social Media Post Failed (${attempts} attempts) — Job ${jobId}`,
+        `<p>The automated social media post for job <strong>${jobId}</strong> has failed <strong>${attempts}</strong> times.</p>
+         <p><strong>Error:</strong> ${error}</p>
+         <p>The item has been marked as permanently failed. Check the <code>gs_socialContentQueue</code> collection for details.</p>`,
+      );
+    }
+  } catch (err) {
+    console.error("Failed to send admin alert:", err);
+  }
+}
+
+// ─── Auto-enhance a cell phone photo using Sharp ───
+async function enhancePhoto(buffer: Buffer): Promise<Buffer> {
+  try {
+    return await sharp(buffer)
+      .rotate()                                    // Fix EXIF orientation
+      .normalize()                                 // Auto-level histogram
+      .sharpen({ sigma: 1.0, m1: 1.0, m2: 2.0 }) // Gentle sharpening
+      .modulate({ brightness: 1.05, saturation: 1.12 }) // Subtle pop
+      .gamma(1.1)                                  // Lift shadows
+      .toBuffer();
+  } catch (err) {
+    console.warn("Photo enhancement failed, using original:", err);
+    return buffer;
+  }
+}
+
+// ─── Create premium before/after composite (1080x1080 Instagram square) ───
 async function createCompositeImage(
   beforeBuffer: Buffer,
   afterBuffer: Buffer,
 ): Promise<Buffer> {
-  // Resize both images to 540x540 (square, fits in 1200x700 canvas)
-  const imgWidth = 540;
-  const imgHeight = 540;
-  const canvasWidth = 1200;
-  const canvasHeight = 700;
-  const padding = 30;
+  const CANVAS = 1080;
+  const BORDER = 8;
+  const INNER = CANVAS - BORDER * 2;                          // 1064
+  const DIVIDER_WIDTH = 6;
+  const IMG_WIDTH = Math.floor((INNER - DIVIDER_WIDTH) / 2);  // 529
+  const IMG_HEIGHT = 904;
+  const GOLD = "#c9a84c";
+  const NAVY_HEX = "#0f1b2d";
 
-  const beforeResized = await sharp(beforeBuffer)
-    .resize(imgWidth, imgHeight, { fit: "cover" })
-    .jpeg({ quality: 90 })
-    .toBuffer();
+  // Enhance both photos
+  const [enhancedBefore, enhancedAfter] = await Promise.all([
+    enhancePhoto(beforeBuffer),
+    enhancePhoto(afterBuffer),
+  ]);
 
-  const afterResized = await sharp(afterBuffer)
-    .resize(imgWidth, imgHeight, { fit: "cover" })
-    .jpeg({ quality: 90 })
-    .toBuffer();
+  // Resize to fill their slots (cover crop, center)
+  const [beforeResized, afterResized] = await Promise.all([
+    sharp(enhancedBefore)
+      .resize(IMG_WIDTH, IMG_HEIGHT, { fit: "cover", position: "centre" })
+      .jpeg({ quality: 92 })
+      .toBuffer(),
+    sharp(enhancedAfter)
+      .resize(IMG_WIDTH, IMG_HEIGHT, { fit: "cover", position: "centre" })
+      .jpeg({ quality: 92 })
+      .toBuffer(),
+  ]);
 
-  // Create text labels as SVG overlays
+  // "BEFORE" label — overlaid near bottom of left image
+  const labelHeight = 44;
+  const labelY = IMG_HEIGHT - 16 - labelHeight;
+
   const beforeLabel = Buffer.from(`
-    <svg width="${imgWidth}" height="36">
-      <rect width="${imgWidth}" height="36" fill="rgba(15,27,45,0.8)" rx="0"/>
-      <text x="${imgWidth / 2}" y="25" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#94a3b8">BEFORE</text>
+    <svg width="${IMG_WIDTH}" height="${labelHeight}">
+      <rect width="${IMG_WIDTH}" height="${labelHeight}" fill="rgba(15,27,45,0.75)"/>
+      <text x="${IMG_WIDTH / 2}" y="30" text-anchor="middle"
+            font-family="Helvetica Neue,Arial,sans-serif"
+            font-size="20" font-weight="700" letter-spacing="4"
+            fill="#ffffff">BEFORE</text>
     </svg>
   `);
 
+  // "AFTER" label — overlaid near bottom of right image
   const afterLabel = Buffer.from(`
-    <svg width="${imgWidth}" height="36">
-      <rect width="${imgWidth}" height="36" fill="rgba(20,184,166,0.85)" rx="0"/>
-      <text x="${imgWidth / 2}" y="25" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#ffffff">AFTER</text>
+    <svg width="${IMG_WIDTH}" height="${labelHeight}">
+      <rect width="${IMG_WIDTH}" height="${labelHeight}" fill="rgba(15,27,45,0.75)"/>
+      <text x="${IMG_WIDTH / 2}" y="30" text-anchor="middle"
+            font-family="Helvetica Neue,Arial,sans-serif"
+            font-size="20" font-weight="700" letter-spacing="4"
+            fill="#ffffff">AFTER</text>
     </svg>
   `);
 
-  // Branding bar
-  const brandingBar = Buffer.from(`
-    <svg width="${canvasWidth}" height="50">
-      <rect width="${canvasWidth}" height="50" fill="#0f1b2d"/>
-      <text x="${canvasWidth / 2}" y="32" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#14b8a6">GARAGE SCHOLARS</text>
+  // Vertical gold divider between images
+  const verticalDivider = Buffer.from(`
+    <svg width="${DIVIDER_WIDTH}" height="${IMG_HEIGHT}">
+      <rect width="${DIVIDER_WIDTH}" height="${IMG_HEIGHT}" fill="${GOLD}"/>
     </svg>
   `);
 
-  // Compose: dark background with before on left, after on right
-  const composite = await sharp({
+  // Horizontal gold separator below images
+  const horizontalDivider = Buffer.from(`
+    <svg width="${INNER}" height="2">
+      <rect width="${INNER}" height="2" fill="${GOLD}"/>
+    </svg>
+  `);
+
+  // Branding bar at bottom
+  const brandBarHeight = CANVAS - BORDER * 2 - IMG_HEIGHT - 2; // 158
+  const brandBar = Buffer.from(`
+    <svg width="${INNER}" height="${brandBarHeight}">
+      <rect width="${INNER}" height="${brandBarHeight}" fill="${NAVY_HEX}"/>
+      <rect x="${(INNER - 120) / 2}" y="18" width="120" height="2" fill="${GOLD}"/>
+      <text x="${INNER / 2}" y="52" text-anchor="middle"
+            font-family="Helvetica Neue,Arial,sans-serif"
+            font-size="28" font-weight="700" letter-spacing="6"
+            fill="${GOLD}">GARAGE SCHOLARS</text>
+      <text x="${INNER / 2}" y="82" text-anchor="middle"
+            font-family="Helvetica Neue,Arial,sans-serif"
+            font-size="14" letter-spacing="2"
+            fill="#94a3b8">Clear Space, Calm Mind, Confident Life</text>
+    </svg>
+  `);
+
+  // Create dark navy base canvas
+  const base = await sharp({
     create: {
-      width: canvasWidth,
-      height: canvasHeight,
+      width: CANVAS,
+      height: CANVAS,
       channels: 3,
       background: { r: 15, g: 27, b: 45 },
     },
@@ -101,43 +231,31 @@ async function createCompositeImage(
     .jpeg()
     .toBuffer();
 
-  const result = await sharp(composite)
+  // Composite everything
+  const result = await sharp(base)
     .composite([
-      // Before image (left)
-      { input: beforeResized, left: padding, top: padding },
-      // Before label
-      { input: beforeLabel, left: padding, top: padding },
-      // After image (right)
-      { input: afterResized, left: padding + imgWidth + padding, top: padding },
-      // After label
-      { input: afterLabel, left: padding + imgWidth + padding, top: padding },
-      // Divider arrow in center
-      {
-        input: Buffer.from(`
-          <svg width="30" height="30">
-            <polygon points="5,0 25,15 5,30" fill="#14b8a6"/>
-          </svg>
-        `),
-        left: Math.floor(canvasWidth / 2 - 15),
-        top: Math.floor(padding + imgHeight / 2 - 15),
-      },
-      // Branding bar at bottom
-      { input: brandingBar, left: 0, top: canvasHeight - 50 },
+      { input: beforeResized, left: BORDER, top: BORDER },
+      { input: beforeLabel, left: BORDER, top: BORDER + labelY },
+      { input: verticalDivider, left: BORDER + IMG_WIDTH, top: BORDER },
+      { input: afterResized, left: BORDER + IMG_WIDTH + DIVIDER_WIDTH, top: BORDER },
+      { input: afterLabel, left: BORDER + IMG_WIDTH + DIVIDER_WIDTH, top: BORDER + labelY },
+      { input: horizontalDivider, left: BORDER, top: BORDER + IMG_HEIGHT },
+      { input: brandBar, left: BORDER, top: BORDER + IMG_HEIGHT + 2 },
     ])
-    .jpeg({ quality: 92 })
+    .jpeg({ quality: 93 })
     .toBuffer();
 
   return result;
 }
 
-// ─── Generate caption using Claude ───
+// ─── Generate caption using Gemini ───
 async function generateCaption(
   jobTitle: string,
   address: string,
   packageTier: string,
 ): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
   // Try to load custom prompt from Firestore
   let promptTemplate = DEFAULT_CAPTION_PROMPT;
@@ -163,15 +281,12 @@ async function generateCaption(
     .replace("{location}", location)
     .replace("{packageTier}", packageTier || "Standard");
 
-  const client = new Anthropic({ apiKey });
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 500,
-    messages: [{ role: "user", content: prompt }],
-  });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
 
-  const textBlock = response.content.find((b) => b.type === "text");
-  return textBlock ? textBlock.text.trim() : "Another garage transformed! #GarageScholars";
+  return text?.trim() || "Another garage transformed! #GarageScholars";
 }
 
 // ─── Post to Facebook Page ───
@@ -266,20 +381,29 @@ export const gsProcessSocialContent = onSchedule(
     timeoutSeconds: 300,
     memory: "1GiB",
     secrets: [
-      "ANTHROPIC_API_KEY",
+      "GEMINI_API_KEY",
       "META_PAGE_ACCESS_TOKEN",
       "META_PAGE_ID",
       "META_IG_USER_ID",
     ],
   },
   async () => {
-    const pendingSnap = await db
-      .collection(GS_COLLECTIONS.SOCIAL_CONTENT_QUEUE)
-      .where("status", "==", "pending")
-      .limit(3)
-      .get();
+    // Query pending items + failed items eligible for retry
+    const [pendingSnap, retrySnap] = await Promise.all([
+      db.collection(GS_COLLECTIONS.SOCIAL_CONTENT_QUEUE)
+        .where("status", "==", "pending")
+        .limit(3)
+        .get(),
+      db.collection(GS_COLLECTIONS.SOCIAL_CONTENT_QUEUE)
+        .where("status", "==", "failed")
+        .where("retryCount", "<", MAX_RETRY_ATTEMPTS)
+        .limit(2)
+        .get(),
+    ]);
 
-    if (pendingSnap.empty) {
+    const allDocs = [...pendingSnap.docs, ...retrySnap.docs];
+
+    if (allDocs.length === 0) {
       console.log("No pending social content to process.");
       return;
     }
@@ -287,11 +411,19 @@ export const gsProcessSocialContent = onSchedule(
     const storage = getStorage();
     const bucket = storage.bucket();
 
-    for (const doc of pendingSnap.docs) {
+    for (const doc of allDocs) {
       const item = doc.data();
+      const retryCount = (item.retryCount || 0) as number;
+      const isRetry = item.status === "failed";
 
       try {
-        console.log(`Processing social content for job ${item.jobId}...`);
+        console.log(
+          `${isRetry ? "Retrying" : "Processing"} social content for job ${item.jobId}` +
+          `${isRetry ? ` (attempt ${retryCount + 1})` : ""}...`,
+        );
+
+        // Mark as processing to prevent duplicate pickups
+        await doc.ref.update({ status: "processing" });
 
         // 1. Download before and after photos
         const [beforeResp, afterResp] = await Promise.all([
@@ -306,10 +438,24 @@ export const gsProcessSocialContent = onSchedule(
         const beforeBuffer = Buffer.from(await beforeResp.arrayBuffer());
         const afterBuffer = Buffer.from(await afterResp.arrayBuffer());
 
-        // 2. Create composite image
+        // 2. Validate source photos
+        const [beforeCheck, afterCheck] = await Promise.all([
+          validatePhoto(beforeBuffer, "Before"),
+          validatePhoto(afterBuffer, "After"),
+        ]);
+        if (!beforeCheck.valid) throw new Error(beforeCheck.reason!);
+        if (!afterCheck.valid) throw new Error(afterCheck.reason!);
+
+        // 3. Create enhanced composite image
         const compositeBuffer = await createCompositeImage(beforeBuffer, afterBuffer);
 
-        // 3. Upload composite to Firebase Storage
+        // 4. Validate composite output
+        const compositeMeta = await sharp(compositeBuffer).metadata();
+        if (!compositeMeta.width || compositeMeta.width < 1080) {
+          throw new Error(`Composite output invalid: ${compositeMeta.width}x${compositeMeta.height}`);
+        }
+
+        // 5. Upload composite to Firebase Storage
         const compositePath = `gs_social_content/${item.jobId}/composite_${Date.now()}.jpg`;
         const file = bucket.file(compositePath);
         await file.save(compositeBuffer, {
@@ -318,14 +464,24 @@ export const gsProcessSocialContent = onSchedule(
         await file.makePublic();
         const compositeUrl = `https://storage.googleapis.com/${bucket.name}/${compositePath}`;
 
-        // 4. Generate caption with Claude
-        const caption = await generateCaption(
+        // 6. Generate caption with Gemini + validate
+        let caption = await generateCaption(
           item.jobTitle,
           item.address,
           item.packageTier,
         );
 
-        // 5. Post to Facebook
+        const captionCheck = validateCaption(caption);
+        if (!captionCheck.valid) {
+          console.warn(`Caption validation failed (${captionCheck.reason}), retrying once...`);
+          caption = await generateCaption(item.jobTitle, item.address, item.packageTier);
+          const retryCheck = validateCaption(caption);
+          if (!retryCheck.valid) {
+            throw new Error(`Caption failed validation after retry: ${retryCheck.reason}`);
+          }
+        }
+
+        // 7. Post to Facebook
         let fbPostId: string | null = null;
         try {
           fbPostId = await postToFacebook(compositeUrl, caption);
@@ -334,7 +490,7 @@ export const gsProcessSocialContent = onSchedule(
           console.error("Facebook post failed:", err);
         }
 
-        // 6. Post to Instagram
+        // 8. Post to Instagram
         let igPostId: string | null = null;
         try {
           igPostId = await postToInstagram(compositeUrl, caption);
@@ -343,7 +499,7 @@ export const gsProcessSocialContent = onSchedule(
           console.error("Instagram post failed:", err);
         }
 
-        // 7. Update queue item
+        // 9. Update queue item — success
         await doc.ref.update({
           status: "posted",
           compositeUrl,
@@ -351,16 +507,32 @@ export const gsProcessSocialContent = onSchedule(
           fbPostId: fbPostId || "",
           igPostId: igPostId || "",
           postedAt: FieldValue.serverTimestamp(),
+          retryCount: retryCount + (isRetry ? 1 : 0),
         });
 
         console.log(`Social content posted for job ${item.jobId}`);
       } catch (err: any) {
-        console.error(`Social content processing failed for job ${item.jobId}:`, err);
+        const newRetryCount = retryCount + 1;
+        const errorMsg = err.message || "Unknown error";
+        console.error(`Social content failed for job ${item.jobId} (attempt ${newRetryCount}):`, err);
 
-        await doc.ref.update({
-          status: "failed",
-          error: err.message || "Unknown error",
-        });
+        if (newRetryCount >= MAX_RETRY_ATTEMPTS) {
+          // Permanently failed — alert admin
+          await doc.ref.update({
+            status: "permanently_failed",
+            error: errorMsg,
+            retryCount: newRetryCount,
+            failedAt: FieldValue.serverTimestamp(),
+          });
+          await alertAdminFailure(item.jobId, errorMsg, newRetryCount);
+        } else {
+          // Mark as failed with retry count — will be picked up next cycle
+          await doc.ref.update({
+            status: "failed",
+            error: errorMsg,
+            retryCount: newRetryCount,
+          });
+        }
       }
     }
   },
