@@ -427,6 +427,57 @@ export const gsOnJobUpdated = onDocumentWritten(
           { screen: "my-jobs", jobId }
         );
       }
+
+      // ── Queue social media content ──
+      try {
+        const checkinSnap = await db.collection(GS_COLLECTIONS.JOB_CHECKINS)
+          .doc(`${jobId}_${scholarId}`).get();
+        const checkinData = checkinSnap.data();
+
+        const beforePhotos = checkinData?.beforePhotos as string[] | undefined;
+        const afterPhotos = checkinData?.afterPhotos as string[] | undefined;
+
+        if (beforePhotos && beforePhotos.length > 0 && afterPhotos && afterPhotos.length > 0) {
+          await db.collection(GS_COLLECTIONS.SOCIAL_CONTENT_QUEUE).add({
+            jobId,
+            scholarId,
+            jobTitle: after.title || "",
+            address: after.address || "",
+            packageTier: after.packageTier || after.package || "",
+            beforePhotoUrl: beforePhotos[0],
+            afterPhotoUrl: afterPhotos[0],
+            status: "pending",
+            createdAt: FieldValue.serverTimestamp(),
+          });
+          console.log(`Social content queued for job ${jobId}`);
+        }
+      } catch (err) {
+        console.error("Social content queue failed:", err);
+      }
+
+      // ── Queue review request campaign ──
+      try {
+        const customerEmail = after.clientEmail;
+        const customerPhone = after.clientPhone || after.customerPhone;
+        const customerName = after.clientName || after.customerName || "Valued Customer";
+
+        if (customerEmail || customerPhone) {
+          await db.collection(GS_COLLECTIONS.REVIEW_CAMPAIGNS).add({
+            jobId,
+            jobTitle: after.title || "",
+            customerName,
+            customerEmail: customerEmail || "",
+            customerPhone: customerPhone || "",
+            completedAt: FieldValue.serverTimestamp(),
+            day3Sent: false,
+            day5Sent: false,
+            templateIndex: Math.floor(Math.random() * 3),
+          });
+          console.log(`Review campaign queued for job ${jobId}`);
+        }
+      } catch (err) {
+        console.error("Review campaign queue failed:", err);
+      }
     }
   }
 );

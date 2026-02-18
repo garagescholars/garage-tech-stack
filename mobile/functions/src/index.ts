@@ -44,6 +44,17 @@ export {
   gsExportPaymentData,
 } from "./gs-payments";
 
+// ── Garage Scholars Social Media functions ──
+export {
+  gsProcessSocialContent,
+  gsRefreshMetaToken,
+} from "./gs-social";
+
+// ── Garage Scholars Review Campaign functions ──
+export {
+  gsReviewCampaign,
+} from "./gs-review-campaign";
+
 const db = getFirestore();
 const storage = getStorage();
 const adminAuth = getAuth();

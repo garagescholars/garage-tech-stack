@@ -29,4 +29,7 @@ export const COLLECTIONS = {
   JOB_PREP: 'gs_jobPrep',
   // Activity feed
   ACTIVITY_FEED: 'gs_activityFeed',
+  // Social media & review campaigns
+  SOCIAL_CONTENT_QUEUE: 'gs_socialContentQueue',
+  REVIEW_CAMPAIGNS: 'gs_reviewCampaigns',
 } as const;

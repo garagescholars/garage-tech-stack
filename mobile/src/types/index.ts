@@ -581,3 +581,43 @@ export type GsActivityFeedItem = {
   accentColor?: string;
   createdAt?: Timestamp;
 };
+
+// ── Social Media Content Queue (gs_socialContentQueue) ──
+
+export type SocialContentStatus = "pending" | "posted" | "failed";
+
+export type GsSocialContentItem = {
+  id: string;
+  jobId: string;
+  scholarId: string;
+  jobTitle: string;
+  address: string;
+  packageTier: string;
+  beforePhotoUrl: string;
+  afterPhotoUrl: string;
+  status: SocialContentStatus;
+  compositeUrl?: string;
+  caption?: string;
+  fbPostId?: string;
+  igPostId?: string;
+  error?: string;
+  createdAt?: Timestamp;
+  postedAt?: Timestamp;
+};
+
+// ── Google Review Campaign (gs_reviewCampaigns) ──
+
+export type GsReviewCampaign = {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  completedAt?: Timestamp;
+  day3Sent: boolean;
+  day3SentAt?: Timestamp;
+  day5Sent: boolean;
+  day5SentAt?: Timestamp;
+  templateIndex: number;
+};
