@@ -207,7 +207,7 @@ export default function SettingsScreen() {
   };
 
   const router = useRouter();
-  const [appUrl, setAppUrl] = useState("https://expo.dev");
+  const [appUrl, setAppUrl] = useState<string | null>(null);
 
   useEffect(() => {
     getDoc(doc(db, COLLECTIONS.PLATFORM_CONFIG, "mobileApp")).then((snap) => {
@@ -239,22 +239,34 @@ export default function SettingsScreen() {
         >
           <View style={styles.qrCardContent}>
             <View style={styles.qrCardLeft}>
-              <View style={styles.qrMini}>
-                <QRCode
-                  value={appUrl}
-                  size={100}
-                  backgroundColor="#ffffff"
-                  color="#0f1b2d"
-                />
-              </View>
+              {appUrl ? (
+                <View style={styles.qrMini}>
+                  <QRCode
+                    value={appUrl}
+                    size={100}
+                    backgroundColor="#ffffff"
+                    color="#0f1b2d"
+                  />
+                </View>
+              ) : (
+                <View style={styles.qrPlaceholder}>
+                  <Ionicons name="qr-code-outline" size={40} color="#64748b" />
+                </View>
+              )}
             </View>
             <View style={styles.qrCardRight}>
-              <Text style={styles.qrCardTitle}>Share with Scholars</Text>
+              <Text style={styles.qrCardTitle}>
+                {appUrl ? "Share with Scholars" : "Set Up QR Code"}
+              </Text>
               <Text style={styles.qrCardDesc}>
-                Tap to open the full QR code screen for onboarding new team members.
+                {appUrl
+                  ? "Tap to open the full QR code screen for onboarding new team members."
+                  : "Tap to configure the app download URL and generate a QR code for scholars."}
               </Text>
               <View style={styles.qrCardArrow}>
-                <Text style={styles.qrCardLink}>Open Share App</Text>
+                <Text style={styles.qrCardLink}>
+                  {appUrl ? "Open Share App" : "Set Up Now"}
+                </Text>
                 <Ionicons name="chevron-forward" size={14} color="#14b8a6" />
               </View>
             </View>
@@ -440,6 +452,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 8,
     padding: 8,
+  },
+  qrPlaceholder: {
+    width: 116,
+    height: 116,
+    borderRadius: 8,
+    backgroundColor: "#0f1b2d",
+    borderWidth: 1,
+    borderColor: "#334155",
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
   },
   qrCardRight: {
     flex: 1,
