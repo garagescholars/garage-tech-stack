@@ -232,7 +232,8 @@ service cloud.firestore {
 
     // gs_platformConfig — admin-managed platform settings
     match /gs_platformConfig/{configId} {
-      allow read: if isAdminByEmail();
+      // mobileApp doc is public (contains download URL for QR code redirect page)
+      allow read: if isAdminByEmail() || configId == 'mobileApp';
       allow write: if isAdminByEmail();
     }
   }

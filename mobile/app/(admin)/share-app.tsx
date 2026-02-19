@@ -22,6 +22,9 @@ import { COLLECTIONS } from "../../src/constants/collections";
 import AdminPageWrapper from "../../src/components/AdminPageWrapper";
 
 const CONFIG_DOC = "mobileApp";
+// QR code always points to this HTTPS page, which reads Firestore and redirects.
+// This works with any phone camera (unlike exp:// which only works inside Expo Go).
+const QR_REDIRECT_URL = "https://garage-scholars-scheduling.web.app/go.html";
 
 export default function ShareAppScreen() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
@@ -41,13 +44,12 @@ export default function ShareAppScreen() {
   }, []);
 
   const handleCopy = async () => {
-    if (!downloadUrl) return;
     try {
-      await Clipboard.setStringAsync(downloadUrl);
+      await Clipboard.setStringAsync(QR_REDIRECT_URL);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      Alert.alert("Copy failed", downloadUrl);
+      Alert.alert("Copy failed", QR_REDIRECT_URL);
     }
   };
 
@@ -99,37 +101,37 @@ export default function ShareAppScreen() {
         </View>
       )}
 
-      {/* QR Code Card - only show when URL is configured */}
-      {downloadUrl && (
-        <View style={styles.qrCard}>
-          <View style={styles.qrWrapper}>
-            <QRCode
-              value={downloadUrl}
-              size={250}
-              backgroundColor="#ffffff"
-              color="#0f1b2d"
-            />
-          </View>
-
-          <Text style={styles.scanText}>Scan to get the Garage Scholars app</Text>
-
-          <Text style={styles.currentUrl} numberOfLines={1}>
-            {downloadUrl}
-          </Text>
-
-          {/* Copy button */}
-          <TouchableOpacity style={styles.copyBtn} onPress={handleCopy}>
-            <Ionicons
-              name={copied ? "checkmark" : "copy-outline"}
-              size={16}
-              color="#fff"
-            />
-            <Text style={styles.copyBtnText}>
-              {copied ? "Copied!" : "Copy Link"}
-            </Text>
-          </TouchableOpacity>
+      {/* QR Code Card - always shows (points to HTTPS redirect page) */}
+      <View style={styles.qrCard}>
+        <View style={styles.qrWrapper}>
+          <QRCode
+            value={QR_REDIRECT_URL}
+            size={250}
+            backgroundColor="#ffffff"
+            color="#0f1b2d"
+          />
         </View>
-      )}
+
+        <Text style={styles.scanText}>Scan to get the Garage Scholars app</Text>
+
+        {downloadUrl && (
+          <Text style={styles.currentUrl} numberOfLines={1}>
+            Redirects to: {downloadUrl}
+          </Text>
+        )}
+
+        {/* Copy button */}
+        <TouchableOpacity style={styles.copyBtn} onPress={handleCopy}>
+          <Ionicons
+            name={copied ? "checkmark" : "copy-outline"}
+            size={16}
+            color="#fff"
+          />
+          <Text style={styles.copyBtnText}>
+            {copied ? "Copied!" : "Copy Link"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Onboarding Instructions */}
       <View style={styles.instructionsCard}>
