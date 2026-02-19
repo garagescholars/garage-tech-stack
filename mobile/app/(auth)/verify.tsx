@@ -59,10 +59,14 @@ export default function VerifyScreen() {
 
     setLoading(true);
     try {
+      console.log("[Verify] verificationId:", verificationId);
+      console.log("[Verify] code:", fullCode);
       await verifyPhone(verificationId as string, fullCode);
-      // Auth state change will redirect via index.tsx
+      // Verification succeeded — navigate to index which routes by role
+      router.replace("/");
     } catch (error: any) {
-      Alert.alert("Verification Failed", error.message || "Invalid code. Please try again.");
+      console.error("[Verify] Error:", error.code, error.message);
+      Alert.alert("Verification Failed", `${error.code || "unknown"}: ${error.message || "Invalid code. Please try again."}`);
       setCode(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
