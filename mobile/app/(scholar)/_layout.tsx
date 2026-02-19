@@ -1,13 +1,31 @@
-import { Tabs } from "expo-router";
+import { useEffect } from "react";
+import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform, View } from "react-native";
+import { Platform, View, ActivityIndicator } from "react-native";
 import { useAuth } from "../../src/hooks/useAuth";
 import { useAchievementUnlock } from "../../src/hooks/useAchievementUnlock";
 import AchievementUnlockOverlay from "../../src/components/AchievementUnlockOverlay";
 
 export default function ScholarLayout() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const { newAchievement, dismiss } = useAchievementUnlock(user?.uid);
+
+  // Auth guard: redirect to login if not authenticated
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.replace("/(auth)/email-login");
+    }
+  }, [user, loading]);
+
+  if (loading || !user) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f1b2d" }}>
+        <ActivityIndicator size="large" color="#14b8a6" />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>

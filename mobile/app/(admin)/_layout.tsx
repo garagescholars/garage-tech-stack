@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Tabs, useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -8,7 +9,9 @@ import {
   StyleSheet,
   useWindowDimensions,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
+import { useAuth } from "../../src/hooks/useAuth";
 
 const SIDEBAR_WIDTH = 240;
 
@@ -26,6 +29,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Payouts", icon: "cash-outline", path: "/(admin)/payouts" },
   { label: "Transfers", icon: "swap-horizontal-outline", path: "/(admin)/transfers" },
   { label: "Analytics", icon: "stats-chart-outline", path: "/(admin)/analytics" },
+  { label: "Social Media", icon: "megaphone-outline", path: "/(admin)/social-media" },
+  { label: "Share App", icon: "qr-code-outline", path: "/(admin)/share-app" },
   { label: "Settings", icon: "settings-outline", path: "/(admin)/settings" },
 ];
 
@@ -69,6 +74,26 @@ function WebSidebar() {
 export default function AdminLayout() {
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && width >= 1024;
+  const { user, profile, loading } = useAuth();
+  const router = useRouter();
+
+  // Auth guard: redirect to login if not authenticated or not admin
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.replace("/(auth)/email-login");
+    } else if (profile && profile.role !== "admin") {
+      router.replace("/(scholar)/jobs");
+    }
+  }, [user, profile, loading]);
+
+  if (loading || !user) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f1b2d" }}>
+        <ActivityIndicator size="large" color="#14b8a6" />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, flexDirection: "row" }}>
@@ -158,6 +183,8 @@ export default function AdminLayout() {
           <Tabs.Screen name="payouts" options={{ href: null, headerTitle: "Payouts" }} />
           <Tabs.Screen name="settings" options={{ href: null, headerTitle: "Settings" }} />
           <Tabs.Screen name="unified" options={{ href: null, headerTitle: "Business Dashboard" }} />
+          <Tabs.Screen name="social-media" options={{ href: null, headerTitle: "Social Media" }} />
+          <Tabs.Screen name="share-app" options={{ href: null, headerTitle: "Share App" }} />
         </Tabs>
       </View>
     </View>

@@ -29,6 +29,18 @@ const MENU_ITEMS: MenuItem[] = [
     path: "/(admin)/payouts",
   },
   {
+    label: "Social Media",
+    subtitle: "Monitor automated posts, retry failures",
+    icon: "megaphone-outline",
+    path: "/(admin)/social-media",
+  },
+  {
+    label: "Share App",
+    subtitle: "QR code for scholars to download",
+    icon: "qr-code-outline",
+    path: "/(admin)/share-app",
+  },
+  {
     label: "Settings",
     subtitle: "Create users, manage accounts",
     icon: "settings-outline",

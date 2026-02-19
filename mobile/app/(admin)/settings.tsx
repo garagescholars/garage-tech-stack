@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import QRCode from "react-native-qrcode-svg";
 import { auth, db } from "../../src/lib/firebase";
 import { COLLECTIONS } from "../../src/constants/collections";
 import AdminPageWrapper from "../../src/components/AdminPageWrapper";
@@ -204,6 +206,17 @@ export default function SettingsScreen() {
     }
   };
 
+  const router = useRouter();
+  const [appUrl, setAppUrl] = useState("https://expo.dev");
+
+  useEffect(() => {
+    getDoc(doc(db, COLLECTIONS.PLATFORM_CONFIG, "mobileApp")).then((snap) => {
+      if (snap.exists() && snap.data().downloadUrl) {
+        setAppUrl(snap.data().downloadUrl);
+      }
+    });
+  }, []);
+
   return (
     <AdminPageWrapper>
       <KeyboardAvoidingView
@@ -217,6 +230,36 @@ export default function SettingsScreen() {
             Manage users and system access.
           </Text>
         </View>
+
+        {/* Share App QR Card */}
+        <TouchableOpacity
+          style={styles.qrCard}
+          activeOpacity={0.7}
+          onPress={() => router.push("/(admin)/share-app" as any)}
+        >
+          <View style={styles.qrCardContent}>
+            <View style={styles.qrCardLeft}>
+              <View style={styles.qrMini}>
+                <QRCode
+                  value={appUrl}
+                  size={100}
+                  backgroundColor="#ffffff"
+                  color="#0f1b2d"
+                />
+              </View>
+            </View>
+            <View style={styles.qrCardRight}>
+              <Text style={styles.qrCardTitle}>Share with Scholars</Text>
+              <Text style={styles.qrCardDesc}>
+                Tap to open the full QR code screen for onboarding new team members.
+              </Text>
+              <View style={styles.qrCardArrow}>
+                <Text style={styles.qrCardLink}>Open Share App</Text>
+                <Ionicons name="chevron-forward" size={14} color="#14b8a6" />
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* Create User Card */}
         <View style={styles.formCard}>
@@ -376,6 +419,52 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#94a3b8",
     marginTop: 4,
+  },
+
+  // QR Card
+  qrCard: {
+    backgroundColor: "#1e293b",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#14b8a625",
+  },
+  qrCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  qrCardLeft: {},
+  qrMini: {
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    padding: 8,
+  },
+  qrCardRight: {
+    flex: 1,
+  },
+  qrCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#f8fafc",
+    marginBottom: 4,
+  },
+  qrCardDesc: {
+    fontSize: 12,
+    color: "#94a3b8",
+    lineHeight: 17,
+    marginBottom: 8,
+  },
+  qrCardArrow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  qrCardLink: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#14b8a6",
   },
 
   // Form card
