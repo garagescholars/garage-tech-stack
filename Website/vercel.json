@@ -1,7 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "name": "garage-scholars-website",
+  "name": "garage-scholars-optimized",
+  "framework": null,
+  "installCommand": "npm install",
   "buildCommand": "bash generate-firebase-config.sh && node build.js",
   "outputDirectory": "dist",
   "public": true,
