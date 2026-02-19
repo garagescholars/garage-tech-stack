@@ -11,18 +11,18 @@ import {
   Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { PhoneAuthProvider, ApplicationVerifier } from "firebase/auth";
-import { auth } from "../../src/lib/firebase";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   FadeInDown,
 } from "react-native-reanimated";
+import PhoneAuthWebView from "../../src/components/PhoneAuthWebView";
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [focused, setFocused] = useState(false);
   const router = useRouter();
   const buttonScale = useSharedValue(1);
@@ -37,24 +37,34 @@ export default function LoginScreen() {
   const digits = phone.replace(/\D/g, "");
   const isValid = digits.length === 10;
 
-  const handleSendCode = async () => {
+  const handleSendCode = () => {
     if (!isValid) {
       Alert.alert("Invalid Phone", "Please enter a valid 10-digit US phone number.");
       return;
     }
-
     setLoading(true);
-    try {
-      const fullPhone = `+1${digits}`;
-      router.push({
-        pathname: "/(auth)/verify",
-        params: { phone: fullPhone },
-      });
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to send verification code.");
-    } finally {
-      setLoading(false);
-    }
+    setShowRecaptcha(true);
+  };
+
+  const handleVerificationId = (verificationId: string) => {
+    setShowRecaptcha(false);
+    setLoading(false);
+    const fullPhone = `+1${digits}`;
+    router.push({
+      pathname: "/(auth)/verify",
+      params: { phone: fullPhone, verificationId },
+    });
+  };
+
+  const handleRecaptchaError = (message: string) => {
+    setShowRecaptcha(false);
+    setLoading(false);
+    Alert.alert("Verification Error", message);
+  };
+
+  const handleRecaptchaCancel = () => {
+    setShowRecaptcha(false);
+    setLoading(false);
   };
 
   const buttonAnimStyle = useAnimatedStyle(() => ({
@@ -129,6 +139,15 @@ export default function LoginScreen() {
           Standard messaging rates may apply.
         </Animated.Text>
       </View>
+
+      {/* reCAPTCHA WebView (invisible, handles Firebase phone auth) */}
+      <PhoneAuthWebView
+        visible={showRecaptcha}
+        phoneNumber={`+1${digits}`}
+        onVerificationId={handleVerificationId}
+        onError={handleRecaptchaError}
+        onCancel={handleRecaptchaCancel}
+      />
     </KeyboardAvoidingView>
   );
 }
