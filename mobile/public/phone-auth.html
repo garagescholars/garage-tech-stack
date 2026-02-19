@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Phone Verification</title>
+  <style>
+    body { margin:0; background:#0f1b2d; color:#f8fafc; font-family:sans-serif;
+           display:flex; justify-content:center; align-items:center; min-height:100vh; }
+    #status { text-align:center; padding:20px; font-size:16px; }
+    .spinner { border:3px solid #1e293b; border-top:3px solid #14b8a6; border-radius:50%;
+               width:32px; height:32px; animation:spin .8s linear infinite; margin:16px auto; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .error { color:#ef4444; }
+  </style>
+</head>
+<body>
+  <div id="status">
+    <div class="spinner"></div>
+    <p>Sending verification code...</p>
+  </div>
+  <div id="recaptcha-container"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+  <script>
+    var config = {
+      apiKey: "AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8",
+      authDomain: "garage-scholars-v2.firebaseapp.com",
+      projectId: "garage-scholars-v2"
+    };
+
+    // Read phone number from URL query param
+    var params = new URLSearchParams(window.location.search);
+    var phone = params.get('phone');
+
+    if (!phone) {
+      postMsg('error', 'No phone number provided.');
+    } else {
+      firebase.initializeApp(config);
+      var auth = firebase.auth();
+      auth.useDeviceLanguage();
+      startVerification();
+    }
+
+    function postMsg(type, message, extra) {
+      var data = { type: type, message: message };
+      if (extra) { for (var k in extra) data[k] = extra[k]; }
+      try {
+        window.ReactNativeWebView.postMessage(JSON.stringify(data));
+      } catch(e) {
+        // Not in WebView — show error on page
+        document.getElementById('status').innerHTML =
+          '<p class="error">' + (message || 'Error') + '</p>';
+      }
+    }
+
+    function startVerification() {
+      try {
+        var verifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+          size: 'invisible',
+          callback: function() {
+            // reCAPTCHA solved
+          },
+          'expired-callback': function() {
+            postMsg('error', 'reCAPTCHA expired. Please try again.');
+          }
+        });
+
+        auth.signInWithPhoneNumber(phone, verifier)
+          .then(function(confirmationResult) {
+            postMsg('verificationId', '', {
+              verificationId: confirmationResult.verificationId
+            });
+          })
+          .catch(function(error) {
+            var msg = error.message || 'Failed to send verification code.';
+            if (error.code === 'auth/too-many-requests') {
+              msg = 'Too many attempts. Please wait a few minutes and try again.';
+            } else if (error.code === 'auth/invalid-phone-number') {
+              msg = 'Invalid phone number format.';
+            } else if (error.code === 'auth/captcha-check-failed') {
+              msg = 'reCAPTCHA verification failed. Please try again.';
+            }
+            postMsg('error', msg);
+          });
+      } catch (e) {
+        postMsg('error', e.message || 'Failed to initialize verification.');
+      }
+    }
+  </script>
+</body>
+</html>
