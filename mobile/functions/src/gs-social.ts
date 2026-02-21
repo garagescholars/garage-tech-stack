@@ -131,19 +131,84 @@ async function enhancePhoto(buffer: Buffer): Promise<Buffer> {
   }
 }
 
+// ─── Brand color themes that rotate with each post ───
+// Derived from garagescholars.com brand: emerald greens, teal, dark backgrounds, gold accents
+interface ColorTheme {
+  name: string;
+  bg: { r: number; g: number; b: number };   // Canvas background
+  bgHex: string;                              // Same as bg in hex
+  accent: string;                             // Divider & brand name color
+  labelBg: string;                            // Label overlay background (rgba)
+  tagline: string;                            // Tagline text color
+}
+
+const COLOR_THEMES: ColorTheme[] = [
+  {
+    // Theme 1: Classic Dark + Emerald — signature brand look
+    name: "emerald",
+    bg: { r: 9, g: 9, b: 11 },
+    bgHex: "#09090b",
+    accent: "#10b981",       // emerald-500
+    labelBg: "rgba(9,9,11,0.8)",
+    tagline: "#6ee7b7",      // emerald-300
+  },
+  {
+    // Theme 2: Dark Slate + Teal — app brand colors
+    name: "teal",
+    bg: { r: 15, g: 27, b: 45 },
+    bgHex: "#0f1b2d",
+    accent: "#14b8a6",       // teal-500 (app primary)
+    labelBg: "rgba(15,27,45,0.8)",
+    tagline: "#5eead4",      // teal-300
+  },
+  {
+    // Theme 3: Deep Green + Gold — premium feel
+    name: "gold",
+    bg: { r: 10, g: 18, b: 10 },
+    bgHex: "#0a120a",
+    accent: "#c9a84c",       // gold
+    labelBg: "rgba(10,18,10,0.8)",
+    tagline: "#86efac",      // green-300
+  },
+  {
+    // Theme 4: Charcoal + Bright Green — bold & clean
+    name: "green",
+    bg: { r: 3, g: 3, b: 3 },
+    bgHex: "#030303",
+    accent: "#22c55e",       // green-500
+    labelBg: "rgba(3,3,3,0.8)",
+    tagline: "#94a3b8",      // slate-400
+  },
+];
+
+// Determine which theme to use based on rotating index stored in Firestore
+async function getNextColorTheme(): Promise<ColorTheme> {
+  const configRef = db.collection(GS_COLLECTIONS.PLATFORM_CONFIG).doc("socialMediaTheme");
+  try {
+    const snap = await configRef.get();
+    const lastIndex = snap.exists ? (snap.data()?.lastThemeIndex ?? -1) as number : -1;
+    const nextIndex = (lastIndex + 1) % COLOR_THEMES.length;
+    await configRef.set({ lastThemeIndex: nextIndex, lastThemeName: COLOR_THEMES[nextIndex].name }, { merge: true });
+    return COLOR_THEMES[nextIndex];
+  } catch {
+    return COLOR_THEMES[0]; // Fallback to emerald
+  }
+}
+
 // ─── Create premium before/after composite (1080x1080 Instagram square) ───
 async function createCompositeImage(
   beforeBuffer: Buffer,
   afterBuffer: Buffer,
+  theme?: ColorTheme,
 ): Promise<Buffer> {
+  const t = theme || COLOR_THEMES[0];
+
   const CANVAS = 1080;
   const BORDER = 8;
   const INNER = CANVAS - BORDER * 2;                          // 1064
   const DIVIDER_WIDTH = 6;
   const IMG_WIDTH = Math.floor((INNER - DIVIDER_WIDTH) / 2);  // 529
   const IMG_HEIGHT = 904;
-  const GOLD = "#c9a84c";
-  const NAVY_HEX = "#0f1b2d";
 
   // Enhance both photos
   const [enhancedBefore, enhancedAfter] = await Promise.all([
@@ -169,7 +234,7 @@ async function createCompositeImage(
 
   const beforeLabel = Buffer.from(`
     <svg width="${IMG_WIDTH}" height="${labelHeight}">
-      <rect width="${IMG_WIDTH}" height="${labelHeight}" fill="rgba(15,27,45,0.75)"/>
+      <rect width="${IMG_WIDTH}" height="${labelHeight}" fill="${t.labelBg}"/>
       <text x="${IMG_WIDTH / 2}" y="30" text-anchor="middle"
             font-family="Helvetica Neue,Arial,sans-serif"
             font-size="20" font-weight="700" letter-spacing="4"
@@ -180,7 +245,7 @@ async function createCompositeImage(
   // "AFTER" label — overlaid near bottom of right image
   const afterLabel = Buffer.from(`
     <svg width="${IMG_WIDTH}" height="${labelHeight}">
-      <rect width="${IMG_WIDTH}" height="${labelHeight}" fill="rgba(15,27,45,0.75)"/>
+      <rect width="${IMG_WIDTH}" height="${labelHeight}" fill="${t.labelBg}"/>
       <text x="${IMG_WIDTH / 2}" y="30" text-anchor="middle"
             font-family="Helvetica Neue,Arial,sans-serif"
             font-size="20" font-weight="700" letter-spacing="4"
@@ -188,17 +253,17 @@ async function createCompositeImage(
     </svg>
   `);
 
-  // Vertical gold divider between images
+  // Vertical accent divider between images
   const verticalDivider = Buffer.from(`
     <svg width="${DIVIDER_WIDTH}" height="${IMG_HEIGHT}">
-      <rect width="${DIVIDER_WIDTH}" height="${IMG_HEIGHT}" fill="${GOLD}"/>
+      <rect width="${DIVIDER_WIDTH}" height="${IMG_HEIGHT}" fill="${t.accent}"/>
     </svg>
   `);
 
-  // Horizontal gold separator below images
+  // Horizontal accent separator below images
   const horizontalDivider = Buffer.from(`
     <svg width="${INNER}" height="2">
-      <rect width="${INNER}" height="2" fill="${GOLD}"/>
+      <rect width="${INNER}" height="2" fill="${t.accent}"/>
     </svg>
   `);
 
@@ -206,26 +271,26 @@ async function createCompositeImage(
   const brandBarHeight = CANVAS - BORDER * 2 - IMG_HEIGHT - 2; // 158
   const brandBar = Buffer.from(`
     <svg width="${INNER}" height="${brandBarHeight}">
-      <rect width="${INNER}" height="${brandBarHeight}" fill="${NAVY_HEX}"/>
-      <rect x="${(INNER - 120) / 2}" y="18" width="120" height="2" fill="${GOLD}"/>
+      <rect width="${INNER}" height="${brandBarHeight}" fill="${t.bgHex}"/>
+      <rect x="${(INNER - 120) / 2}" y="18" width="120" height="2" fill="${t.accent}"/>
       <text x="${INNER / 2}" y="52" text-anchor="middle"
             font-family="Helvetica Neue,Arial,sans-serif"
             font-size="28" font-weight="700" letter-spacing="6"
-            fill="${GOLD}">GARAGE SCHOLARS</text>
+            fill="${t.accent}">GARAGE SCHOLARS</text>
       <text x="${INNER / 2}" y="82" text-anchor="middle"
             font-family="Helvetica Neue,Arial,sans-serif"
             font-size="14" letter-spacing="2"
-            fill="#94a3b8">Clear Space, Calm Mind, Confident Life</text>
+            fill="${t.tagline}">Clear Space, Calm Mind, Confident Life</text>
     </svg>
   `);
 
-  // Create dark navy base canvas
+  // Create dark base canvas
   const base = await sharp({
     create: {
       width: CANVAS,
       height: CANVAS,
       channels: 3,
-      background: { r: 15, g: 27, b: 45 },
+      background: t.bg,
     },
   })
     .jpeg()
@@ -352,13 +417,34 @@ async function postToInstagram(
   }
   if (!createData.id) throw new Error("No creation_id returned from Instagram");
 
-  // Step 2: Publish the container
+  // Step 2: Wait for Instagram to process the media container
+  const containerId = createData.id;
+  const maxWaitMs = 60_000; // 60 seconds max
+  const pollInterval = 5_000; // check every 5 seconds
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < maxWaitMs) {
+    const statusResp = await fetch(
+      `https://graph.facebook.com/v21.0/${containerId}?fields=status_code&access_token=${accessToken}`,
+    );
+    const statusData = await statusResp.json() as { status_code?: string; error?: { message: string } };
+
+    if (statusData.status_code === "FINISHED") break;
+    if (statusData.status_code === "ERROR") {
+      throw new Error("Instagram media container processing failed");
+    }
+
+    // Still processing — wait and poll again
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+  }
+
+  // Step 3: Publish the container
   const publishUrl = `https://graph.facebook.com/v21.0/${igUserId}/media_publish`;
   const publishResp = await fetch(publishUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      creation_id: createData.id,
+      creation_id: containerId,
       access_token: accessToken,
     }),
   });
@@ -372,12 +458,13 @@ async function postToInstagram(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Scheduled: Process social media content queue (every 30 min)
+// Scheduled: Process social media content queue (daily at 9 AM MT)
 // ═══════════════════════════════════════════════════════════════
 
 export const gsProcessSocialContent = onSchedule(
   {
-    schedule: "every 30 minutes",
+    schedule: "every day 09:00",
+    timeZone: "America/Denver",
     timeoutSeconds: 300,
     memory: "1GiB",
     secrets: [
@@ -446,8 +533,10 @@ export const gsProcessSocialContent = onSchedule(
         if (!beforeCheck.valid) throw new Error(beforeCheck.reason!);
         if (!afterCheck.valid) throw new Error(afterCheck.reason!);
 
-        // 3. Create enhanced composite image
-        const compositeBuffer = await createCompositeImage(beforeBuffer, afterBuffer);
+        // 3. Pick next color theme in rotation & create enhanced composite
+        const theme = await getNextColorTheme();
+        console.log(`Using color theme: ${theme.name}`);
+        const compositeBuffer = await createCompositeImage(beforeBuffer, afterBuffer, theme);
 
         // 4. Validate composite output
         const compositeMeta = await sharp(compositeBuffer).metadata();
@@ -598,3 +687,4 @@ export const gsRefreshMetaToken = onCall(
     };
   },
 );
+
