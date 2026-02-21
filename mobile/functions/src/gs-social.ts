@@ -18,33 +18,35 @@ import { sendEmail } from "./gs-notifications";
 const db = getFirestore();
 
 // ─── Default prompt for caption generation ───
-const DEFAULT_CAPTION_PROMPT = `You are the social media manager for Garage Scholars, a Denver-based garage transformation company staffed by college students ("scholars"). Generate an engaging Instagram/Facebook feed post caption for a before-and-after garage transformation photo.
+const DEFAULT_CAPTION_PROMPT = `You are writing a real Instagram/Facebook caption for Garage Scholars, a Denver garage transformation company run by college students. This is a before-and-after photo post.
 
-JOB DETAILS:
-- Service: {jobTitle}
-- Location: {location}
-- Package: {packageTier}
+JOB: {jobTitle} in {location} ({packageTier} package)
 
-BRAND VOICE:
-- Professional but warm and approachable
-- Highlight the transformation, not the mess
-- Celebrate the homeowner's decision to invest in their space
-- Subtly mention scholars (college students doing the work) — it's a differentiator
-- Never negative about the "before" state
+Write it like a real person typed it on their phone — casual, genuine, no corporate speak. Think of how a proud small business owner would caption their work on Instagram.
 
-CAPTION RULES:
-- 2-3 short paragraphs (not a wall of text)
-- End with a clear call-to-action (book a consultation, link in bio, etc.)
-- Include 8-12 relevant hashtags at the end
-- Use 1-2 emojis max (professional, not spammy)
-- Mention Denver/Colorado when natural
-- Keep under 300 words total
-- Each caption should feel unique — vary the opening line, structure, and CTA
+STRICT FORMATTING RULES (violating these is an error):
+- NEVER use asterisks (*), bold, italic, underscores, or any markdown/formatting characters
+- NEVER use bullet points, numbered lists, or dashes as list items
+- NEVER use quotation marks around phrases for emphasis
+- NEVER use ALL CAPS for emphasis (hashtags excluded)
+- Write in plain conversational text only — exactly how it would appear on Instagram
+- Do NOT start with "Just" or "Another" — vary your openings every time
 
-HASHTAG STRATEGY:
-Mix of: #GarageOrganization #GarageTransformation #DenverHome #GarageScholars #BeforeAndAfter #HomeOrganization #GarageMakeover #Denver #Colorado #OrganizedGarage #DeclutterYourLife #GarageGoals
+CONTENT GUIDELINES:
+- 2-3 short paragraphs, written naturally
+- Mention the scholars (college students) casually, not forced
+- Never trash-talk the "before" — focus on the transformation
+- End with a simple call-to-action (link in bio, DM us, etc.)
+- Add 8-12 hashtags at the very end on their own line
+- 1-2 emojis max, placed naturally
+- Mention Denver area when it fits
+- Keep under 250 words
+- Make every caption feel different — change up the opening, angle, and tone each time
 
-Output ONLY the caption text (including hashtags). No labels, headers, or formatting.`;
+HASHTAGS TO MIX FROM:
+#GarageOrganization #GarageTransformation #DenverHome #GarageScholars #BeforeAndAfter #HomeOrganization #GarageMakeover #Denver #Colorado #OrganizedGarage #DeclutterYourLife #GarageGoals
+
+Output ONLY the caption text. No labels, no headers, no extra formatting. Plain text + hashtags.`;
 
 // ─── Quality validation constants ───
 const MIN_IMAGE_WIDTH = 400;
@@ -144,40 +146,40 @@ interface ColorTheme {
 
 const COLOR_THEMES: ColorTheme[] = [
   {
-    // Theme 1: Classic Dark + Emerald — signature brand look
+    // Theme 1: Deep Black + Emerald — signature brand look
     name: "emerald",
     bg: { r: 9, g: 9, b: 11 },
     bgHex: "#09090b",
     accent: "#10b981",       // emerald-500
-    labelBg: "rgba(9,9,11,0.8)",
+    labelBg: "rgba(9,9,11,0.85)",
     tagline: "#6ee7b7",      // emerald-300
   },
   {
-    // Theme 2: Dark Slate + Teal — app brand colors
+    // Theme 2: Navy Blue + Teal — stands out with blue undertone
     name: "teal",
-    bg: { r: 15, g: 27, b: 45 },
-    bgHex: "#0f1b2d",
+    bg: { r: 12, g: 30, b: 58 },
+    bgHex: "#0c1e3a",
     accent: "#14b8a6",       // teal-500 (app primary)
-    labelBg: "rgba(15,27,45,0.8)",
+    labelBg: "rgba(12,30,58,0.85)",
     tagline: "#5eead4",      // teal-300
   },
   {
-    // Theme 3: Deep Green + Gold — premium feel
+    // Theme 3: Dark Olive + Gold — warm premium feel, noticeably different
     name: "gold",
-    bg: { r: 10, g: 18, b: 10 },
-    bgHex: "#0a120a",
-    accent: "#c9a84c",       // gold
-    labelBg: "rgba(10,18,10,0.8)",
-    tagline: "#86efac",      // green-300
+    bg: { r: 28, g: 25, b: 12 },
+    bgHex: "#1c190c",
+    accent: "#d4a843",       // warm gold
+    labelBg: "rgba(28,25,12,0.85)",
+    tagline: "#fbbf24",      // amber-400
   },
   {
-    // Theme 4: Charcoal + Bright Green — bold & clean
+    // Theme 4: Forest Green + Bright Green — bold green-on-green
     name: "green",
-    bg: { r: 3, g: 3, b: 3 },
-    bgHex: "#030303",
+    bg: { r: 8, g: 28, b: 14 },
+    bgHex: "#081c0e",
     accent: "#22c55e",       // green-500
-    labelBg: "rgba(3,3,3,0.8)",
-    tagline: "#94a3b8",      // slate-400
+    labelBg: "rgba(8,28,14,0.85)",
+    tagline: "#86efac",      // green-300
   },
 ];
 
@@ -349,9 +351,27 @@ async function generateCaption(
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  let text = result.response.text()?.trim() || "Another garage transformed! #GarageScholars";
 
-  return text?.trim() || "Another garage transformed! #GarageScholars";
+  // Strip AI formatting artifacts that slip through despite prompt instructions
+  text = text
+    .replace(/\*\*/g, "")        // Remove bold markdown **
+    .replace(/(?<!\w)\*(?!\*)/g, "") // Remove stray single asterisks
+    .replace(/__/g, "")          // Remove underline markdown __
+    .replace(/(?<!\w)_(?!_)/g, (match, offset, str) => {
+      // Keep underscores inside words/hashtags, remove emphasis underscores
+      const before = str[offset - 1];
+      const after = str[offset + 1];
+      if (before && /\w/.test(before)) return match;
+      if (after && /\w/.test(after)) return "";
+      return match;
+    })
+    .replace(/^#{1,6}\s+/gm, "") // Remove markdown headers
+    .replace(/^[-•]\s+/gm, "")   // Remove bullet points
+    .replace(/^\d+\.\s+/gm, "")  // Remove numbered lists
+    .trim();
+
+  return text;
 }
 
 // ─── Post to Facebook Page ───
