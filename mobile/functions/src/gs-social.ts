@@ -18,33 +18,67 @@ import { sendEmail } from "./gs-notifications";
 const db = getFirestore();
 
 // ─── Default prompt for caption generation ───
+// Caption story angles — rotated one per post so every caption tells a different story
+const CAPTION_ANGLES = [
+  // --- HEALTH & FITNESS ---
+  "HOME GYM angle: The homeowner set up a home gym in their clean garage. They work out every morning now without a gym membership. Paint a picture of early morning workouts, weights racked on the wall, and someone who got their fitness back because the space was finally there.",
+  "MENTAL HEALTH angle: The clutter was causing real anxiety. Every time they opened the garage door they felt overwhelmed. Now it's calm and organized and that peace of mind carries into the rest of their day. Talk about how physical clutter equals mental clutter.",
+  "ACTIVE FAMILY angle: The family bikes together now. The kids grab their helmets off the hooks and ride out of the garage on Saturday mornings. The garage went from a place nobody wanted to enter to the launchpad for family adventures.",
+
+  // --- MONEY & VALUE ---
+  "HOME RESALE angle: An organized garage adds real value to a home. Talk about how buyers notice the garage first and a clean one signals a well-maintained property. This homeowner just increased their home's appeal and resale value with one transformation.",
+  "CASH BACK angle: During the cleanup they found gear, tools, and equipment worth hundreds of dollars. Some of it went on Facebook Marketplace, some to a consignment shop. The garage transformation literally paid for part of itself. Talk about the money they made back.",
+  "STOP REBUYING angle: This homeowner used to rebuy things they already owned because they couldn't find anything. Duplicate tools, extra holiday lights, three sets of the same screws. Now everything has a spot and they're saving money every month without even trying.",
+
+  // --- GIVING BACK ---
+  "DONATION angle: The best part of this cleanup was the six bags of stuff that went straight to Goodwill. Clothes the kids outgrew, sports equipment they never used, perfectly good items that will help another family. Decluttering feels even better when it helps someone else.",
+
+  // --- ORGANIZATION & DAILY LIFE ---
+  "PARKING INSIDE angle: No more scraping ice at 6 AM in a Denver winter. No more worrying about hail season. This homeowner parks inside their garage again for the first time in years. It changed their entire morning routine and they wonder why they waited so long.",
+  "MORNING ROUTINE angle: The homeowner's morning used to start with stress — stepping over boxes, searching for keys, tripping on shoes. Now they walk through a clean garage to their car and start the day calm. Talk about how the first five minutes of your day set the tone for everything.",
+  "SEASONAL STORAGE angle: Winter gear, summer toys, camping equipment, sports stuff — all labeled and easy to find when the season changes. No more digging through piles to find the right bin. This homeowner is ready for whatever Colorado throws at them. Do NOT mention specific holidays or seasons — keep it general about being prepared year-round.",
+  "EVERYTHING HAS A HOME angle: Every tool on a pegboard, every bin labeled, every shelf with a purpose. The homeowner said the most satisfying thing is that nothing ends up on the floor anymore. When everything has a spot, putting things away takes seconds instead of being a chore.",
+
+  // --- CONFIDENCE & LIFESTYLE ---
+  "CONFIDENCE angle: This homeowner used to rush guests past the garage. Now they actually show it off. A clean organized space makes the whole house feel more put together and gave them a sense of pride they didn't expect from a garage.",
+  "DOMINO EFFECT angle: It started with the garage and then they organized the closets, then the basement. A clean garage kicked off a whole lifestyle shift. Talk about how one transformation inspired them to level up the rest of their home.",
+  "COUPLE'S PROJECT SPACE angle: The garage became a workshop where the homeowner and their partner build things together. Weekend projects, refinishing furniture, finally having space to work on hobbies side by side. The garage went from dead space to their favorite room.",
+  "SAFETY angle: There were tripping hazards everywhere, heavy boxes stacked dangerously, and the kids couldn't walk through without bumping into something. Now it's safe, clear paths, nothing falling off shelves, and the family doesn't worry about someone getting hurt in there.",
+];
+
 const DEFAULT_CAPTION_PROMPT = `You are writing a real Instagram/Facebook caption for Garage Scholars, a Denver garage transformation company run by college students. This is a before-and-after photo post.
 
 JOB: {jobTitle} in {location} ({packageTier} package)
 
-Write it like a real person typed it on their phone — casual, genuine, no corporate speak. Think of how a proud small business owner would caption their work on Instagram.
+Write it like a real person — professional but warm, the kind of caption a sharp small business owner posts when they're genuinely proud of the work.
+
+YOUR STORY ANGLE FOR THIS POST (you MUST use this specific angle):
+{storyAngle}
+
+Weave this angle into the caption naturally. Tell a mini story or paint a vivid picture of the homeowner's life after the transformation. Do NOT list multiple benefits — go deep on this one angle.
+
+{avoidSection}
 
 STRICT FORMATTING RULES (violating these is an error):
-- NEVER use asterisks (*), bold, italic, underscores, or any markdown/formatting characters
+- NEVER use asterisks, bold, italic, underscores, or any markdown/formatting characters
 - NEVER use bullet points, numbered lists, or dashes as list items
 - NEVER use quotation marks around phrases for emphasis
 - NEVER use ALL CAPS for emphasis (hashtags excluded)
 - Write in plain conversational text only — exactly how it would appear on Instagram
-- Do NOT start with "Just" or "Another" — vary your openings every time
+- Do NOT start with "Just" or "Another" or "Imagine" — vary your openings every time
 
 CONTENT GUIDELINES:
 - 2-3 short paragraphs, written naturally
-- Mention the scholars (college students) casually, not forced
-- Never trash-talk the "before" — focus on the transformation
-- End with a simple call-to-action (link in bio, DM us, etc.)
+- Mention the scholars (college students doing the work) casually — it's a differentiator
+- Never trash-talk the "before" — focus on what's possible now
+- End with a clear call-to-action (link in bio, DM us, book a consultation, etc.)
 - Add 8-12 hashtags at the very end on their own line
 - 1-2 emojis max, placed naturally
 - Mention Denver area when it fits
 - Keep under 250 words
-- Make every caption feel different — change up the opening, angle, and tone each time
 
 HASHTAGS TO MIX FROM:
-#GarageOrganization #GarageTransformation #DenverHome #GarageScholars #BeforeAndAfter #HomeOrganization #GarageMakeover #Denver #Colorado #OrganizedGarage #DeclutterYourLife #GarageGoals
+#GarageOrganization #GarageTransformation #DenverHome #GarageScholars #BeforeAndAfter #HomeOrganization #GarageMakeover #Denver #Colorado #OrganizedGarage #DeclutterYourLife #GarageGoals #ClearSpaceClearMind #HealthyHome
 
 Output ONLY the caption text. No labels, no headers, no extra formatting. Plain text + hashtags.`;
 
@@ -197,6 +231,16 @@ async function getNextColorTheme(): Promise<ColorTheme> {
   }
 }
 
+// ─── Convert hex color to RGB object for Sharp ───
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  return {
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16),
+  };
+}
+
 // ─── Create premium before/after composite (1080x1080 Instagram square) ───
 async function createCompositeImage(
   beforeBuffer: Buffer,
@@ -286,21 +330,30 @@ async function createCompositeImage(
     </svg>
   `);
 
-  // Create dark base canvas
+  // Create accent-colored base canvas (visible border/outline around the whole image)
+  const accentRgb = hexToRgb(t.accent);
   const base = await sharp({
     create: {
       width: CANVAS,
       height: CANVAS,
       channels: 3,
-      background: t.bg,
+      background: accentRgb,
     },
   })
     .jpeg()
     .toBuffer();
 
+  // Dark inner fill so the border is the accent color outline
+  const innerFill = Buffer.from(`
+    <svg width="${INNER}" height="${INNER}">
+      <rect width="${INNER}" height="${INNER}" fill="${t.bgHex}"/>
+    </svg>
+  `);
+
   // Composite everything
   const result = await sharp(base)
     .composite([
+      { input: innerFill, left: BORDER, top: BORDER },
       { input: beforeResized, left: BORDER, top: BORDER },
       { input: beforeLabel, left: BORDER, top: BORDER + labelY },
       { input: verticalDivider, left: BORDER + IMG_WIDTH, top: BORDER },
@@ -315,6 +368,36 @@ async function createCompositeImage(
   return result;
 }
 
+// ─── Get next story angle + last caption from Firestore ───
+async function getNextCaptionAngle(): Promise<{ angle: string; lastCaption: string }> {
+  const configRef = db.collection(GS_COLLECTIONS.PLATFORM_CONFIG).doc("socialMediaCaption");
+  try {
+    const snap = await configRef.get();
+    const lastIndex = snap.exists ? (snap.data()?.lastAngleIndex ?? -1) as number : -1;
+    const lastCaption = snap.exists ? (snap.data()?.lastCaption ?? "") as string : "";
+    const nextIndex = (lastIndex + 1) % CAPTION_ANGLES.length;
+    await configRef.set({
+      lastAngleIndex: nextIndex,
+      lastAngleName: `angle_${nextIndex}`,
+    }, { merge: true });
+    return { angle: CAPTION_ANGLES[nextIndex], lastCaption };
+  } catch {
+    return { angle: CAPTION_ANGLES[0], lastCaption: "" };
+  }
+}
+
+// ─── Save last caption to Firestore so next post can avoid repeating ───
+async function saveLastCaption(caption: string) {
+  try {
+    await db.collection(GS_COLLECTIONS.PLATFORM_CONFIG).doc("socialMediaCaption").set(
+      { lastCaption: caption.substring(0, 500) },
+      { merge: true },
+    );
+  } catch {
+    // Non-critical
+  }
+}
+
 // ─── Generate caption using Gemini ───
 async function generateCaption(
   jobTitle: string,
@@ -323,6 +406,10 @@ async function generateCaption(
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
+
+  // Get the next story angle and last caption for context
+  const { angle, lastCaption } = await getNextCaptionAngle();
+  console.log(`Caption angle: ${angle.substring(0, 60)}...`);
 
   // Try to load custom prompt from Firestore
   let promptTemplate = DEFAULT_CAPTION_PROMPT;
@@ -343,10 +430,17 @@ async function generateCaption(
     ? address.split(",").slice(-2, -1)[0]?.trim() || "Denver"
     : "Denver";
 
+  // Build avoidance section from last caption
+  const avoidSection = lastCaption
+    ? `IMPORTANT — DO NOT repeat the previous post. Here is the last caption we posted (write something COMPLETELY different — different opening, different story, different vibe):\n---\n${lastCaption}\n---`
+    : "";
+
   const prompt = promptTemplate
     .replace("{jobTitle}", jobTitle || "Garage Transformation")
     .replace("{location}", location)
-    .replace("{packageTier}", packageTier || "Standard");
+    .replace("{packageTier}", packageTier || "Standard")
+    .replace("{storyAngle}", angle)
+    .replace("{avoidSection}", avoidSection);
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -370,6 +464,9 @@ async function generateCaption(
     .replace(/^[-•]\s+/gm, "")   // Remove bullet points
     .replace(/^\d+\.\s+/gm, "")  // Remove numbered lists
     .trim();
+
+  // Save this caption so the next post knows what to avoid
+  await saveLastCaption(text);
 
   return text;
 }
