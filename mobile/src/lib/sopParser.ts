@@ -1,0 +1,203 @@
+// ── SOP Parsing Utilities ──
+// Extracted from AdminLeads for reuse across mobile and web.
+
+import {
+  BOLD_SERIES_SETS,
+  STANDARD_SHELVING,
+  OVERHEAD_STORAGE,
+  FLOORING_OPTIONS,
+  GYM_EQUIPMENT_CATALOG,
+  type ProductSelections,
+} from "../constants/productCatalog";
+
+export type ChecklistEntry = {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+  status: "pending" | "approved";
+  subItems?: ChecklistEntry[];
+};
+
+export type SopSection = {
+  title: string;
+  body: string;
+};
+
+/**
+ * Extract numbered items from the "## 3. PHASE SEQUENCE" section of a SOP
+ * and return them as a checklist array with nested sub-steps.
+ *
+ * Lines matching /^\d+\.\s/ become top-level items.
+ * Lines matching /^[a-z]\.\s/ (indented) become sub-items of the preceding top-level item.
+ */
+export function parsePhaseSequenceToChecklist(sopText: string): ChecklistEntry[] {
+  const phaseMatch = sopText.match(/## 3\. PHASE SEQUENCE[\s\S]*?(?=## \d|$)/i);
+  if (!phaseMatch) return [];
+
+  const lines = phaseMatch[0].split("\n");
+  const entries: ChecklistEntry[] = [];
+  let currentEntry: ChecklistEntry | null = null;
+  let subIndex = 0;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Top-level numbered phase: "1. Full pull-out (60-90 min)"
+    if (/^\d+\.\s/.test(trimmed)) {
+      currentEntry = {
+        id: `sop-phase-${entries.length + 1}`,
+        text: trimmed.replace(/^\d+\.\s*/, "").trim(),
+        isCompleted: false,
+        status: "approved" as const,
+        subItems: [],
+      };
+      entries.push(currentEntry);
+      subIndex = 0;
+      continue;
+    }
+
+    // Lettered sub-step: "a. Move vehicles to street" or "- Move vehicles to street"
+    if (currentEntry && /^[a-z]\.\s/.test(trimmed)) {
+      subIndex++;
+      currentEntry.subItems!.push({
+        id: `${currentEntry.id}-sub-${subIndex}`,
+        text: trimmed.replace(/^[a-z]\.\s*/, "").trim(),
+        isCompleted: false,
+        status: "approved" as const,
+      });
+      continue;
+    }
+
+    // Also support "- " bullet sub-steps under a numbered phase
+    if (currentEntry && /^[-•]\s/.test(trimmed) && trimmed.length > 2) {
+      subIndex++;
+      currentEntry.subItems!.push({
+        id: `${currentEntry.id}-sub-${subIndex}`,
+        text: trimmed.replace(/^[-•]\s*/, "").trim(),
+        isCompleted: false,
+        status: "approved" as const,
+      });
+    }
+  }
+
+  // Clean up: remove empty subItems arrays
+  for (const entry of entries) {
+    if (entry.subItems && entry.subItems.length === 0) {
+      delete entry.subItems;
+    }
+  }
+
+  return entries;
+}
+
+/**
+ * Split SOP markdown text into sections at `## N.` headers.
+ * Returns an array of { title, body } pairs.
+ */
+export function parseSopSections(text: string): SopSection[] {
+  const parts = text.split(/^(## \d+\..+)$/m);
+  const sections: SopSection[] = [];
+
+  for (let i = 1; i < parts.length; i += 2) {
+    sections.push({
+      title: parts[i].replace(/^## /, "").trim(),
+      body: (parts[i + 1] || "").trim(),
+    });
+  }
+
+  return sections;
+}
+
+/**
+ * Serialize structured product selections into human-readable strings
+ * suitable for storage in Firestore and for SOP prompt context.
+ *
+ * Credit logic:
+ *  - Doctorate: $500 credit toward Bold Series
+ *  - Graduate:  $300 credit toward Bold Series
+ *  - Undergraduate: $0 credit
+ */
+export function serializeSelections(
+  sel: ProductSelections,
+  packageTier: string,
+): { shelvingSelections: string; addOns: string } {
+  const parts: string[] = [];
+
+  // Bold Series
+  const bold = BOLD_SERIES_SETS.find((b) => b.id === sel.boldSeriesId);
+  if (bold) {
+    const credit = packageTier === "doctorate" ? 500 : packageTier === "graduate" ? 300 : 0;
+    const clientPays = Math.max(0, bold.retail - credit);
+    parts.push(
+      `Bold Series ${bold.name} (${bold.dims}) -- Retail $${bold.retail}${
+        credit > 0 ? `, client pays $${clientPays} after $${credit} credit` : ""
+      }`,
+    );
+  }
+
+  // Standard shelving
+  sel.standardShelving.forEach((s) => {
+    const item = STANDARD_SHELVING.find((x) => x.id === s.id);
+    if (item) parts.push(`${s.qty}x ${item.name} (${item.dims})`);
+  });
+
+  // Overhead storage
+  sel.overheadStorage.forEach((s) => {
+    const item = OVERHEAD_STORAGE.find((x) => x.id === s.id);
+    if (item) parts.push(`${s.qty}x ${item.name} (${item.dims})`);
+  });
+
+  const shelvingSelections = parts.length > 0 ? parts.join(" | ") : "None selected";
+
+  // Add-ons
+  const addOnParts: string[] = [];
+
+  if (sel.extraHaulAways > 0) {
+    addOnParts.push(`${sel.extraHaulAways}x Extra Haul-Away ($${sel.extraHaulAways * 300})`);
+  }
+
+  const flooring = FLOORING_OPTIONS.find((f) => f.id === sel.flooringId);
+  if (flooring && flooring.id !== "none") {
+    addOnParts.push(
+      flooring.price > 0
+        ? `${flooring.name} ($${flooring.price})`
+        : `${flooring.name} (Price TBD)`,
+    );
+  }
+
+  if (sel.extraBinPacks > 0) {
+    addOnParts.push(`${sel.extraBinPacks}x Extra Bin Pack (8 bins each)`);
+  }
+
+  if (sel.notes.trim()) {
+    addOnParts.push(`Notes: ${sel.notes.trim()}`);
+  }
+
+  // Gym equipment
+  if (sel.gymEquipment?.length > 0) {
+    const gymParts = sel.gymEquipment.map((item) => {
+      const cat = GYM_EQUIPMENT_CATALOG.find((e) => e.id === item.id);
+      return cat
+        ? `${item.qty}x ${cat.name} (${cat.brand})`
+        : `${item.qty}x ${item.customName || "Custom Equipment"}`;
+    });
+    addOnParts.push(`Gym Equipment: ${gymParts.join(", ")}`);
+  }
+
+  if (sel.gymFlooringType && sel.gymFlooringType !== "none") {
+    const floorLabels: Record<string, string> = {
+      "stall-mats": "Rubber Stall Mats",
+      "click-in": "Click-In Plate Flooring",
+      polyaspartic: "Polyaspartic Floor Coating",
+    };
+    addOnParts.push(`Gym Flooring: ${floorLabels[sel.gymFlooringType] || sel.gymFlooringType}`);
+  }
+
+  if (sel.gymNotes?.trim()) {
+    addOnParts.push(`Gym Notes: ${sel.gymNotes.trim()}`);
+  }
+
+  const addOns = addOnParts.length > 0 ? addOnParts.join(" | ") : "None selected";
+
+  return { shelvingSelections, addOns };
+}

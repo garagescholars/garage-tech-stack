@@ -1,0 +1,50 @@
+node_modules
+.DS_Store
+.env
+.env.*
+service-account.json
+chrome_profile/
+temp_downloads/
+debug_screenshots/
+
+# Puppeteer/Chrome runtime artifacts
+backend/chrome_profile/
+backend/temp_downloads/
+backend/my_craigslist_session/
+backend/uploads/
+backend/*.HEIC
+backend/*.png
+
+.DS_Store
+backend/node_modules/
+node_modules/
+
+frontend/dist/
+# mac junk
+.DS_Store
+
+# dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# build output
+frontend/dist/
+
+# mac junk
+.DS_Store
+**/.DS_Store
+
+# scheduling system artifacts
+schedulingsystem/
+schedulingsystem.zip
+
+# backup files
+copy-of-*/
+website-backup/
+*.zip
+
+# firebase cache
+.firebase/
+**/.firebase/
+.vercel

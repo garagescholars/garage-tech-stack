@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garage Scholars Denver - About</title>
+    <meta property="og:title" content="Garage Scholars Denver - About">
+    <meta name="description" content="Meet the team behind Garage Scholars. Denver's premier garage transformation service.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ========== HEADER ========== -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo"><a href="index.html">Garage Scholars</a></div>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html" class="active">About</a>
+                <a href="index.html#services">Services</a>
+                <a href="index.html#pricing">Pricing</a>
+                <a href="contact.html">Contact</a>
+                <a href="apply.html">Join Our Team</a>
+            </nav>
+            <div class="nav-buttons">
+                <a href="coming-soon.html" class="btn btn-outline">Visualize Your Garage</a>
+                <button class="btn btn-primary" onclick="openQuoteModal()">Get a Quote</button>
+            </div>
+            <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <nav class="mobile-nav" id="mobileNav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="index.html#services">Services</a>
+        <a href="index.html#pricing">Pricing</a>
+        <a href="contact.html">Contact</a>
+        <a href="apply.html">Join Our Team</a>
+        <a href="coming-soon.html" class="btn btn-outline">Visualize Your Garage</a>
+        <button class="btn btn-primary" onclick="openQuoteModal()">Get a Quote</button>
+    </nav>
+
+    <!-- ========== MISSION SECTION ========== -->
+    <section class="section section-dark">
+        <div class="container">
+            <div class="about-hero fade-up">
+                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80" alt="Beautiful organized space">
+                <div>
+                    <h2>Our Mission</h2>
+                    <h3>Clear Space, Calm Mind, Confident Life.</h3>
+                    <p>We create clarity and confidence by transforming garages into functional, stress-free spaces.</p>
+                    <button class="btn btn-primary" onclick="openQuoteModal()">Get Started</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== WHY CHOOSE US ========== -->
+    <section class="section section-darker">
+        <div class="container">
+            <div class="about-why fade-up">
+                <div>
+                    <h3>Why Choose Garage Transformation?</h3>
+                    <p>We believe your environment shapes your mindset &mdash; and a transformed garage can transform the way you show up in life.</p>
+                    <button class="btn btn-primary" onclick="openQuoteModal()">Get Started</button>
+                </div>
+                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80" alt="Luxury home exterior">
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== MEET THE SCHOLARS ========== -->
+    <section class="section section-dark">
+        <div class="container">
+            <div class="scholars-section fade-up">
+                <h2>Meet The Scholars</h2>
+                <div class="scholars-grid">
+                    <div class="scholar-card">
+                        <h3>Zach Harmon</h3>
+                        <span class="credentials">PT, DPT</span>
+                        <p class="title">Co-Owner</p>
+                        <p class="bio">Zach Harmon is a performance-minded problem solver who loves turning chaotic spaces into efficient, functional, and good-looking environments. As a physical therapist, strength coach, and entrepreneur, Zach has spent his career studying how people move, how spaces influence behavior, and how smart systems make life easier.</p>
+                        <br>
+                        <p class="bio">Garage Scholars was born from that mindset &mdash; blending organization, design, and practical utility into one streamlined service. Zach approaches every project like he approaches his clinics: with precision, clarity, and a commitment to long-term results.</p>
+                        <br>
+                        <p class="bio">When he's not transforming garages, Zach is lifting, learning, or exploring the outdoors with his family.</p>
+                        <br>
+                        <p class="bio"><strong>Clear Space. Calm Mind. Confident Life.</strong><br>Zach helps you get there.</p>
+                    </div>
+                    <div class="scholar-card">
+                        <h3>Tyler Sodia</h3>
+                        <span class="credentials">PhD</span>
+                        <p class="title">Co-Owner</p>
+                        <p class="bio">Dr. Tyler Sodia is a systems-obsessed builder who loves turning big, messy ideas into clean, repeatable results. As a scientist, engineer, and entrepreneur, Tyler has spent his career studying how things work&mdash;materials, machines, workflows&mdash;and how small changes in environment can completely change how people feel and perform in their space.</p>
+                        <br>
+                        <p class="bio">Tyler believes that the garage should be a personal lab. Whether he's designing a lifting-friendly layout, dialing in storage for busy families, or mapping out a full "garage ecosystem," his goal is the same&mdash;cut friction, create order, and turn the garage into an asset instead of a stressor.</p>
+                        <br>
+                        <p class="bio">When he's not rethinking garages, Tyler is lifting, learning, or sketching out the next experiment on a whiteboard, a spreadsheet, or a napkin with a cup of coffee nearby and a new idea already in motion.</p>
+                        <br>
+                        <p class="bio"><strong>Clear Garage. Sharper Mind. Bigger Life.</strong><br>Tyler helps you build it.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="newsletter">
+                <h3>Join our newsletter</h3>
+                <p>Sign up for our newsletter to receive exclusive deals, service updates, and garage organization tips. Stay informed!</p>
+                <form class="newsletter-form" onsubmit="handleNewsletter(event)">
+                    <input type="email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
+                <p class="newsletter-disclaimer">By subscribing you agree to our <a href="privacypolicy.html">Privacy Policy</a></p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Menu</h4>
+                    <a href="index.html">Home</a>
+                    <a href="about.html">About</a>
+                    <a href="index.html#services">Services</a>
+                    <a href="contact.html">Contact</a>
+                    <a href="apply.html">Join Our Team</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Quick Links</h4>
+                    <a href="privacypolicy.html">Privacy Policy</a>
+                    <a href="termsofuse.html">Terms of Use</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <a href="tel:7205073969">(720) 507-3969</a>
+                    <a href="mailto:garagescholars@gmail.com">garagescholars@gmail.com</a>
+                    <span style="color: var(--color-text-muted); font-size: 0.9rem;">Serving the Denver Metro Area</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="logo">Garage Scholars</span>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ========== QUOTE MODAL ========== -->
+    <div class="modal-overlay" id="quoteModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeQuoteModal()">&times;</button>
+            <h2>Get Your Free Quote</h2>
+            <p class="subtitle">Tell us about your garage and we'll get back to you within 24 hours.</p>
+            <form id="quoteForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-name">Name *</label>
+                        <input type="text" id="quote-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-email">Email *</label>
+                        <input type="email" id="quote-email" name="email" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-phone">Phone *</label>
+                        <input type="tel" id="quote-phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-zipcode">Zip Code *</label>
+                        <input type="text" id="quote-zipcode" name="zipcode" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-service">Service Type *</label>
+                        <select id="quote-service" name="serviceType" required>
+                            <option value="">Select a service</option>
+                            <option value="cleaning">Garage Cleaning</option>
+                            <option value="organization">Organization</option>
+                            <option value="gym">Gym Setup</option>
+                            <option value="resale">Resale Services</option>
+                            <option value="full">Full Transformation</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-package">Package</label>
+                        <select id="quote-package" name="package">
+                            <option value="">Select a package</option>
+                            <option value="undergraduate">The Undergraduate</option>
+                            <option value="graduate">The Graduate</option>
+                            <option value="doctorate">The Doctorate</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="quote-size">Garage Size (optional)</label>
+                    <input type="text" id="quote-size" name="garageSize" placeholder="e.g., 2-car garage">
+                </div>
+                <div class="form-group">
+                    <label for="quote-description">Description (optional)</label>
+                    <textarea id="quote-description" name="description" rows="3" placeholder="Tell us about your garage..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="quote-photos">Photos of Your Garage * (minimum 3)</label>
+                    <input type="file" id="quote-photos" name="photos" multiple accept="image/*" style="padding: 10px;">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Submit Quote Request</button>
+                <div class="form-message" id="formMessage"></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+    <script src="/firebase-config.js"></script>
+
+    <script>
+        function toggleMobileNav() { document.getElementById('mobileNav').classList.toggle('open'); }
+        document.querySelectorAll('#mobileNav a').forEach(function(link) { link.addEventListener('click', function() { document.getElementById('mobileNav').classList.remove('open'); }); });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-up, .fade-in').forEach(el => observer.observe(el));
+
+        firebase.initializeApp(window.firebaseConfig);
+        const functions = firebase.functions();
+
+        // Resize an image file to max dimension and return compressed base64
+        function resizePhoto(file, maxDim, quality) {
+            return new Promise(function(resolve, reject) {
+                var img = new Image();
+                var objectUrl = URL.createObjectURL(file);
+                img.onload = function() {
+                    URL.revokeObjectURL(objectUrl);
+                    var w = img.width, h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+                        else { w = Math.round(w * maxDim / h); h = maxDim; }
+                    }
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    var dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(dataUrl.split(',')[1]);
+                };
+                img.onerror = function() { URL.revokeObjectURL(objectUrl); reject(); };
+                img.src = objectUrl;
+            });
+        }
+
+        function openQuoteModal(packageType) {
+            document.getElementById('quoteModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            if (packageType) { const pkg = document.getElementById('quote-package'); if (pkg) pkg.value = packageType; }
+        }
+        function closeQuoteModal() {
+            document.getElementById('quoteModal').classList.remove('open');
+            document.body.style.overflow = 'auto';
+            document.getElementById('quoteForm').reset();
+            const msg = document.getElementById('formMessage'); msg.textContent = ''; msg.className = 'form-message'; msg.style.display = '';
+        }
+        document.getElementById('quoteModal').addEventListener('click', function(e) { if (e.target === this) closeQuoteModal(); });
+
+        document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const msg = document.getElementById('formMessage');
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Submitting...';
+            try {
+                const fd = new FormData(this);
+                const data = { name: fd.get('name'), email: fd.get('email'), phone: fd.get('phone'), zipcode: fd.get('zipcode'), serviceType: fd.get('serviceType'), package: fd.get('package'), garageSize: fd.get('garageSize') || '', description: fd.get('description') || '', photoData: [] };
+                const photos = fd.getAll('photos').filter(f => f.size > 0);
+                if (!photos || photos.length < 3) { msg.textContent = 'Please upload at least 3 photos of your garage.'; msg.className = 'form-message error'; btn.disabled = false; btn.textContent = 'Submit Quote Request'; return; }
+                msg.textContent = 'Processing photos...'; msg.className = 'form-message'; msg.style.display = 'block';
+                for (const file of photos) { var base64 = await resizePhoto(file, 1200, 0.7); data.photoData.push({ base64: base64, filename: file.name, mimeType: 'image/jpeg' }); }
+                msg.textContent = 'Submitting your request...';
+                const submitQuoteRequest = functions.httpsCallable('submitQuoteRequest');
+                await submitQuoteRequest(data);
+                msg.textContent = 'Thank you! Your quote request has been submitted.'; msg.className = 'form-message success';
+                setTimeout(() => closeQuoteModal(), 3000);
+            } catch (error) { let errMsg = 'There was an error. Please try again.'; if (error.message) errMsg = 'Error: ' + error.message; msg.textContent = errMsg; msg.className = 'form-message error'; }
+            finally { btn.disabled = false; btn.textContent = 'Submit Quote Request'; }
+        });
+
+        function handleNewsletter(e) {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Subscribing...';
+            firebase.firestore().collection('newsletterSubscriptions').add({ email, subscribedAt: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(() => { form.querySelector('input[type="email"]').value = ''; btn.textContent = 'Subscribed!'; btn.style.background = 'var(--color-primary-dark)'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); })
+                .catch(err => { console.error(err); btn.textContent = 'Error - Try Again'; btn.style.background = '#c0392b'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); });
+        }
+    </script>
+
+</body>
+</html>

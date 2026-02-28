@@ -1,0 +1,94 @@
+<!-- config title: About Garage Scholars — Founded by a DPT & PhD | Denver -->
+<!-- config description: Meet the founders behind Denver's premier garage transformation service. Zach Harmon, PT, DPT and Tyler Sodia, PhD bring clinical precision and systems engineering to every project. -->
+<!-- config ogTitle: About Garage Scholars — Founded by a DPT & PhD -->
+<!-- config activeNav: about -->
+<!-- config firebase: app,firestore,storage,functions -->
+<!-- config hasQuoteModal: true -->
+
+{{head}}
+{{header}}
+
+    <!-- ========== MISSION SECTION ========== -->
+    <section class="section section-dark">
+        <div class="container">
+            <div class="about-hero fade-up">
+                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80" alt="Beautiful organized space">
+                <div>
+                    <h2>Our Mission</h2>
+                    <h3>Clear Space, Calm Mind, Confident Life.</h3>
+                    <p>We create clarity and confidence by transforming garages into functional, stress-free spaces. Every project is backed by clinical expertise, systems thinking, and a guarantee that you'll love the result.</p>
+                    <button class="btn btn-primary" onclick="openQuoteModal()">Get Your Free Quote</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== WHY CHOOSE US ========== -->
+    <section class="section section-darker">
+        <div class="container">
+            <div class="about-why fade-up">
+                <div>
+                    <h3>Why Choose Garage Scholars?</h3>
+                    <p>We believe your environment shapes your mindset &mdash; and a transformed garage can transform the way you show up in life. Unlike junk removal companies or handyman services, we bring professional credentials, evidence-based design, and a systematic approach to every garage we touch.</p>
+                    <div class="about-differentiators">
+                        <div class="about-diff-item"><i class="fa-solid fa-check" style="color: var(--color-primary); margin-right: 10px;"></i>Home gym layouts designed by a Doctor of Physical Therapy</div>
+                        <div class="about-diff-item"><i class="fa-solid fa-check" style="color: var(--color-primary); margin-right: 10px;"></i>Operations and quality systems built by a PhD engineer</div>
+                        <div class="about-diff-item"><i class="fa-solid fa-check" style="color: var(--color-primary); margin-right: 10px;"></i>Insured, background-checked crews trained to our standard</div>
+                        <div class="about-diff-item"><i class="fa-solid fa-check" style="color: var(--color-primary); margin-right: 10px;"></i>Satisfaction guarantee on every project &mdash; no exceptions</div>
+                    </div>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal()">Get Your Free Quote</button>
+                </div>
+                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80" alt="Luxury home exterior">
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== MEET THE SCHOLARS ========== -->
+    <section class="section section-dark">
+        <div class="container">
+            <div class="scholars-section fade-up">
+                <h2>Meet The Scholars</h2>
+                <div class="scholars-grid">
+                    <div class="scholar-card">
+                        <h3>Zach Harmon</h3>
+                        <span class="credentials">PT, DPT</span>
+                        <p class="title">Co-Founder</p>
+                        <p class="bio">Zach Harmon is a performance-minded problem solver who loves turning chaotic spaces into efficient, functional, and good-looking environments. As a physical therapist, strength coach, and entrepreneur, Zach has spent his career studying how people move, how spaces influence behavior, and how smart systems make life easier.</p>
+                        <br>
+                        <p class="bio">Garage Scholars was born from that mindset &mdash; blending organization, design, and practical utility into one streamlined service. Zach approaches every project like he approaches his clinics: with precision, clarity, and a commitment to long-term results.</p>
+                        <br>
+                        <p class="bio">His DPT background is the key differentiator for Garage Scholars' home gym installations. Every gym layout is designed with ergonomic equipment placement, safe training flow, and proper spacing &mdash; not guesswork from a YouTube video.</p>
+                        <br>
+                        <p class="bio">When he's not transforming garages, Zach is lifting, learning, or exploring the outdoors with his family.</p>
+                        <br>
+                        <p class="bio"><strong>Clear Space. Calm Mind. Confident Life.</strong><br>Zach helps you get there.</p>
+                    </div>
+                    <div class="scholar-card">
+                        <h3>Tyler Sodia</h3>
+                        <span class="credentials">PhD</span>
+                        <p class="title">Co-Founder</p>
+                        <p class="bio">Dr. Tyler Sodia is a systems-obsessed builder who loves turning big, messy ideas into clean, repeatable results. As a scientist, engineer, and entrepreneur, Tyler has spent his career studying how things work&mdash;materials, machines, workflows&mdash;and how small changes in environment can completely change how people feel and perform in their space.</p>
+                        <br>
+                        <p class="bio">Tyler believes that the garage should be a personal lab. Whether he's designing a lifting-friendly layout, dialing in storage for busy families, or mapping out a full "garage ecosystem," his goal is the same&mdash;cut friction, create order, and turn the garage into an asset instead of a stressor.</p>
+                        <br>
+                        <p class="bio">His PhD background means every Garage Scholars project runs on systems, not luck. Detailed planning, trained crews, quality checkpoints, and a satisfaction guarantee that actually means something.</p>
+                        <br>
+                        <p class="bio">When he's not rethinking garages, Tyler is lifting, learning, or sketching out the next experiment on a whiteboard, a spreadsheet, or a napkin with a cup of coffee nearby and a new idea already in motion.</p>
+                        <br>
+                        <p class="bio"><strong>Clear Garage. Sharper Mind. Bigger Life.</strong><br>Tyler helps you build it.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+{{quote-modal}}
+{{footer}}
+{{scripts}}
+
+    <script>
+        firebase.initializeApp(window.firebaseConfig);
+    </script>
+
+</body>
+</html>

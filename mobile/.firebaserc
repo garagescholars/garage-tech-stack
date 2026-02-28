@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "garage-scholars-v2"
+  },
+  "targets": {
+    "garage-scholars-v2": {
+      "hosting": {
+        "scheduling": [
+          "garage-scholars-scheduling"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -1,0 +1,427 @@
+<!-- config title: Garage Scholars Denver — Garage Cleanout, Organization & Home Gym Installation -->
+<!-- config description: Denver's Premier Garage Transformation Service. Cleanout, organization, home gym installation by a Doctor of Physical Therapy, and resale concierge. Get your free quote today. -->
+<!-- config ogTitle: Garage Scholars Denver — Garage Transformation & Home Gym Installation -->
+<!-- config activeNav: index -->
+<!-- config firebase: app,firestore,storage,functions -->
+<!-- config hasQuoteModal: true -->
+
+{{head}}
+{{header}}
+
+    <!-- ========== HERO ========== -->
+    <!-- H1: 6 words | Subheadline: brand motto + tagline | CTA: Get Your Free Quote -->
+    <section class="hero">
+        <div class="hero-bg" style="background-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1920&q=80')"></div>
+        <div class="hero-content">
+            <img src="images/hero-logo.png?v=5" alt="Garage Scholars" class="hero-logo">
+            <h1 class="hero-headline">Denver's Premier Garage Transformation Service</h1>
+            <p class="hero-motto">Clear Space, Calm Mind, Confident Life.</p>
+            <p class="hero-tagline">The smartest investment in your space.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary btn-lg" onclick="openQuoteModal()">Get Your Free Quote</button>
+                <a href="#services" class="btn btn-outline btn-lg">View Services</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== AUTHORITY BAR ========== -->
+    <section class="authority-bar">
+        <div class="container">
+            <div class="authority-items">
+                <div class="authority-item">
+                    <i class="fa-solid fa-user-doctor" style="color: var(--color-accent);"></i>
+                    <span>Founded by a DPT &amp; a PhD</span>
+                </div>
+                <div class="authority-item">
+                    <i class="fa-solid fa-shield-halved" style="color: var(--color-accent);"></i>
+                    <span>Insured &amp; Background Checked</span>
+                </div>
+                <div class="authority-item">
+                    <i class="fa-solid fa-star" style="color: var(--color-accent);"></i>
+                    <span>5-Star Rated in Denver</span>
+                </div>
+                <div class="authority-item">
+                    <i class="fa-solid fa-calendar-check" style="color: var(--color-accent);"></i>
+                    <span>Limited Monthly Availability</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== SERVICES ========== -->
+    <!-- H2: "More Space. More Strength. More Value." -->
+    <section class="section section-dark" id="services">
+        <div class="container">
+            <div class="services-intro fade-up">
+                <h2>More Space. More Strength. More Value.</h2>
+                <p>We don't just clean garages. We engineer complete transformations &mdash; from cluttered storage units to organized spaces, functional home gyms, and recovered cash from items you no longer need.</p>
+            </div>
+            <div class="services-grid fade-up">
+                <div class="service-tab active" onclick="showService('declutter', event)">
+                    <div class="tab-header">
+                        <div class="tab-title"><i class="fa-solid fa-check check-icon"></i><h3>Get Clean</h3></div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Flat fee, responsible removal.</p>
+                </div>
+                <div class="service-tab" onclick="showService('organize', event)">
+                    <div class="tab-header">
+                        <div class="tab-title"><i class="fa-solid fa-check check-icon"></i><h3>Get Organized</h3></div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Shelving, totes, neat space.</p>
+                </div>
+                <div class="service-tab" onclick="showService('gym', event)">
+                    <div class="tab-header">
+                        <div class="tab-title"><i class="fa-solid fa-check check-icon"></i><h3>Get Healthy</h3></div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Full Gym Installation</p>
+                </div>
+                <div class="service-tab" onclick="showService('resale', event)">
+                    <div class="tab-header">
+                        <div class="tab-title"><i class="fa-solid fa-check check-icon"></i><h3>Get Cash</h3></div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Turn your clutter into cash</p>
+                </div>
+            </div>
+            <div class="service-detail active fade-up" id="service-declutter">
+                <div class="service-detail-text">
+                    <h3>Declutter &amp; Remove</h3>
+                    <p>We clear out every corner, removing unwanted items quickly and responsibly under one flat fee. No dumpster rental, no hauling trips, no weekend wasted. Our insured team handles the heavy lifting, the sorting, and the disposal &mdash; so you reclaim your garage without lifting a finger.</p>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal('cleaning')">Get Your Free Quote</button>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-RL1kwBnUiaA?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-organize">
+                <div class="service-detail-text">
+                    <h3>Organization &amp; Storage Systems</h3>
+                    <p>Our team micro-sorts your belongings, installs commercial-grade shelving and cabinet systems, and creates labeled zones so every item has a home. Overhead racks, wall-mounted cabinets, clear bins with printed labels &mdash; your garage becomes the most organized room in your house.</p>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal('organization')">Get Your Free Quote</button>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-xNRWQv1Bz38?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-gym">
+                <div class="service-detail-text">
+                    <h3>Home Gym Installation &mdash; Designed by a DPT</h3>
+                    <p>This isn't a handyman bolting a pull-up bar to the wall. Our co-founder is a Doctor of Physical Therapy who designs every gym layout with ergonomic positioning, safe equipment spacing, and evidence-based training flow. From squat racks to full rigs &mdash; we build the gym your body actually needs.</p>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal('gym')">Get Your Free Quote</button>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-gzeTjGu3b_k?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-resale">
+                <div class="service-detail-text">
+                    <h3>Resale Concierge &mdash; We Sell, You Earn</h3>
+                    <p>That old Peloton, the weight set you never use, the tools from projects that never happened &mdash; they're worth money. We identify valuable items, photograph them, list them on marketplace platforms, and handle the entire sale. You approve every listing and split the proceeds 50/50. Zero effort on your end, cash back in your pocket.</p>
+                    <button class="btn btn-primary mt-2" onclick="openQuoteModal('resale')">Get Your Free Quote</button>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-jK8AnaPAIGQ?w=800&q=80')"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== SOCIAL PROOF / RESULTS ========== -->
+    <!-- HIDDEN: Uncomment when real testimonials are available
+    <section class="section section-darker" id="results">
+        <div class="container">
+            <div class="results-header fade-up">
+                <h2>Real Transformations. Real Results.</h2>
+                <p>Denver homeowners are reclaiming their garages &mdash; and their weekends.</p>
+            </div>
+            <div class="stats-grid fade-up">
+                <div class="stat-card">
+                    <span class="stat-number">[XX]+</span>
+                    <span class="stat-label">Garages Transformed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">[XX] sq ft</span>
+                    <span class="stat-label">Avg. Space Reclaimed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">$[XX]</span>
+                    <span class="stat-label">Avg. Resale Recovery</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">[XX] hrs</span>
+                    <span class="stat-label">Avg. Time Saved vs DIY</span>
+                </div>
+            </div>
+            <div class="testimonials-grid fade-up">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="testimonial-quote">&ldquo;[Client quote about their garage transformation &mdash; mention the specific service and result. Keep it under 40 words.]&rdquo;</p>
+                    <span class="testimonial-author">&mdash; [First Name], [Neighborhood] ([Service Type])</span>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="testimonial-quote">&ldquo;[Client quote about the home gym build &mdash; mention the DPT-designed layout. Keep it under 40 words.]&rdquo;</p>
+                    <span class="testimonial-author">&mdash; [First Name], [Neighborhood] (Home Gym Build)</span>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="testimonial-quote">&ldquo;[Client quote about the resale service &mdash; mention dollars recovered. Keep it under 40 words.]&rdquo;</p>
+                    <span class="testimonial-author">&mdash; [First Name], [Neighborhood] (Resale Concierge)</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    -->
+
+    <!-- ========== GARAGE ORGANIZATION PACKAGES ========== -->
+    <section class="section section-dark" id="pricing">
+        <div class="container">
+            <div class="pricing-header fade-up">
+                <h2>Your Garage, Your Curriculum</h2>
+                <p>Pick the plan that fits your lifestyle. Graduate to a smarter garage.</p>
+            </div>
+
+            <!-- Garage Organization Tiers -->
+            <h3 class="pricing-section-title fade-up">Garage Organization</h3>
+            <div class="pricing-cards fade-up">
+                <div class="pricing-card">
+                    <h3>The Undergraduate</h3>
+                    <p class="subtitle">The Basics, Done Right</p>
+                    <div class="pricing-features">
+                        <p class="what-you-get">What you get:</p>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>2-person crew</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Sort into keep / donate / trash zones</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>1 shelving unit installed</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Sweep &amp; blow out cleaning</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Standard clean guarantee</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('organization', 'undergraduate')">Get Your Free Quote</button>
+                </div>
+                <div class="pricing-card featured">
+                    <span class="pricing-badge">Most Popular</span>
+                    <h3>The Graduate</h3>
+                    <p class="subtitle">Leveling Up Your Space</p>
+                    <div class="pricing-features">
+                        <p class="what-you-get">What you get:</p>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>2-person crew</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>1 truck bed haul-away included</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Micro-sorting into categorized, labeled bins</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Up to 2 industrial-grade shelving units OR credit toward Bold Series cabinets</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Deep degrease &amp; power wash floor cleaning</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Resale Concierge</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>30-day Clutter-Free Guarantee</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('organization', 'graduate')">Get Your Free Quote</button>
+                </div>
+                <div class="pricing-card">
+                    <h3>The Doctorate</h3>
+                    <p class="subtitle">The Complete Scholar Treatment</p>
+                    <div class="pricing-features">
+                        <p class="what-you-get">What you get:</p>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>3-person crew</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>2 truck bed haul-aways included</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>16 premium bins with printed labels</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Up to 3 industrial-grade shelving units OR larger credit toward Bold Series cabinets</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Deep degrease &amp; power wash + heavy-duty surcharge waived</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Resale Concierge</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Seasonal swap service with scheduled return visit</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>White-glove photo documentation</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('organization', 'doctorate')">Get Your Free Quote</button>
+                </div>
+            </div>
+
+            <!-- Gym Installation Tiers -->
+            <h3 class="pricing-section-title fade-up">Home Gym Installation</h3>
+            <div class="pricing-cards fade-up">
+                <div class="pricing-card">
+                    <h3>Warm Up</h3>
+                    <p class="subtitle">Get the Basics Set Up</p>
+                    <div class="pricing-features">
+                        <p class="what-you-get">What you get:</p>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>2-person crew</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Up to 2 pieces of equipment assembled &amp; placed</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Basic equipment positioning</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('gym', 'warmup')">Get Your Free Quote</button>
+                </div>
+                <div class="pricing-card featured">
+                    <span class="pricing-badge">Most Popular</span>
+                    <h3>Super Set</h3>
+                    <p class="subtitle">A Real Training Space</p>
+                    <div class="pricing-features">
+                        <p class="what-you-get">What you get:</p>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>2-person crew</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Up to 3 pieces of equipment assembled &amp; placed</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>DPT-designed gym layout for safe training flow</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('gym', 'superset')">Get Your Free Quote</button>
+                </div>
+                <div class="pricing-card">
+                    <h3>1 Rep Max</h3>
+                    <p class="subtitle">The Ultimate Home Gym</p>
+                    <div class="pricing-features">
+                        <p class="what-you-get">What you get:</p>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>3-person crew</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Up to 5 pieces of equipment assembled &amp; placed</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Full gym floor covering included</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Full DPT-designed layout with ergonomic flow</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Wall storage: hooks, bar holders &amp; band pegs</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Deadlift &amp; Olympic lifting platform build</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('gym', '1repmax')">Get Your Free Quote</button>
+                </div>
+            </div>
+
+            <!-- Bundle Packages -->
+            <h3 class="pricing-section-title fade-up">Bundle Packages <span class="pricing-section-badge">Best Value</span></h3>
+            <div class="pricing-cards pricing-cards-2col fade-up">
+                <div class="pricing-card featured">
+                    <span class="pricing-badge">Save More Together</span>
+                    <h3>The Dean's List</h3>
+                    <p class="subtitle">Graduate Org + 1 Rep Max Gym</p>
+                    <div class="pricing-features">
+                        <p class="what-you-get">Full garage organization &amp; full gym build:</p>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Everything in The Graduate (2-crew, 1 haul-away, micro-sort, labeled bins, power wash)</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Everything in 1 Rep Max (5 equipment pieces, full flooring, DPT layout, wall storage, platform build)</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-star" style="color: var(--color-accent);"></i><span>Bundle discount included</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('full', 'deans-list')">Get Your Free Quote</button>
+                </div>
+                <div class="pricing-card featured">
+                    <span class="pricing-badge">Ultimate Package</span>
+                    <h3>The Valedictorian</h3>
+                    <p class="subtitle">Doctorate Org + 1 Rep Max Gym</p>
+                    <div class="pricing-features">
+                        <p class="what-you-get">Premium organization &amp; full gym build:</p>
+                        <div class="pricing-feature"><i class="fa-solid fa-check"></i><span>Everything in The Doctorate (3-crew, 2 haul-aways, premium bins, seasonal swap, white-glove photos)</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-dumbbell"></i><span>Everything in 1 Rep Max (5 equipment pieces, full flooring, DPT layout, wall storage, platform build)</span></div>
+                        <div class="pricing-feature"><i class="fa-solid fa-star" style="color: var(--color-accent);"></i><span>Largest bundle discount</span></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('full', 'valedictorian')">Get Your Free Quote</button>
+                </div>
+            </div>
+
+            <!-- Add-Ons -->
+            <div class="addons-section fade-up">
+                <h3 class="pricing-section-title">A La Carte Add-Ons</h3>
+                <div class="addons-grid">
+                    <div class="addon-item"><i class="fa-solid fa-truck"></i><span>Extra Haul-Away (per truck bed)</span></div>
+                    <div class="addon-item"><i class="fa-solid fa-warehouse"></i><span>Additional Shelving Units</span></div>
+                    <div class="addon-item"><i class="fa-solid fa-arrow-up"></i><span>Overhead Storage Rack Installation</span></div>
+                    <div class="addon-item"><i class="fa-solid fa-square"></i><span>Click-In Plate Flooring (priced by sq ft)</span></div>
+                    <div class="addon-item"><i class="fa-solid fa-paint-roller"></i><span>Polyaspartic Floor Coating</span></div>
+                </div>
+            </div>
+
+            <p class="pricing-note fade-up">All packages include before &amp; after photos. Pricing is customized per project &mdash; <a href="#" onclick="openQuoteModal(); return false;" style="color: var(--color-primary); text-decoration: underline;">get your free quote</a> for exact details.</p>
+        </div>
+    </section>
+
+    <!-- ========== GUARANTEE ========== -->
+    <section class="guarantee">
+        <div class="guarantee-badge fade-up">
+            <div class="guarantee-icon"><i class="fa-solid fa-check"></i></div>
+            <div class="guarantee-text">
+                <h2>Love your garage or we come back &mdash; free.</h2>
+                <p>Your satisfaction is our guarantee. No questions asked.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FAQ ========== -->
+    <section class="section section-dark" id="faq">
+        <div class="container">
+            <div class="faq-header fade-up"><h2>Frequently Asked Questions</h2></div>
+            <div class="faq-list fade-up">
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>How much does a garage transformation cost?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Every garage is different, so we don't do cookie-cutter quotes. We provide a free, no-obligation assessment &mdash; either on-site or from photos you send us. We'll walk your space, understand your goals, and give you an honest price. No pressure, no surprises. <a href="#" onclick="openQuoteModal(); return false;" style="color: var(--color-primary);">Request your free quote now.</a></p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>What areas do you serve?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>We serve the entire Denver Metro Area, including Lakewood, Littleton, Aurora, Englewood, Arvada, Westminster, Centennial, Highlands Ranch, Parker, and surrounding communities. If you're within 30 miles of downtown Denver, we've got you covered.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>What happens to my stuff? Do I get to decide what stays and goes?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Absolutely. You control everything. Before we remove a single item, we sort everything into Keep, Donate, and Trash zones &mdash; and you approve each pile. For resale items, you approve every listing and we split the proceeds 50/50 &mdash; we handle all the work. We never throw away anything you haven't signed off on.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>How long does a typical transformation take?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Most projects are completed in a single day. An Undergraduate package takes 4-5 hours, a Graduate takes 6-8 hours, and a Doctorate is a full day. We come prepared with a detailed plan specific to your garage &mdash; no wasted time, no return trips.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>What makes you different from a junk removal company?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Junk removal companies take your stuff and leave. We transform the entire space. We sort, clean, install commercial-grade storage systems, organize everything into labeled zones, and hand you back a garage that functions like it was professionally designed &mdash; because it was. Plus, we sell valuable items for you instead of hauling them to a landfill.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>Can you actually build me a real gym in my garage?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Yes &mdash; and it won't be a DIY setup from YouTube. Our co-founder Zach Harmon is a Doctor of Physical Therapy who designs every gym layout. He considers equipment spacing, floor protection, ventilation, lighting, and ergonomic training flow. Whether you want a squat rack and bench or a full home gym, we design and install it safely and correctly.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>Are you insured? What about damage?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Yes, we carry full liability insurance and every crew member is background checked. We treat your home like our own. In the unlikely event something is damaged, we make it right immediately &mdash; no red tape.</p></div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)"><span>What's your guarantee?</span><i class="fa-solid fa-plus"></i></button>
+                    <div class="faq-answer"><p>Simple: love your garage or we come back &mdash; free. If you're not completely satisfied with your transformation, we'll return and make it right at no additional cost. Graduate and Doctorate packages also include a 30-day Clutter-Free Guarantee, so if things shift or you want adjustments, we've got you.</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== TEAM / AUTHORITY ========== -->
+    <section class="section section-darker" id="team">
+        <div class="container">
+            <div class="team-header fade-up">
+                <p class="team-eyebrow">Why Garage Scholars?</p>
+                <h2>Founded by a Doctor of Physical Therapy and a PhD</h2>
+                <p>This isn't a side hustle. Garage Scholars was built by two guys who studied how spaces affect performance, health, and quality of life &mdash; and turned that knowledge into Denver's premier garage transformation service.</p>
+            </div>
+            <div class="team-grid fade-up">
+                <div class="team-card">
+                    <h3>Zach Harmon, PT, DPT</h3>
+                    <span class="role">Co-Founder</span>
+                    <p class="team-bio">Doctor of Physical Therapy. Designs every home gym with ergonomic precision, evidence-based equipment placement, and safe training flow. Your gym isn't just installed &mdash; it's engineered for your body.</p>
+                </div>
+                <div class="team-card">
+                    <h3>Tyler Sodia, PhD</h3>
+                    <span class="role">Co-Founder</span>
+                    <p class="team-bio">Systems engineer and scientist. Builds the operational backbone &mdash; scheduling, logistics, quality control &mdash; so every job runs on time, on budget, and above standard. Your project is managed, not winged.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FINAL CTA ========== -->
+    <section class="final-cta">
+        <div class="container">
+            <div class="final-cta-content fade-up">
+                <h2>Stop Staring at the Mess.</h2>
+                <p>Your garage transformation is one quote away. Free assessment. No obligation. Real results.</p>
+                <button class="btn btn-primary btn-lg" onclick="openQuoteModal()">Get Your Free Quote</button>
+                <p class="final-cta-sub">We only take a limited number of projects per month. Availability fills fast during spring and summer.</p>
+            </div>
+        </div>
+    </section>
+
+{{quote-modal}}
+{{footer}}
+{{scripts}}
+
+    <script>
+        // Initialize Firebase
+        firebase.initializeApp(window.firebaseConfig);
+
+        // Service Tabs
+        function showService(service, e) {
+            document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.service-detail').forEach(d => d.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            document.getElementById('service-' + service).classList.add('active');
+        }
+    </script>
+
+</body>
+</html>

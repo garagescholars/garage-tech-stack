@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garage Scholars Recruitment Flyer</title>
+    <style>
+        @page {
+            size: 8.5in 11in;
+            margin: 0;
+        }
+        body {
+            font-family: 'Arial Black', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            width: 8.5in;
+            height: 11in;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .flyer {
+            width: 7.5in;
+            padding: 0.5in;
+            text-align: center;
+            color: white;
+        }
+        .header {
+            font-size: 72pt;
+            font-weight: bold;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        }
+        .subheader {
+            font-size: 48pt;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .benefits {
+            background: rgba(255,255,255,0.15);
+            border-radius: 30px;
+            padding: 40px;
+            margin: 40px 0;
+            backdrop-filter: blur(10px);
+        }
+        .benefit-item {
+            font-size: 32pt;
+            margin: 25px 0;
+            font-weight: bold;
+            text-align: left;
+            display: flex;
+            align-items: center;
+        }
+        .benefit-item::before {
+            content: "✓";
+            background: #48bb78;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        .qr-section {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            margin: 40px 0;
+        }
+        .qr-code {
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            background: white;
+            border: 10px solid #667eea;
+            border-radius: 20px;
+        }
+        .apply-text {
+            font-size: 36pt;
+            color: #2d3748;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .url-text {
+            font-size: 24pt;
+            color: #667eea;
+            font-weight: bold;
+            word-wrap: break-word;
+        }
+        .footer {
+            font-size: 28pt;
+            margin-top: 30px;
+            font-weight: bold;
+        }
+        .tear-off-section {
+            margin-top: 50px;
+            border-top: 3px dashed white;
+            padding-top: 30px;
+        }
+        .tear-off-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .tear-off-tab {
+            background: white;
+            color: #667eea;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18pt;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="flyer">
+        <div class="header">
+            💼 HIRING<br>
+            STUDENTS
+        </div>
+
+        <div class="subheader">
+            $25-35/HOUR
+        </div>
+
+        <div class="benefits">
+            <div class="benefit-item">Flexible Schedule</div>
+            <div class="benefit-item">Same-Day Pay</div>
+            <div class="benefit-item">Work With Friends</div>
+            <div class="benefit-item">No Experience Needed</div>
+            <div class="benefit-item">Weekend Jobs</div>
+        </div>
+
+        <div class="qr-section">
+            <div class="apply-text">
+                📱 SCAN TO APPLY
+            </div>
+            <div class="qr-code" id="qrcode">
+                <!-- QR Code will be inserted here -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+                    <rect width="300" height="300" fill="white"/>
+                    <!-- Placeholder - Replace with actual QR code -->
+                    <text x="150" y="150" text-anchor="middle" font-size="20" fill="#667eea">
+                        QR CODE HERE
+                    </text>
+                </svg>
+            </div>
+            <div class="url-text">
+                garagescholars.com/apply
+            </div>
+        </div>
+
+        <div class="footer">
+            🎓 GARAGE SCHOLARS<br>
+            Text: (720) 290-1560
+        </div>
+
+        <div class="tear-off-section">
+            <div style="font-size: 24pt; margin-bottom: 20px;">✂️ TEAR & SHARE</div>
+            <div class="tear-off-tabs">
+                <div class="tear-off-tab">
+                    $25-35/HR<br>
+                    TEXT:<br>
+                    720-290-1560
+                </div>
+                <div class="tear-off-tab">
+                    $25-35/HR<br>
+                    TEXT:<br>
+                    720-290-1560
+                </div>
+                <div class="tear-off-tab">
+                    $25-35/HR<br>
+                    TEXT:<br>
+                    720-290-1560
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Generator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        // Generate QR Code
+        // REPLACE THIS URL WITH YOUR ACTUAL LANDING PAGE URL
+        const applicationUrl = "https://garagescholars.com/apply"; // UPDATE THIS
+
+        const qrcode = document.getElementById('qrcode');
+        qrcode.innerHTML = ''; // Clear placeholder
+
+        new QRCode(qrcode, {
+            text: applicationUrl,
+            width: 280,
+            height: 280,
+            colorDark: "#667eea",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    </script>
+</body>
+</html>

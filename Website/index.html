@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garage Scholars Denver - Home</title>
+    <meta property="og:title" content="Garage Scholars Denver - Home">
+    <meta property="twitter:title" content="Garage Scholars Denver - Home">
+    <meta name="description" content="Denver's Premier Garage Transformation Service. Cleaning, organization, gym setup, and resale services.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ========== HEADER ========== -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo"><a href="index.html">Garage Scholars</a></div>
+            <nav class="nav-links">
+                <a href="index.html" class="active">Home</a>
+                <a href="about.html">About</a>
+                <a href="index.html#services">Services</a>
+                <a href="index.html#pricing">Pricing</a>
+                <a href="contact.html">Contact</a>
+                <a href="apply.html">Join Our Team</a>
+            </nav>
+            <div class="nav-buttons">
+                <a href="coming-soon.html" class="btn btn-outline">Visualize Your Garage</a>
+                <button class="btn btn-primary" onclick="openQuoteModal()">Get a Quote</button>
+            </div>
+            <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Nav -->
+    <nav class="mobile-nav" id="mobileNav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="index.html#services">Services</a>
+        <a href="index.html#pricing">Pricing</a>
+        <a href="contact.html">Contact</a>
+        <a href="apply.html">Join Our Team</a>
+        <a href="coming-soon.html" class="btn btn-outline">Visualize Your Garage</a>
+        <button class="btn btn-primary" onclick="openQuoteModal()">Get a Quote</button>
+    </nav>
+
+    <!-- ========== HERO ========== -->
+    <section class="hero">
+        <div class="hero-bg" style="background-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1920&q=80')"></div>
+        <div class="hero-content">
+            <img src="hero-logo.png?v=5" alt="Garage Scholars" class="hero-logo">
+            <h1 class="hero-headline">Denver's Premier Garage Transformation Service</h1>
+            <p class="hero-motto">Clear Space, Calm Mind, Confident Life.</p>
+            <p class="hero-tagline">The smartest investment in your space.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary btn-lg" onclick="openQuoteModal()">Get Your Free Quote</button>
+                <a href="#services" class="btn btn-outline btn-lg">View Services</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== SERVICES ========== -->
+    <section class="section section-dark" id="services">
+        <div class="container">
+            <div class="services-intro fade-up">
+                <h2>More Space. More Strength. More Value.</h2>
+                <p>Converting cluttered garages into organized spaces, building functional home gyms, and offering resale concierge services.</p>
+            </div>
+
+            <!-- Service Tabs -->
+            <div class="services-grid fade-up">
+                <div class="service-tab active" onclick="showService('declutter', event)">
+                    <div class="tab-header">
+                        <div class="tab-title">
+                            <i class="fa-solid fa-check check-icon"></i>
+                            <h3>Get Clean</h3>
+                        </div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Flat fee, responsible removal.</p>
+                </div>
+                <div class="service-tab" onclick="showService('organize', event)">
+                    <div class="tab-header">
+                        <div class="tab-title">
+                            <i class="fa-solid fa-check check-icon"></i>
+                            <h3>Get Organized</h3>
+                        </div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Shelving, totes, neat space.</p>
+                </div>
+                <div class="service-tab" onclick="showService('gym', event)">
+                    <div class="tab-header">
+                        <div class="tab-title">
+                            <i class="fa-solid fa-check check-icon"></i>
+                            <h3>Get Healthy</h3>
+                        </div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Full Gym Installation</p>
+                </div>
+                <div class="service-tab" onclick="showService('resale', event)">
+                    <div class="tab-header">
+                        <div class="tab-title">
+                            <i class="fa-solid fa-check check-icon"></i>
+                            <h3>Get Cash</h3>
+                        </div>
+                        <i class="fa-solid fa-angle-right arrow"></i>
+                    </div>
+                    <p>Turn your clutter into cash</p>
+                </div>
+            </div>
+
+            <!-- Service Details -->
+            <div class="service-detail active fade-up" id="service-declutter">
+                <div class="service-detail-text">
+                    <h3>Declutter &amp; Remove</h3>
+                    <p>We clear out every corner, removing unwanted items quickly and responsibly under one flat fee. Reclaim your garage space and unlock its potential today!</p>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-organize">
+                <div class="service-detail-text">
+                    <h3>Organized Space Solutions: Maximize Your Garage</h3>
+                    <p>Our team sorts and arranges your belongings, offering optional upgrades like shelving and totes to keep your space neat and accessible. Get organized today!</p>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-gym">
+                <div class="service-detail-text">
+                    <h3>Garage Gyms</h3>
+                    <p>Transform your garage into a personal fitness haven with our custom gym setups. We design and install functional gyms tailored to your needs.</p>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80')"></div>
+            </div>
+            <div class="service-detail" id="service-resale">
+                <div class="service-detail-text">
+                    <h3>Resale &amp; Value Recovery: Earn Cash Back</h3>
+                    <p>We identify valuable items, prepare them for resale, and handle listings to help you earn cash back while reducing waste. Start earning today!</p>
+                </div>
+                <div class="service-detail-img" style="background-image: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80')"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== PRICING ========== -->
+    <section class="section section-darker" id="pricing">
+        <div class="container">
+            <div class="pricing-header fade-up">
+                <h2>Your Garage, Your Curriculum</h2>
+                <p>Pick the plan that fits your lifestyle. Graduate to a smarter garage.</p>
+            </div>
+
+            <div class="pricing-cards fade-up">
+                <!-- Undergraduate -->
+                <div class="pricing-card">
+                    <h3>The Undergraduate</h3>
+                    <p class="subtitle">The Basics, Done Right</p>
+                    <p class="what-you-get">What you get:</p>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Sort into keep/donate/trash</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>One storage zone installed</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Sweep and blow out</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('undergraduate')">Get Started</button>
+                </div>
+
+                <!-- Graduate (Featured) -->
+                <div class="pricing-card featured">
+                    <span class="pricing-badge">Most Popular</span>
+                    <h3>The Graduate</h3>
+                    <p class="subtitle">Leveling Up Your Space</p>
+                    <p class="what-you-get">What you get:</p>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>2-person crew</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>1 truck bed haul-away included</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Micro-sorting into categorized, labeled bins</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>$300 credit toward storage and shelving</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Deep degrease &amp; power wash floor cleaning</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Resale Concierge</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>30-day Clutter-Free Guarantee</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('graduate')">Get Started</button>
+                </div>
+
+                <!-- Doctorate -->
+                <div class="pricing-card">
+                    <h3>The Doctorate</h3>
+                    <p class="subtitle">The Complete Scholar Treatment</p>
+                    <p class="what-you-get">What you get:</p>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>3-person crew</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>2 truck bed haul-aways included</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>16 premium bins with printed labels</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>$500 credit toward storage and shelving</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Deep degrease &amp; power wash + heavy-duty surcharge waived</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Resale Concierge</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Seasonal swap service with scheduled return visit</span>
+                    </div>
+                    <div class="pricing-feature">
+                        <i class="fa-solid fa-check"></i>
+                        <span>White-glove photo documentation</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="openQuoteModal('doctorate')">Get Started</button>
+                </div>
+            </div>
+
+            <p class="pricing-note fade-up">All packages come with resale services</p>
+        </div>
+    </section>
+
+    <!-- ========== GUARANTEE ========== -->
+    <section class="guarantee">
+        <div class="guarantee-badge fade-up">
+            <div class="guarantee-icon"><i class="fa-solid fa-check"></i></div>
+            <div class="guarantee-text">
+                <h2>Love your garage or we come back &mdash; free.</h2>
+                <p>Your satisfaction is our guarantee. No questions asked.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FAQ ========== -->
+    <section class="section section-dark">
+        <div class="container">
+            <div class="faq-header fade-up">
+                <h2>FAQ</h2>
+            </div>
+            <div class="faq-list fade-up">
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>What services do you offer?</span>
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>We offer garage cleaning, organization, gym setup, decluttering, and resale services. We transform cluttered garages into functional spaces and help you maximize your property value.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>How much does it cost?</span>
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Our pricing varies depending on the size and scope of the project. Contact us for a free consultation and estimate tailored to your needs.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>How long does a garage transformation take?</span>
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>The timeline depends on the project's complexity. We'll provide an estimated timeframe during the consultation. We work efficiently to minimize disruption.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>Do you offer resale?</span>
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Yes, we identify valuable items, prepare them for resale, and handle listings to help you earn cash back while reducing waste. It's a win-win!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== TEAM ========== -->
+    <section class="section section-darker">
+        <div class="container">
+            <div class="team-header fade-up">
+                <h2>Meet Our Scholars</h2>
+                <p>Experts in garage transformation and gym design.</p>
+            </div>
+            <div class="team-grid fade-up">
+                <div class="team-card">
+                    <h3>Zach Harmon, PT, DPT</h3>
+                    <span class="role">Co-Founder</span>
+                </div>
+                <div class="team-card">
+                    <h3>Tyler Sodia, PhD</h3>
+                    <span class="role">Co-Founder</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="newsletter">
+                <h3>Join our newsletter</h3>
+                <p>Sign up for our newsletter to receive exclusive deals, service updates, and garage organization tips. Stay informed!</p>
+                <form class="newsletter-form" id="newsletterForm" onsubmit="handleNewsletter(event)">
+                    <input type="email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
+                <p class="newsletter-disclaimer">By subscribing you agree to our <a href="privacypolicy.html">Privacy Policy</a></p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Menu</h4>
+                    <a href="index.html">Home</a>
+                    <a href="about.html">About</a>
+                    <a href="index.html#services">Services</a>
+                    <a href="contact.html">Contact</a>
+                    <a href="apply.html">Join Our Team</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Quick Links</h4>
+                    <a href="privacypolicy.html">Privacy Policy</a>
+                    <a href="termsofuse.html">Terms of Use</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <a href="tel:7205073969">(720) 507-3969</a>
+                    <a href="mailto:garagescholars@gmail.com">garagescholars@gmail.com</a>
+                    <span style="color: var(--color-text-muted); font-size: 0.9rem;">Serving the Denver Metro Area</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="logo">Garage Scholars</span>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ========== QUOTE MODAL ========== -->
+    <div class="modal-overlay" id="quoteModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeQuoteModal()">&times;</button>
+            <h2>Get Your Free Quote</h2>
+            <p class="subtitle">Tell us about your garage and we'll get back to you within 24 hours.</p>
+            <form id="quoteForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-name">Name *</label>
+                        <input type="text" id="quote-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-email">Email *</label>
+                        <input type="email" id="quote-email" name="email" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-phone">Phone *</label>
+                        <input type="tel" id="quote-phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-zipcode">Zip Code *</label>
+                        <input type="text" id="quote-zipcode" name="zipcode" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-service">Service Type *</label>
+                        <select id="quote-service" name="serviceType" required>
+                            <option value="">Select a service</option>
+                            <option value="cleaning">Garage Cleaning</option>
+                            <option value="organization">Organization</option>
+                            <option value="gym">Gym Setup</option>
+                            <option value="resale">Resale Services</option>
+                            <option value="full">Full Transformation</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-package">Package</label>
+                        <select id="quote-package" name="package">
+                            <option value="">Select a package</option>
+                            <option value="undergraduate">The Undergraduate</option>
+                            <option value="graduate">The Graduate</option>
+                            <option value="doctorate">The Doctorate</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="quote-size">Garage Size (optional)</label>
+                    <input type="text" id="quote-size" name="garageSize" placeholder="e.g., 2-car garage">
+                </div>
+                <div class="form-group">
+                    <label for="quote-description">Description (optional)</label>
+                    <textarea id="quote-description" name="description" rows="3" placeholder="Tell us about your garage..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="quote-photos">Photos of Your Garage * (minimum 3)</label>
+                    <input type="file" id="quote-photos" name="photos" multiple accept="image/*" style="padding: 10px;">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Submit Quote Request</button>
+                <div class="form-message" id="formMessage"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+    <script src="/firebase-config.js"></script>
+
+    <script>
+        // ===== Mobile Nav =====
+        function toggleMobileNav() {
+            document.getElementById('mobileNav').classList.toggle('open');
+        }
+
+        // Close mobile nav when any link inside it is clicked
+        document.querySelectorAll('#mobileNav a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                document.getElementById('mobileNav').classList.remove('open');
+            });
+        });
+
+        // ===== Service Tabs =====
+        function showService(service, e) {
+            document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.service-detail').forEach(d => d.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            document.getElementById('service-' + service).classList.add('active');
+        }
+
+        // ===== FAQ Toggle =====
+        function toggleFaq(btn) {
+            const item = btn.closest('.faq-item');
+            item.classList.toggle('open');
+        }
+
+        // ===== Scroll Animations =====
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-up, .fade-in').forEach(el => observer.observe(el));
+
+        // ===== Quote Modal =====
+        firebase.initializeApp(window.firebaseConfig);
+        const functions = firebase.functions();
+
+        // Resize an image file to max dimension and return compressed base64
+        function resizePhoto(file, maxDim, quality) {
+            return new Promise(function(resolve, reject) {
+                var img = new Image();
+                var objectUrl = URL.createObjectURL(file);
+                img.onload = function() {
+                    URL.revokeObjectURL(objectUrl);
+                    var w = img.width, h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+                        else { w = Math.round(w * maxDim / h); h = maxDim; }
+                    }
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    var dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(dataUrl.split(',')[1]);
+                };
+                img.onerror = function() { URL.revokeObjectURL(objectUrl); reject(); };
+                img.src = objectUrl;
+            });
+        }
+
+        function openQuoteModal(packageType) {
+            document.getElementById('quoteModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            if (packageType) {
+                const pkg = document.getElementById('quote-package');
+                if (pkg) pkg.value = packageType;
+            }
+        }
+
+        function closeQuoteModal() {
+            document.getElementById('quoteModal').classList.remove('open');
+            document.body.style.overflow = 'auto';
+            document.getElementById('quoteForm').reset();
+            const msg = document.getElementById('formMessage');
+            msg.textContent = '';
+            msg.className = 'form-message';
+            msg.style.display = '';
+        }
+
+        // Close modal on overlay click
+        document.getElementById('quoteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeQuoteModal();
+        });
+
+        // Quote Form Submission
+        document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const msg = document.getElementById('formMessage');
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                const fd = new FormData(this);
+                const data = {
+                    name: fd.get('name'),
+                    email: fd.get('email'),
+                    phone: fd.get('phone'),
+                    zipcode: fd.get('zipcode'),
+                    serviceType: fd.get('serviceType'),
+                    package: fd.get('package'),
+                    garageSize: fd.get('garageSize') || '',
+                    description: fd.get('description') || '',
+                    photoData: []
+                };
+
+                const photos = fd.getAll('photos').filter(f => f.size > 0);
+                if (!photos || photos.length < 3) {
+                    msg.textContent = 'Please upload at least 3 photos of your garage.';
+                    msg.className = 'form-message error';
+                    btn.disabled = false;
+                    btn.textContent = 'Submit Quote Request';
+                    return;
+                }
+
+                msg.textContent = 'Processing photos...';
+                msg.className = 'form-message';
+                msg.style.display = 'block';
+
+                for (const file of photos) {
+                    const base64 = await resizePhoto(file, 1200, 0.7);
+                    data.photoData.push({ base64, filename: file.name, mimeType: 'image/jpeg' });
+                }
+
+                msg.textContent = 'Submitting your request...';
+                const submitQuoteRequest = functions.httpsCallable('submitQuoteRequest');
+                await submitQuoteRequest(data);
+
+                msg.textContent = 'Thank you! Your quote request has been submitted. We\'ll contact you soon.';
+                msg.className = 'form-message success';
+                setTimeout(() => closeQuoteModal(), 3000);
+
+            } catch (error) {
+                let errMsg = 'There was an error submitting your request. Please try again.';
+                if (error.code === 'invalid-argument') errMsg = 'Please fill in all required fields.';
+                else if (error.message) errMsg = 'Error: ' + error.message;
+                msg.textContent = errMsg;
+                msg.className = 'form-message error';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Quote Request';
+            }
+        });
+
+        // ===== Newsletter =====
+        function handleNewsletter(e) {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Subscribing...';
+            const db = firebase.firestore();
+            db.collection('newsletterSubscriptions').add({
+                email: email,
+                subscribedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                form.querySelector('input[type="email"]').value = '';
+                btn.textContent = 'Subscribed!';
+                btn.style.background = 'var(--color-primary-dark)';
+                setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000);
+            }).catch(err => {
+                console.error('Newsletter error:', err);
+                btn.textContent = 'Error - Try Again';
+                btn.style.background = '#c0392b';
+                setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000);
+            });
+        }
+    </script>
+
+</body>
+</html>

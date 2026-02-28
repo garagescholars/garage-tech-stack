@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "site": "garage-scholars-website",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/home",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

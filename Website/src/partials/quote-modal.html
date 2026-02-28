@@ -1,0 +1,84 @@
+    <!-- ========== QUOTE MODAL ========== -->
+    <div class="modal-overlay" id="quoteModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeQuoteModal()">&times;</button>
+            <h2>Get Your Free Quote</h2>
+            <p class="subtitle">Tell us about your garage and we'll get back to you within 24 hours.</p>
+            <form id="quoteForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-name">Name *</label>
+                        <input type="text" id="quote-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-email">Email *</label>
+                        <input type="email" id="quote-email" name="email" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-phone">Phone *</label>
+                        <input type="tel" id="quote-phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-zipcode">Zip Code *</label>
+                        <input type="text" id="quote-zipcode" name="zipcode" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quote-service">Service Type *</label>
+                        <select id="quote-service" name="serviceType" required>
+                            <option value="">Select a service</option>
+                            <option value="cleaning">Garage Cleaning</option>
+                            <option value="organization">Organization</option>
+                            <option value="gym">Gym Setup</option>
+                            <option value="resale">Resale Services</option>
+                            <option value="full">Full Transformation</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-package">Package</label>
+                        <select id="quote-package" name="package">
+                            <option value="">Select a package</option>
+                            <optgroup label="Garage Organization">
+                                <option value="undergraduate">The Undergraduate</option>
+                                <option value="graduate">The Graduate</option>
+                                <option value="doctorate">The Doctorate</option>
+                            </optgroup>
+                            <optgroup label="Home Gym Installation">
+                                <option value="warmup">Warm Up</option>
+                                <option value="superset">Super Set</option>
+                                <option value="1repmax">1 Rep Max</option>
+                            </optgroup>
+                            <optgroup label="Bundle Packages">
+                                <option value="deans-list">The Dean's List</option>
+                                <option value="valedictorian">The Valedictorian</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="quote-size">Garage Size (optional)</label>
+                    <select id="quote-size" name="garageSizeSelect">
+                        <option value="">Select garage size</option>
+                        <option value="1-car">1-Car Garage</option>
+                        <option value="2-car">2-Car Garage</option>
+                        <option value="3-car">3-Car Garage</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <input type="text" id="quote-size-other" name="garageSizeOther" placeholder="Describe your space..." style="display: none; margin-top: 8px;">
+                </div>
+                <div class="form-group">
+                    <label for="quote-description">What's your dream garage? (optional)</label>
+                    <textarea id="quote-description" name="description" rows="3" placeholder="Home gym? Workshop? Organized storage? Tell us your vision..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="quote-photos">Photos of Your Garage * (minimum 3)</label>
+                    <input type="file" id="quote-photos" name="photos" multiple accept="image/*" style="padding: 10px;">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Submit Quote Request</button>
+                <div class="form-message" id="formMessage"></div>
+            </form>
+        </div>
+    </div>

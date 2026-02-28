@@ -1,0 +1,8 @@
+{
+  "name": "garage-scholars-website",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js && echo 'Build complete. Open dist/index.html to preview.'"
+  }
+}

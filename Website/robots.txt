@@ -1,0 +1,10 @@
+# robots.txt for https://garagescholars.com
+
+User-agent: *
+Disallow:
+
+Allow: /
+
+Sitemap: https://garagescholars.com/sitemap.xml
+
+Host: garagescholars.com

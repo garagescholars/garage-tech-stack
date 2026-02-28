@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Use - Garage Scholars Denver</title>
+    <meta property="og:title" content="Terms of Use - Garage Scholars Denver">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo"><a href="index.html">Garage Scholars</a></div>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About</a>
+                <a href="index.html#services">Services</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <div class="nav-buttons">
+                <a href="coming-soon.html" class="btn btn-outline">Visualize Your Garage</a>
+                <a href="index.html" class="btn btn-primary">Get a Quote</a>
+            </div>
+            <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+        </div>
+    </header>
+    <nav class="mobile-nav" id="mobileNav">
+        <a href="index.html">Home</a><a href="about.html">About</a><a href="contact.html">Contact</a>
+    </nav>
+
+    <div class="legal-page">
+        <div class="legal-content">
+            <h1>Terms and Conditions</h1>
+            <p class="intro">These Terms and Conditions govern your access to and use of Garage Scholars, including any content, functionality, and services offered on or through the Website. Please read these Terms carefully before using the Website. By accessing or using the Website, you agree to be bound by these Terms and all applicable laws and regulations. If you disagree with any part of these Terms, then you may not access the Website.</p>
+
+            <div class="legal-section">
+                <h2>1. Acceptance of Terms</h2>
+                <p>By using Garage Scholars, you agree to be bound by these Terms and our Privacy Policy. We may modify these Terms at any time, with changes effective upon posting.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>2. Use of the Website</h2>
+                <p>This website is for personal, non-commercial use only. You agree to use it lawfully and refrain from any disruptive actions.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>3. Intellectual Property</h2>
+                <p>All content on Garage Scholars belongs to Garage Scholars or its content suppliers. You may not reproduce or modify any materials without permission.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>4. Disclaimers</h2>
+                <p>Garage Scholars is provided "as is." We make no guarantees regarding availability or error-free operation and disclaim all warranties, express or implied.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>5. Limitation of Liability</h2>
+                <p>Garage Scholars is not liable for any indirect, incidental, or consequential damages arising from your use of the website.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>6. Third Party Links</h2>
+                <p>Our site may link to external sites not controlled by Garage Scholars. We are not responsible for their content or practices.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>7. Termination</h2>
+                <p>We reserve the right to suspend or terminate your access at any time, without notice.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>8. Governing Law</h2>
+                <p>These Terms are governed by the laws of the State of Colorado.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>9. Contact Us</h2>
+                <p>For questions about these Terms, please contact us at <a href="mailto:garagescholars@gmail.com" style="color: var(--color-primary);">garagescholars@gmail.com</a> or <a href="tel:7205073969" style="color: var(--color-primary);">(720) 507-3969</a>.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="newsletter">
+                <h3>Join our newsletter</h3>
+                <p>Sign up for exclusive deals, service updates, and garage organization tips.</p>
+                <form class="newsletter-form" onsubmit="handleNewsletter(event)">
+                    <input type="email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
+                <p class="newsletter-disclaimer">By subscribing you agree to our <a href="privacypolicy.html">Privacy Policy</a></p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column"><h4>Menu</h4><a href="index.html">Home</a><a href="about.html">About</a><a href="contact.html">Contact</a></div>
+                <div class="footer-column"><h4>Quick Links</h4><a href="index.html#pricing">Pricing</a><a href="privacypolicy.html">Privacy Policy</a><a href="termsofuse.html">Terms of Use</a></div>
+                <div class="footer-column"><h4>Company</h4><a href="tel:7205073969">(720) 507-3969</a><a href="mailto:garagescholars@gmail.com">garagescholars@gmail.com</a></div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="logo">Garage Scholars</span>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="/firebase-config.js"></script>
+    <script>
+        function toggleMobileNav() { document.getElementById('mobileNav').classList.toggle('open'); }
+        firebase.initializeApp(window.firebaseConfig);
+        function handleNewsletter(e) {
+            e.preventDefault();
+            var form = e.target;
+            var email = form.querySelector('input[type="email"]').value;
+            var btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Subscribing...';
+            firebase.firestore().collection('newsletterSubscriptions').add({ email: email, subscribedAt: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(function() { form.querySelector('input[type="email"]').value = ''; btn.textContent = 'Subscribed!'; btn.style.background = 'var(--color-primary-dark)'; setTimeout(function() { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); })
+                .catch(function() { btn.textContent = 'Error - Try Again'; btn.style.background = '#c0392b'; setTimeout(function() { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); });
+        }
+    </script>
+
+</body>
+</html>

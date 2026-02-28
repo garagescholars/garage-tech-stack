@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Become a Scholar - Earn $35-45/hr | Garage Scholars Denver</title>
+    <meta name="description" content="Join the Garage Scholars team. Earn $35-45/hr with flexible scheduling.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ========== HEADER ========== -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo"><a href="index.html">Garage Scholars</a></div>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+                <a href="apply.html" class="active">Join Our Team</a>
+            </nav>
+            <div class="nav-buttons">
+                <a href="coming-soon.html" class="btn btn-outline">Visualize Your Garage</a>
+                <a href="index.html" class="btn btn-primary">Back to Home</a>
+            </div>
+            <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <nav class="mobile-nav" id="mobileNav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <a href="apply.html">Join Our Team</a>
+    </nav>
+
+    <!-- ========== APPLICATION ========== -->
+    <div class="apply-page">
+        <div class="apply-container">
+            <h1>Become a Scholar</h1>
+            <p class="apply-highlight">Earn $35-45/hour</p>
+
+            <div class="benefits-list">
+                <div class="benefit-item">Flexible Schedule - Work Around Your Classes</div>
+                <div class="benefit-item">Same-Day Pay Available</div>
+                <div class="benefit-item">Work With Friends - Team Jobs</div>
+                <div class="benefit-item">No Experience Needed - We Train You</div>
+                <div class="benefit-item">Build Your Resume - Project Management Skills</div>
+            </div>
+
+            <div id="successMessage" class="success-message">
+                <h2>Application Submitted!</h2>
+                <p>We'll text you within 24 hours for a quick phone interview.</p>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+
+            <form id="applicationForm">
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number *</label>
+                    <input type="tel" id="phone" name="phone" placeholder="(720) 555-1234" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="isStudent">Are you a student or recent graduate? *</label>
+                    <select id="isStudent" name="isStudent" required>
+                        <option value="">Select</option>
+                        <option value="Yes">Yes - Current student or recent graduate</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="form-group" id="schoolGroup" style="display: none;">
+                    <label for="school">University *</label>
+                    <select id="school" name="school">
+                        <option value="">Select your school</option>
+                        <option value="DU">University of Denver (DU)</option>
+                        <option value="CSM">Colorado School of Mines</option>
+                        <option value="CU">CU Boulder</option>
+                        <option value="MSU">Metro State</option>
+                        <option value="N/A">Not Applicable</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group" id="yearGroup" style="display: none;">
+                    <label for="year">Year in School</label>
+                    <select id="year" name="year">
+                        <option value="">Select year</option>
+                        <option value="Freshman">Freshman</option>
+                        <option value="Sophomore">Sophomore</option>
+                        <option value="Junior">Junior</option>
+                        <option value="Senior">Senior</option>
+                        <option value="Graduate">Graduate Student</option>
+                        <option value="Recent Graduate">Recent Graduate (within 2 years)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="availability">Weekly Availability (hours/week) *</label>
+                    <select id="availability" name="availability" required>
+                        <option value="">Select availability</option>
+                        <option value="5-10">5-10 hours/week</option>
+                        <option value="10-15">10-15 hours/week</option>
+                        <option value="15-20">15-20 hours/week</option>
+                        <option value="20+">20+ hours/week</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="hasCar">Do you have reliable transportation? *</label>
+                    <select id="hasCar" name="hasCar" required>
+                        <option value="">Select</option>
+                        <option value="Yes">Yes - I have a car</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="referral">How did you hear about us?</label>
+                    <select id="referral" name="referral">
+                        <option value="">Select</option>
+                        <option value="Flyer">Campus Flyer</option>
+                        <option value="Friend">Friend/Referral</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="whyJoin">Why do you want to work with Garage Scholars?</label>
+                    <textarea id="whyJoin" name="whyJoin" rows="4" placeholder="Tell us why you're interested..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="resume">Upload Resume (Optional)</label>
+                    <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" style="padding: 10px;">
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 5px;">PDF, DOC, or DOCX format. Max 5MB.</p>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;" id="submitBtn">Apply Now</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="newsletter">
+                <h3>Join our newsletter</h3>
+                <p>Sign up for our newsletter to receive exclusive deals, service updates, and garage organization tips. Stay informed!</p>
+                <form class="newsletter-form" onsubmit="handleNewsletter(event)">
+                    <input type="email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
+                <p class="newsletter-disclaimer">By subscribing you agree to our <a href="privacypolicy.html">Privacy Policy</a></p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Menu</h4>
+                    <a href="index.html">Home</a>
+                    <a href="about.html">About</a>
+                    <a href="index.html#services">Services</a>
+                    <a href="contact.html">Contact</a>
+                    <a href="apply.html">Join Our Team</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Quick Links</h4>
+                    <a href="index.html#pricing">Pricing</a>
+                    <a href="privacypolicy.html">Privacy Policy</a>
+                    <a href="termsofuse.html">Terms of Use</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <a href="tel:7205073969">(720) 507-3969</a>
+                    <a href="mailto:garagescholars@gmail.com">garagescholars@gmail.com</a>
+                    <span style="color: var(--color-text-muted); font-size: 0.9rem;">Serving the Denver Metro Area</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="logo">Garage Scholars</span>
+            <p>&copy; 2025 Garage Scholars. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="/firebase-config.js"></script>
+
+    <script>
+        function toggleMobileNav() { document.getElementById('mobileNav').classList.toggle('open'); }
+        document.querySelectorAll('#mobileNav a').forEach(function(link) { link.addEventListener('click', function() { document.getElementById('mobileNav').classList.remove('open'); }); });
+
+        firebase.initializeApp(window.firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        const form = document.getElementById('applicationForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+
+        document.getElementById('isStudent').addEventListener('change', function() {
+            const show = this.value === 'Yes';
+            document.getElementById('schoolGroup').style.display = show ? 'block' : 'none';
+            document.getElementById('yearGroup').style.display = show ? 'block' : 'none';
+            document.getElementById('school').required = show;
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            errorMessage.style.display = 'none';
+
+            try {
+                const formData = {
+                    name: document.getElementById('name').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    isStudent: document.getElementById('isStudent').value,
+                    school: document.getElementById('school').value || 'N/A',
+                    year: document.getElementById('year').value || 'N/A',
+                    availability: document.getElementById('availability').value,
+                    hasCar: document.getElementById('hasCar').value,
+                    referralSource: document.getElementById('referral').value,
+                    whyJoin: document.getElementById('whyJoin').value,
+                    status: 'NEW',
+                    appliedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    source: 'landing-page'
+                };
+
+                const resumeFile = document.getElementById('resume').files[0];
+                if (resumeFile) {
+                    if (resumeFile.size > 5 * 1024 * 1024) {
+                        errorMessage.textContent = 'Resume file is too large. Please upload a file under 5MB.';
+                        errorMessage.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Apply Now';
+                        return;
+                    }
+                    const resumeRef = storage.ref('scholar-resumes/' + Date.now() + '-' + resumeFile.name);
+                    await resumeRef.put(resumeFile);
+                    formData.resumeURL = await resumeRef.getDownloadURL();
+                }
+
+                await db.collection('scholarApplications').add(formData);
+                form.style.display = 'none';
+                successMessage.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = 'Error submitting application. Please try again or text us at (720) 507-3969';
+                errorMessage.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Apply Now';
+            }
+        });
+        function handleNewsletter(e) {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Subscribing...';
+            db.collection('newsletterSubscriptions').add({ email, subscribedAt: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(() => { form.querySelector('input[type="email"]').value = ''; btn.textContent = 'Subscribed!'; btn.style.background = 'var(--color-primary-dark)'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); })
+                .catch(err => { console.error(err); btn.textContent = 'Error - Try Again'; btn.style.background = '#c0392b'; setTimeout(() => { btn.textContent = 'Subscribe'; btn.style.background = ''; btn.disabled = false; }, 3000); });
+        }
+    </script>
+
+</body>
+</html>
