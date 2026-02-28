@@ -9,13 +9,16 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import * as Location from "expo-location";
-import { db } from "../../src/lib/firebase";
+import * as ImagePicker from "expo-image-picker";
+import { db, storage } from "../../src/lib/firebase";
 import { useAuth } from "../../src/hooks/useAuth";
 import { COLLECTIONS } from "../../src/constants/collections";
 
@@ -28,10 +31,63 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState(1);
   const [fullName, setFullName] = useState(profile?.name || "");
   const [submitting, setSubmitting] = useState(false);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // Permission states
   const [notifGranted, setNotifGranted] = useState<boolean | null>(null);
   const [locationGranted, setLocationGranted] = useState<boolean | null>(null);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Needed", "Please allow access to your photo library to choose a profile picture.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setAvatarUri(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Needed", "Please allow camera access to take a profile picture.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setAvatarUri(result.assets[0].uri);
+    }
+  };
+
+  const uploadAvatar = async (): Promise<string | null> => {
+    if (!avatarUri || !user) return null;
+    try {
+      setAvatarUploading(true);
+      const response = await fetch(avatarUri);
+      const blob = await response.blob();
+      const avatarRef = ref(storage, `gs_avatars/${user.uid}.jpg`);
+      await uploadBytes(avatarRef, blob);
+      const downloadUrl = await getDownloadURL(avatarRef);
+      return downloadUrl;
+    } catch (err: any) {
+      console.error("[Onboarding] Avatar upload error:", err);
+      return null;
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const goNext = () => {
     if (step < TOTAL_STEPS) {
@@ -87,18 +143,27 @@ export default function OnboardingScreen() {
     try {
       const trimmedName = fullName.trim() || "Scholar";
 
-      // Update gs_profiles with the name
-      await updateDoc(doc(db, COLLECTIONS.PROFILES, user.uid), {
+      // Upload avatar if one was selected
+      const avatarUrl = await uploadAvatar();
+
+      // Update gs_profiles with the name (and avatar if uploaded)
+      const profileUpdate: Record<string, any> = {
         fullName: trimmedName,
         updatedAt: serverTimestamp(),
-      });
+      };
+      if (avatarUrl) profileUpdate.avatarUrl = avatarUrl;
+
+      await updateDoc(doc(db, COLLECTIONS.PROFILES, user.uid), profileUpdate);
 
       // Update gs_scholarProfiles with onboardingComplete and name
-      await updateDoc(doc(db, COLLECTIONS.SCHOLAR_PROFILES, user.uid), {
+      const scholarUpdate: Record<string, any> = {
         onboardingComplete: true,
         scholarName: trimmedName,
         updatedAt: serverTimestamp(),
-      });
+      };
+      if (avatarUrl) scholarUpdate.avatarUrl = avatarUrl;
+
+      await updateDoc(doc(db, COLLECTIONS.SCHOLAR_PROFILES, user.uid), scholarUpdate);
 
       router.replace("/(scholar)/jobs");
     } catch (err: any) {
@@ -124,7 +189,7 @@ export default function OnboardingScreen() {
         value={fullName}
         onChangeText={setFullName}
         placeholder="Full Name"
-        placeholderTextColor="#64748b"
+        placeholderTextColor="#5a6a80"
         autoFocus
         autoCapitalize="words"
         returnKeyType="next"
@@ -143,19 +208,31 @@ export default function OnboardingScreen() {
 
   const renderStepAvatar = () => (
     <View style={styles.stepContent}>
-      <View style={styles.avatarPlaceholder}>
-        <Ionicons name="person-circle-outline" size={96} color="#334155" />
-      </View>
+      {avatarUri ? (
+        <Image source={{ uri: avatarUri }} style={styles.avatarPreview} />
+      ) : (
+        <View style={styles.avatarPlaceholder}>
+          <Ionicons name="person-circle-outline" size={96} color="#2a3545" />
+        </View>
+      )}
       <Text style={styles.stepTitle}>Profile Picture</Text>
       <Text style={styles.stepSubtitle}>
-        You can add a profile picture later from your profile settings.
+        Add a profile picture so customers and scholars can recognize you.
       </Text>
-      <TouchableOpacity style={styles.secondaryBtn} disabled>
-        <Ionicons name="camera-outline" size={20} color="#64748b" />
-        <Text style={styles.secondaryBtnText}>Coming Soon</Text>
+      <TouchableOpacity style={styles.secondaryBtn} onPress={pickImage}>
+        <Ionicons name="images-outline" size={20} color="#14b8a6" />
+        <Text style={[styles.secondaryBtnText, { color: "#14b8a6" }]}>
+          {avatarUri ? "Change Photo" : "Choose from Library"}
+        </Text>
       </TouchableOpacity>
+      {Platform.OS !== "web" && (
+        <TouchableOpacity style={styles.secondaryBtn} onPress={takePhoto}>
+          <Ionicons name="camera-outline" size={20} color="#14b8a6" />
+          <Text style={[styles.secondaryBtnText, { color: "#14b8a6" }]}>Take a Photo</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity style={styles.primaryBtn} onPress={goNext}>
-        <Text style={styles.primaryBtnText}>Skip for Now</Text>
+        <Text style={styles.primaryBtnText}>{avatarUri ? "Continue" : "Skip for Now"}</Text>
         <Ionicons name="arrow-forward" size={18} color="#fff" />
       </TouchableOpacity>
     </View>
@@ -281,7 +358,7 @@ export default function OnboardingScreen() {
       {/* Back button */}
       {step > 1 && (
         <TouchableOpacity style={styles.backBtn} onPress={goBack}>
-          <Ionicons name="arrow-back" size={22} color="#94a3b8" />
+          <Ionicons name="arrow-back" size={22} color="#8b9bb5" />
         </TouchableOpacity>
       )}
 
@@ -294,7 +371,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     paddingHorizontal: 24,
     paddingTop: 80,
   },
@@ -309,7 +386,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
   },
   dotActive: {
     backgroundColor: "#14b8a6",
@@ -321,7 +398,7 @@ const styles = StyleSheet.create({
   },
   stepCounter: {
     textAlign: "center",
-    color: "#64748b",
+    color: "#5a6a80",
     fontSize: 13,
     fontWeight: "600",
     marginBottom: 24,
@@ -343,7 +420,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
@@ -351,16 +428,24 @@ const styles = StyleSheet.create({
   avatarPlaceholder: {
     marginBottom: 24,
   },
+  avatarPreview: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    marginBottom: 24,
+    borderWidth: 3,
+    borderColor: "#14b8a6",
+  },
   stepTitle: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     textAlign: "center",
     marginBottom: 8,
   },
   stepSubtitle: {
     fontSize: 15,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textAlign: "center",
     lineHeight: 22,
     marginBottom: 32,
@@ -368,14 +453,14 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 18,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     marginBottom: 20,
     textAlign: "center",
   },
@@ -399,7 +484,7 @@ const styles = StyleSheet.create({
   },
   secondaryBtn: {
     width: "100%",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     paddingVertical: 14,
     flexDirection: "row",
@@ -407,12 +492,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     marginBottom: 12,
-    opacity: 0.5,
   },
   secondaryBtnText: {
-    color: "#64748b",
+    color: "#5a6a80",
     fontSize: 15,
     fontWeight: "600",
   },
@@ -421,7 +505,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   skipBtnText: {
-    color: "#64748b",
+    color: "#5a6a80",
     fontSize: 15,
     fontWeight: "600",
   },
@@ -430,7 +514,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginBottom: 20,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,

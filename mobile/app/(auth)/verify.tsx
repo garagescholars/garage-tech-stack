@@ -16,9 +16,30 @@ export default function VerifyScreen() {
   const { phone, verificationId } = useLocalSearchParams<{ phone: string; verificationId: string }>();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const { verifyPhone } = useAuth();
   const router = useRouter();
+
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResend = () => {
+    if (resendCooldown > 0) return;
+    setResendCooldown(60);
+    // Navigate back to login with phone pre-filled to re-trigger reCAPTCHA
+    const phoneDigits = (phone || "").replace(/\D/g, "").replace(/^1/, "");
+    router.replace({
+      pathname: "/(auth)/login",
+      params: { resendPhone: phoneDigits },
+    });
+  };
 
   const handleCodeChange = (text: string, index: number) => {
     const newCode = [...code];
@@ -118,8 +139,16 @@ export default function VerifyScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.resendButton}>
-          <Text style={styles.resendText}>Didn't get a code? Resend</Text>
+        <TouchableOpacity
+          style={[styles.resendButton, resendCooldown > 0 && styles.resendDisabled]}
+          onPress={handleResend}
+          disabled={resendCooldown > 0}
+        >
+          <Text style={[styles.resendText, resendCooldown <= 0 && styles.resendTextActive]}>
+            {resendCooldown > 0
+              ? `Resend code in ${resendCooldown}s`
+              : "Didn't get a code? Resend"}
+          </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -129,7 +158,7 @@ export default function VerifyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
   },
   content: {
     flex: 1,
@@ -151,12 +180,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textAlign: "center",
     lineHeight: 24,
   },
@@ -174,13 +203,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 56,
     borderRadius: 12,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderWidth: 2,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     textAlign: "center",
     fontSize: 24,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   codeInputFilled: {
     borderColor: "#14b8a6",
@@ -206,7 +235,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   resendText: {
-    color: "#64748b",
+    color: "#5a6a80",
     fontSize: 14,
+  },
+  resendTextActive: {
+    color: "#14b8a6",
+    fontWeight: "600",
+  },
+  resendDisabled: {
+    opacity: 0.5,
   },
 });

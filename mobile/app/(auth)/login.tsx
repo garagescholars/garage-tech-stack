@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,20 +19,26 @@ import Animated, {
 } from "react-native-reanimated";
 import PhoneAuthWebView from "../../src/components/PhoneAuthWebView";
 
+function formatPhoneStatic(input: string) {
+  const digits = input.replace(/\D/g, "");
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+}
+
 export default function LoginScreen() {
-  const [phone, setPhone] = useState("");
+  const { resendPhone } = useLocalSearchParams<{ resendPhone?: string }>();
+  const [phone, setPhone] = useState(() => {
+    if (resendPhone) return formatPhoneStatic(resendPhone);
+    return "";
+  });
   const [loading, setLoading] = useState(false);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [focused, setFocused] = useState(false);
   const router = useRouter();
   const buttonScale = useSharedValue(1);
 
-  const formatPhone = (input: string) => {
-    const digits = input.replace(/\D/g, "");
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-  };
+  const formatPhone = formatPhoneStatic;
 
   const digits = phone.replace(/\D/g, "");
   const isValid = digits.length === 10;
@@ -94,7 +100,7 @@ export default function LoginScreen() {
               value={phone}
               onChangeText={(t) => setPhone(formatPhone(t))}
               placeholder="(555) 123-4567"
-              placeholderTextColor="#64748b"
+              placeholderTextColor="#5a6a80"
               keyboardType="phone-pad"
               maxLength={14}
               autoFocus
@@ -155,7 +161,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
   },
   content: {
     flex: 1,
@@ -173,12 +179,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textAlign: "center",
   },
   form: {
@@ -196,13 +202,13 @@ const styles = StyleSheet.create({
   },
   phoneRowFocused: {},
   countryCode: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     paddingHorizontal: 16,
     justifyContent: "center",
     marginRight: 8,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   countryCodeFocused: {
     borderColor: "#14b8a6",
@@ -214,14 +220,14 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 18,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     letterSpacing: 0.5,
   },
   inputFocused: {
@@ -229,7 +235,7 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#5a6a80",
     marginBottom: 14,
     marginLeft: 4,
   },
@@ -241,7 +247,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   buttonDisabled: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
   },
   buttonContent: {
     flexDirection: "row",
@@ -255,7 +261,7 @@ const styles = StyleSheet.create({
   },
   disclaimer: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#5a6a80",
     textAlign: "center",
     lineHeight: 18,
     paddingHorizontal: 16,

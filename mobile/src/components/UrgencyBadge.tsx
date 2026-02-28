@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { URGENCY_CONFIG } from "../constants/urgency";
+import { colors, radius } from "../constants/theme";
 import type { UrgencyLevel } from "../types";
 
 type Props = {
@@ -13,17 +14,19 @@ export default function UrgencyBadge({ level, reopened }: Props) {
   return (
     <View style={styles.row}>
       {reopened && (
-        <View style={[styles.badge, { backgroundColor: "#fef3c7", borderColor: "#fcd34d" }]}>
-          <Text style={[styles.text, { color: "#92400e" }]}>REOPENED</Text>
+        <View style={[styles.badge, { backgroundColor: "#92400e20" }]}>
+          <View style={[styles.dot, { backgroundColor: colors.accent.amber }]} />
+          <Text style={[styles.text, { color: colors.accent.amber }]}>REOPENED</Text>
         </View>
       )}
       {config.label ? (
         <View
           style={[
             styles.badge,
-            { backgroundColor: config.bgColor, borderColor: config.borderColor },
+            { backgroundColor: `${config.color}15` },
           ]}
         >
+          <View style={[styles.dot, { backgroundColor: config.color }]} />
           <Text style={[styles.text, { color: config.color }]}>{config.label}</Text>
         </View>
       ) : null}
@@ -37,14 +40,21 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   badge: {
-    paddingHorizontal: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
+    borderRadius: radius.xs,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
   },
   text: {
     fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.5,
+    fontWeight: "700",
+    letterSpacing: 0.8,
   },
 });

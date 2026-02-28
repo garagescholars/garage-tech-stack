@@ -170,7 +170,7 @@ function StatCard({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { padding: 16 },
   heroCard: {
@@ -182,12 +182,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#14b8a640",
   },
-  heroLabel: { fontSize: 13, fontWeight: "700", color: "#94a3b8", marginBottom: 4 },
+  heroLabel: { fontSize: 13, fontWeight: "700", color: "#8b9bb5", marginBottom: 4 },
   heroValue: { fontSize: 36, fontWeight: "800", color: "#10b981" },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 12,
   },
   grid: {
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   section: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginBottom: 8,
   },
 });
@@ -213,12 +213,12 @@ const styles = StyleSheet.create({
 const cardStyles = StyleSheet.create({
   card: {
     width: "31%" as any,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     alignItems: "center",
     gap: 4,
   },
   value: { fontSize: 22, fontWeight: "800" },
-  label: { fontSize: 10, color: "#64748b", fontWeight: "600", textAlign: "center" },
+  label: { fontSize: 10, color: "#5a6a80", fontWeight: "600", textAlign: "center" },
 });

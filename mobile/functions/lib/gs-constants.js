@@ -31,6 +31,10 @@ exports.GS_COLLECTIONS = {
     // Social media & review campaigns
     SOCIAL_CONTENT_QUEUE: "gs_socialContentQueue",
     REVIEW_CAMPAIGNS: "gs_reviewCampaigns",
+    // Resale, donation & gym install
+    RESALE_DONATION_ITEMS: "gs_resale_donation_items",
+    DONATION_RECEIPTS: "gs_donation_receipts",
+    GYM_INSTALL_PHOTOS: "gs_gym_install_photos",
 };
 /** Quality score weights — must total 1.0 */
 exports.SCORING_WEIGHTS = {

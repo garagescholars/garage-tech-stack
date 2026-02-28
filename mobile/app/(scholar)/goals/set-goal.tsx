@@ -68,7 +68,7 @@ export default function SetGoalScreen() {
             <Ionicons
               name="briefcase"
               size={20}
-              color={goalType === "jobs" ? "#fff" : "#64748b"}
+              color={goalType === "jobs" ? "#fff" : "#5a6a80"}
             />
             <Text
               style={[styles.typeText, goalType === "jobs" && styles.typeTextActive]}
@@ -83,7 +83,7 @@ export default function SetGoalScreen() {
             <Ionicons
               name="cash"
               size={20}
-              color={goalType === "money" ? "#fff" : "#64748b"}
+              color={goalType === "money" ? "#fff" : "#5a6a80"}
             />
             <Text
               style={[styles.typeText, goalType === "money" && styles.typeTextActive]}
@@ -141,14 +141,14 @@ export default function SetGoalScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   content: { padding: 20 },
-  heading: { fontSize: 24, fontWeight: "800", color: "#f8fafc", marginBottom: 4 },
-  subheading: { fontSize: 14, color: "#64748b", marginBottom: 24 },
+  heading: { fontSize: 24, fontWeight: "800", color: "#f1f5f9", marginBottom: 4 },
+  subheading: { fontSize: 14, color: "#5a6a80", marginBottom: 24 },
   label: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 8,
@@ -162,24 +162,24 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   typeBtnActive: {
     backgroundColor: "#14b8a6",
     borderColor: "#14b8a6",
   },
-  typeText: { fontSize: 14, fontWeight: "700", color: "#64748b" },
+  typeText: { fontSize: 14, fontWeight: "700", color: "#5a6a80" },
   typeTextActive: { color: "#fff" },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     marginBottom: 12,
   },
   prefix: { fontSize: 20, fontWeight: "700", color: "#10b981", marginRight: 4 },
@@ -188,17 +188,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 20,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   presetRow: { flexDirection: "row", gap: 8, marginBottom: 32 },
   preset: {
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     alignItems: "center",
   },
-  presetText: { color: "#94a3b8", fontWeight: "700", fontSize: 13 },
+  presetText: { color: "#8b9bb5", fontWeight: "700", fontSize: 13 },
   saveBtn: {
     backgroundColor: "#14b8a6",
     borderRadius: 14,

@@ -130,7 +130,7 @@ function EmptyState({
 }) {
   return (
     <View style={styles.emptyContainer}>
-      <Ionicons name={icon} size={36} color="#334155" />
+      <Ionicons name={icon} size={36} color="#2a3545" />
       <Text style={styles.emptyTitle}>{title}</Text>
       <Text style={styles.emptySubtitle}>{subtitle}</Text>
     </View>
@@ -299,7 +299,7 @@ function ReviewModal({
               Review: {job.clientName}
             </Text>
             <TouchableOpacity onPress={onClose} hitSlop={12}>
-              <Ionicons name="close" size={24} color="#94a3b8" />
+              <Ionicons name="close" size={24} color="#8b9bb5" />
             </TouchableOpacity>
           </View>
 
@@ -419,7 +419,7 @@ function ReviewModal({
                     <Text
                       style={[
                         modalStyles.checklistText,
-                        !task.isCompleted && { color: "#64748b" },
+                        !task.isCompleted && { color: "#5a6a80" },
                       ]}
                     >
                       {task.text}
@@ -1160,19 +1160,19 @@ const styles = StyleSheet.create({
   headerLabel: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#64748b",
+    color: "#5a6a80",
     letterSpacing: 1.5,
     marginBottom: 4,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
 
   // Quick Stats
@@ -1213,7 +1213,7 @@ const styles = StyleSheet.create({
 
   // Cards
   card: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
@@ -1232,11 +1232,11 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   cardHeaderCount: {
     fontSize: 11,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     fontWeight: "600",
   },
 
@@ -1261,11 +1261,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   listItemContent: {
     flex: 1,
@@ -1274,16 +1274,16 @@ const styles = StyleSheet.create({
   listItemTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   listItemSubtitle: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginTop: 2,
   },
   listItemMeta: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 2,
   },
 
@@ -1329,11 +1329,11 @@ const styles = StyleSheet.create({
   notifItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   notifItemUnread: {
     borderColor: "#3b82f6",
@@ -1341,11 +1341,11 @@ const styles = StyleSheet.create({
   },
   notifMessage: {
     fontSize: 13,
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   notifTime: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 2,
   },
   markReadBtn: {
@@ -1370,9 +1370,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   extractBtnDisabled: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   extractBtnText: {
     fontSize: 12,
@@ -1400,12 +1400,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginTop: 4,
   },
   emptySubtitle: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#5a6a80",
     textAlign: "center",
   },
 
@@ -1428,13 +1428,13 @@ const modalStyles = StyleSheet.create({
     padding: 16,
   },
   container: {
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 16,
     width: "100%",
     maxWidth: 600,
     maxHeight: "90%",
     borderWidth: 1,
-    borderColor: "#1e293b",
+    borderColor: "#1a2332",
   },
   header: {
     flexDirection: "row",
@@ -1442,12 +1442,12 @@ const modalStyles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#1e293b",
+    borderBottomColor: "#1a2332",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     flex: 1,
     marginRight: 12,
   },
@@ -1458,7 +1458,7 @@ const modalStyles = StyleSheet.create({
 
   // Info box
   infoBox: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     gap: 6,
@@ -1466,15 +1466,15 @@ const modalStyles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   infoValue: {
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   infoMuted: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
   },
 
   // Policy box
@@ -1496,7 +1496,7 @@ const modalStyles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginBottom: 8,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -1507,22 +1507,22 @@ const modalStyles = StyleSheet.create({
     width: "100%",
     height: 200,
     borderRadius: 10,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
   },
   mediaPlaceholder: {
     width: "100%",
     height: 160,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     gap: 8,
   },
   mediaPlaceholderText: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#5a6a80",
     textAlign: "center",
   },
 
@@ -1536,12 +1536,12 @@ const modalStyles = StyleSheet.create({
   videoContainer: {
     width: "100%",
     height: 200,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   videoPlayOverlay: {
     alignItems: "center",
@@ -1549,7 +1549,7 @@ const modalStyles = StyleSheet.create({
   },
   videoPlayText: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
 
   // Checklist
@@ -1560,7 +1560,7 @@ const modalStyles = StyleSheet.create({
   },
   checklistText: {
     fontSize: 13,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     flex: 1,
   },
 
@@ -1600,7 +1600,7 @@ const modalStyles = StyleSheet.create({
   },
   cancelBtn: {
     flex: 1,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
@@ -1609,19 +1609,19 @@ const modalStyles = StyleSheet.create({
   cancelBtnText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     textAlign: "center",
   },
 
   // Notes input
   notesInput: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 10,
     padding: 14,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     fontSize: 14,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     minHeight: 80,
     textAlignVertical: "top",
   },

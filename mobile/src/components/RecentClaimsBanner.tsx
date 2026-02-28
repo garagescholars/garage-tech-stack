@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 4,
@@ -153,11 +153,11 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   name: {
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   job: {
     fontWeight: "600",

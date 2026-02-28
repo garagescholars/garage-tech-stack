@@ -11,59 +11,69 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../../src/hooks/useAuth";
-
-const SIDEBAR_WIDTH = 240;
+import { colors, layout } from "../../src/constants/theme";
 
 type NavItem = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   path: string;
+  group?: string;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Jobs", icon: "briefcase-outline", path: "/(admin)/jobs" },
-  { label: "Scholars", icon: "people-outline", path: "/(admin)/scholars" },
-  { label: "Dashboard", icon: "grid-outline", path: "/(admin)/dashboard" },
-  { label: "Leads & SOPs", icon: "document-text-outline", path: "/(admin)/leads" },
-  { label: "Payouts", icon: "cash-outline", path: "/(admin)/payouts" },
-  { label: "Transfers", icon: "swap-horizontal-outline", path: "/(admin)/transfers" },
-  { label: "Analytics", icon: "stats-chart-outline", path: "/(admin)/analytics" },
-  { label: "Social Media", icon: "megaphone-outline", path: "/(admin)/social-media" },
-  { label: "Share App", icon: "qr-code-outline", path: "/(admin)/share-app" },
-  { label: "Settings", icon: "settings-outline", path: "/(admin)/settings" },
+  { label: "Jobs", icon: "briefcase-outline", path: "/(admin)/jobs", group: "Operations" },
+  { label: "Scholars", icon: "people-outline", path: "/(admin)/scholars", group: "Operations" },
+  { label: "Dashboard", icon: "grid-outline", path: "/(admin)/dashboard", group: "Operations" },
+  { label: "Leads & SOPs", icon: "document-text-outline", path: "/(admin)/leads", group: "Operations" },
+  { label: "Payouts", icon: "cash-outline", path: "/(admin)/payouts", group: "Finance" },
+  { label: "Transfers", icon: "swap-horizontal-outline", path: "/(admin)/transfers", group: "Finance" },
+  { label: "Analytics", icon: "stats-chart-outline", path: "/(admin)/analytics", group: "Insights" },
+  { label: "Social Media", icon: "megaphone-outline", path: "/(admin)/social-media", group: "Insights" },
+  { label: "Share App", icon: "qr-code-outline", path: "/(admin)/share-app", group: "Settings" },
+  { label: "Settings", icon: "settings-outline", path: "/(admin)/settings", group: "Settings" },
 ];
 
 function WebSidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  let lastGroup = "";
 
   return (
     <View style={sidebarStyles.container}>
       <View style={sidebarStyles.header}>
-        <Ionicons name="construct" size={24} color="#14b8a6" />
+        <Ionicons name="construct" size={22} color={colors.brand.teal} />
         <Text style={sidebarStyles.headerText}>Garage Scholars</Text>
       </View>
-      <ScrollView style={sidebarStyles.nav}>
+      <ScrollView style={sidebarStyles.nav} showsVerticalScrollIndicator={false}>
         {NAV_ITEMS.map((item) => {
           const isActive = pathname.startsWith(item.path.replace("/(admin)", ""));
+          const showGroupLabel = item.group && item.group !== lastGroup;
+          if (item.group) lastGroup = item.group;
+
           return (
-            <TouchableOpacity
-              key={item.path}
-              style={[sidebarStyles.navItem, isActive && sidebarStyles.navItemActive]}
-              onPress={() => router.push(item.path as any)}
-            >
-              <Ionicons
-                name={item.icon}
-                size={18}
-                color={isActive ? "#14b8a6" : "#94a3b8"}
-              />
-              <Text
-                style={[sidebarStyles.navLabel, isActive && sidebarStyles.navLabelActive]}
+            <View key={item.path}>
+              {showGroupLabel && (
+                <Text style={sidebarStyles.groupLabel}>{item.group}</Text>
+              )}
+              <TouchableOpacity
+                style={[sidebarStyles.navItem, isActive && sidebarStyles.navItemActive]}
+                onPress={() => router.push(item.path as any)}
               >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
+                {isActive && <View style={sidebarStyles.activeIndicator} />}
+                <Ionicons
+                  name={item.icon}
+                  size={18}
+                  color={isActive ? colors.brand.teal : colors.text.secondary}
+                />
+                <Text
+                  style={[sidebarStyles.navLabel, isActive && sidebarStyles.navLabelActive]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            </View>
           );
         })}
       </ScrollView>
@@ -77,7 +87,6 @@ export default function AdminLayout() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
 
-  // Auth guard: redirect to login if not authenticated or not admin
   useEffect(() => {
     if (loading) return;
     if (!user) {
@@ -89,8 +98,8 @@ export default function AdminLayout() {
 
   if (loading || !user) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f1b2d" }}>
-        <ActivityIndicator size="large" color="#14b8a6" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.bg.primary }}>
+        <ActivityIndicator size="large" color={colors.brand.teal} />
       </View>
     );
   }
@@ -101,26 +110,26 @@ export default function AdminLayout() {
       <View style={{ flex: 1 }}>
         <Tabs
           screenOptions={{
-            headerStyle: { backgroundColor: "#0f1b2d" },
-            headerTintColor: "#f8fafc",
-            headerTitleStyle: { fontWeight: "700" },
+            headerStyle: { backgroundColor: colors.bg.primary },
+            headerTintColor: colors.text.primary,
+            headerTitleStyle: { fontWeight: "700", letterSpacing: -0.2 },
             tabBarStyle: isDesktopWeb
               ? { display: "none" }
               : {
-                  backgroundColor: "#0f1b2d",
-                  borderTopColor: "#1e293b",
+                  backgroundColor: colors.bg.primary,
+                  borderTopColor: colors.border.divider,
                   borderTopWidth: 1,
                   paddingBottom: Platform.OS === "ios" ? 20 : 4,
-                  height: Platform.OS === "ios" ? 80 : 60,
+                  height: Platform.OS === "ios" ? layout.tabBarHeight.ios : layout.tabBarHeight.android,
                   shadowColor: "#000",
-                  shadowOffset: { width: 0, height: -4 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 12,
-                  elevation: 8,
+                  shadowOffset: { width: 0, height: -2 },
+                  shadowOpacity: 0.12,
+                  shadowRadius: 8,
+                  elevation: 6,
                 },
-            tabBarActiveTintColor: "#14b8a6",
-            tabBarInactiveTintColor: "#64748b",
-            tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+            tabBarActiveTintColor: colors.brand.teal,
+            tabBarInactiveTintColor: colors.text.muted,
+            tabBarLabelStyle: { fontSize: 11, fontWeight: "600", letterSpacing: 0.2 },
           }}
         >
           <Tabs.Screen
@@ -128,8 +137,18 @@ export default function AdminLayout() {
             options={{
               title: "Jobs",
               headerTitle: "All Jobs",
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name="briefcase-outline" size={size} color={color} />
+              tabBarIcon: ({ color, size, focused }) => (
+                <View style={{ alignItems: "center" }}>
+                  {focused && (
+                    <LinearGradient
+                      colors={colors.brand.gradient as unknown as [string, string]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ width: 24, height: 3, borderRadius: 2, marginBottom: 4 }}
+                    />
+                  )}
+                  <Ionicons name={focused ? "briefcase" : "briefcase-outline"} size={size} color={color} />
+                </View>
               ),
             }}
           />
@@ -138,8 +157,18 @@ export default function AdminLayout() {
             options={{
               title: "Scholars",
               headerTitle: "Scholar Management",
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name="people-outline" size={size} color={color} />
+              tabBarIcon: ({ color, size, focused }) => (
+                <View style={{ alignItems: "center" }}>
+                  {focused && (
+                    <LinearGradient
+                      colors={colors.brand.gradient as unknown as [string, string]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ width: 24, height: 3, borderRadius: 2, marginBottom: 4 }}
+                    />
+                  )}
+                  <Ionicons name={focused ? "people" : "people-outline"} size={size} color={color} />
+                </View>
               ),
             }}
           />
@@ -148,8 +177,18 @@ export default function AdminLayout() {
             options={{
               title: "Transfers",
               headerTitle: "Transfers & Reschedules",
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name="swap-horizontal-outline" size={size} color={color} />
+              tabBarIcon: ({ color, size, focused }) => (
+                <View style={{ alignItems: "center" }}>
+                  {focused && (
+                    <LinearGradient
+                      colors={colors.brand.gradient as unknown as [string, string]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ width: 24, height: 3, borderRadius: 2, marginBottom: 4 }}
+                    />
+                  )}
+                  <Ionicons name={focused ? "swap-horizontal" : "swap-horizontal-outline"} size={size} color={color} />
+                </View>
               ),
             }}
           />
@@ -158,8 +197,18 @@ export default function AdminLayout() {
             options={{
               title: "Analytics",
               headerTitle: "Analytics",
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name="stats-chart-outline" size={size} color={color} />
+              tabBarIcon: ({ color, size, focused }) => (
+                <View style={{ alignItems: "center" }}>
+                  {focused && (
+                    <LinearGradient
+                      colors={colors.brand.gradient as unknown as [string, string]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ width: 24, height: 3, borderRadius: 2, marginBottom: 4 }}
+                    />
+                  )}
+                  <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={size} color={color} />
+                </View>
               ),
             }}
           />
@@ -169,8 +218,18 @@ export default function AdminLayout() {
               title: "More",
               headerTitle: "More",
               href: isDesktopWeb ? null : undefined,
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name="ellipsis-horizontal" size={size} color={color} />
+              tabBarIcon: ({ color, size, focused }) => (
+                <View style={{ alignItems: "center" }}>
+                  {focused && (
+                    <LinearGradient
+                      colors={colors.brand.gradient as unknown as [string, string]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ width: 24, height: 3, borderRadius: 2, marginBottom: 4 }}
+                    />
+                  )}
+                  <Ionicons name="ellipsis-horizontal" size={size} color={color} />
+                </View>
               ),
             }}
           />
@@ -193,48 +252,70 @@ export default function AdminLayout() {
 
 const sidebarStyles = StyleSheet.create({
   container: {
-    width: SIDEBAR_WIDTH,
-    backgroundColor: "#0f1b2d",
+    width: layout.sidebarWidth,
+    backgroundColor: colors.bg.primary,
     borderRightWidth: 1,
-    borderRightColor: "#1e293b",
+    borderRightColor: colors.border.divider,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 22,
     borderBottomWidth: 1,
-    borderBottomColor: "#1e293b",
+    borderBottomColor: colors.border.divider,
   },
   headerText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#f8fafc",
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.text.heading,
+    letterSpacing: -0.2,
   },
   nav: {
     flex: 1,
     paddingTop: 8,
   },
+  groupLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.text.muted,
+    letterSpacing: 1.0,
+    textTransform: "uppercase",
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 6,
+  },
   navItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 11,
+    paddingHorizontal: 24,
+    paddingLeft: 24,
     marginHorizontal: 8,
-    borderRadius: 8,
+    borderRadius: 10,
+    position: "relative",
   },
   navItemActive: {
-    backgroundColor: "#14b8a610",
+    backgroundColor: `${colors.brand.teal}10`,
+  },
+  activeIndicator: {
+    position: "absolute",
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: colors.brand.teal,
   },
   navLabel: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#94a3b8",
+    fontWeight: "500",
+    color: colors.text.secondary,
   },
   navLabelActive: {
-    color: "#14b8a6",
-    fontWeight: "700",
+    color: colors.brand.teal,
+    fontWeight: "600",
   },
 });

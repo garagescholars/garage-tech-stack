@@ -225,7 +225,7 @@ export default function ScholarDetailScreen() {
 function StatBox({
   label,
   value,
-  color = "#f8fafc",
+  color = "#f1f5f9",
 }: {
   label: string;
   value: string;
@@ -240,12 +240,12 @@ function StatBox({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { color: "#ef4444", fontSize: 16 },
   scroll: { padding: 16 },
   profileCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 16,
     padding: 24,
     alignItems: "center",
@@ -255,21 +255,21 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
     marginBottom: 12,
   },
-  name: { fontSize: 22, fontWeight: "800", color: "#f8fafc", marginBottom: 2 },
-  contact: { fontSize: 14, color: "#94a3b8", marginBottom: 10 },
+  name: { fontSize: 22, fontWeight: "800", color: "#f1f5f9", marginBottom: 2 },
+  contact: { fontSize: 14, color: "#8b9bb5", marginBottom: 10 },
   badgeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   tierBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
   tierText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusLabel: { fontSize: 12, color: "#94a3b8", fontWeight: "600", textTransform: "capitalize" },
+  statusLabel: { fontSize: 12, color: "#8b9bb5", fontWeight: "600", textTransform: "capitalize" },
   section: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -277,12 +277,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#64748b",
+    color: "#5a6a80",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 10,
   },
-  avgText: { color: "#64748b", fontSize: 12, marginTop: 8 },
+  avgText: { color: "#5a6a80", fontSize: 12, marginTop: 8 },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   jobRow: {
     flexDirection: "row",
@@ -290,18 +290,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#2a3545",
   },
   jobInfo: { flex: 1 },
-  jobTitle: { fontSize: 14, fontWeight: "600", color: "#f8fafc" },
-  jobDate: { fontSize: 12, color: "#64748b" },
+  jobTitle: { fontSize: 14, fontWeight: "600", color: "#f1f5f9" },
+  jobDate: { fontSize: 12, color: "#5a6a80" },
   jobStatusBadge: {
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
-  jobStatusText: { fontSize: 10, fontWeight: "700", color: "#94a3b8" },
+  jobStatusText: { fontSize: 10, fontWeight: "700", color: "#8b9bb5" },
   actionBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderWidth: 1,
   },
   actionText: { fontWeight: "700", fontSize: 15 },
@@ -318,11 +318,11 @@ const styles = StyleSheet.create({
 const statStyles = StyleSheet.create({
   box: {
     width: "30%" as any,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 8,
     padding: 10,
     alignItems: "center",
   },
   value: { fontSize: 16, fontWeight: "800" },
-  label: { fontSize: 10, color: "#64748b", fontWeight: "600", textAlign: "center", marginTop: 2 },
+  label: { fontSize: 10, color: "#5a6a80", fontWeight: "600", textAlign: "center", marginTop: 2 },
 });

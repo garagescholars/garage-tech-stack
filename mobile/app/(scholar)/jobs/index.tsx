@@ -10,17 +10,22 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useOpenJobs } from "../../../src/hooks/useJobs";
+import { useAuth } from "../../../src/hooks/useAuth";
 import JobCard from "../../../src/components/JobCard";
 import RecentClaimsBanner from "../../../src/components/RecentClaimsBanner";
 import FeedStatsBar from "../../../src/components/FeedStatsBar";
 import HotJobsCarousel from "../../../src/components/HotJobsCarousel";
 import { StaggeredItem, SkeletonBox, FadeInView } from "../../../src/components/AnimatedComponents";
+import { colors, spacing, radius, typography, layout } from "../../../src/constants/theme";
 
 export default function JobFeedScreen() {
   const { jobs, loading } = useOpenJobs();
+  const { profile } = useAuth();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+
+  const firstName = (profile?.fullName || profile?.scholarName || "").split(" ")[0];
 
   const filtered = search.trim()
     ? jobs.filter(
@@ -32,7 +37,6 @@ export default function JobFeedScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Firestore onSnapshot auto-updates; just simulate refresh
     setTimeout(() => setRefreshing(false), 800);
   }, []);
 
@@ -43,8 +47,8 @@ export default function JobFeedScreen() {
           <SkeletonBox width="100%" height={18} />
         </View>
         {[0, 1, 2].map((i) => (
-          <FadeInView key={i} delay={i * 100} style={{ paddingHorizontal: 12, paddingTop: 8 }}>
-            <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#334155' }}>
+          <FadeInView key={i} delay={i * 100} style={{ paddingHorizontal: layout.screenPadding, paddingTop: 8 }}>
+            <View style={{ backgroundColor: colors.bg.card, borderRadius: radius.lg, padding: spacing.lg, borderLeftWidth: 4, borderLeftColor: colors.category.default }}>
               <SkeletonBox width={80} height={20} style={{ marginBottom: 10 }} />
               <SkeletonBox width="70%" height={17} style={{ marginBottom: 8 }} />
               <SkeletonBox width="90%" height={13} style={{ marginBottom: 4 }} />
@@ -58,12 +62,22 @@ export default function JobFeedScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Personal greeting */}
+      {firstName ? (
+        <View style={styles.greetingRow}>
+          <Text style={styles.greeting}>Hey {firstName}!</Text>
+          <Text style={styles.greetingSub}>
+            {jobs.length} job{jobs.length !== 1 ? "s" : ""} available today
+          </Text>
+        </View>
+      ) : null}
+
       <View style={styles.searchRow}>
-        <Ionicons name="search" size={18} color="#64748b" />
+        <Ionicons name="search" size={18} color={colors.text.muted} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search jobs..."
-          placeholderTextColor="#64748b"
+          placeholderTextColor={colors.text.muted}
           value={search}
           onChangeText={setSearch}
         />
@@ -71,7 +85,7 @@ export default function JobFeedScreen() {
 
       {filtered.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="briefcase-outline" size={48} color="#334155" />
+          <Ionicons name="briefcase-outline" size={48} color={colors.border.default} />
           <Text style={styles.emptyText}>
             {search ? "No matching jobs" : "No open jobs right now"}
           </Text>
@@ -110,7 +124,7 @@ export default function JobFeedScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#14b8a6"
+              tintColor={colors.brand.teal}
             />
           }
         />
@@ -122,46 +136,60 @@ export default function JobFeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: colors.bg.primary,
+  },
+  greetingRow: {
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xs,
+  },
+  greeting: {
+    ...typography.heading1,
+    color: colors.text.heading,
+    marginBottom: 2,
+  },
+  greetingSub: {
+    ...typography.body,
+    color: colors.text.secondary,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 32,
+    padding: spacing.xxl,
   },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
-    margin: 12,
-    marginBottom: 4,
-    paddingHorizontal: 12,
+    backgroundColor: colors.bg.input,
+    marginHorizontal: layout.screenPadding,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#334155",
-    gap: 8,
+    borderColor: colors.border.default,
+    gap: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    color: "#f8fafc",
-    fontSize: 15,
+    color: colors.text.primary,
+    ...typography.body,
   },
   list: {
-    padding: 12,
-    paddingTop: 8,
+    padding: layout.screenPadding,
+    paddingTop: spacing.sm,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#f8fafc",
-    marginTop: 16,
+    ...typography.heading3,
+    color: colors.text.primary,
+    marginTop: spacing.lg,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: "#64748b",
-    marginTop: 6,
+    ...typography.body,
+    color: colors.text.muted,
+    marginTop: spacing.xs + 2,
     textAlign: "center",
   },
 });

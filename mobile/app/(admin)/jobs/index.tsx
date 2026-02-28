@@ -80,11 +80,11 @@ export default function AdminJobsScreen() {
     <View style={styles.container}>
       {/* Search */}
       <View style={styles.searchRow}>
-        <Ionicons name="search" size={18} color="#64748b" />
+        <Ionicons name="search" size={18} color="#5a6a80" />
         <TextInput
           style={styles.searchInput}
           placeholder="Search jobs..."
-          placeholderTextColor="#64748b"
+          placeholderTextColor="#5a6a80"
           value={search}
           onChangeText={setSearch}
         />
@@ -154,33 +154,33 @@ export default function AdminJobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     margin: 12,
     marginBottom: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     gap: 8,
   },
-  searchInput: { flex: 1, color: "#f8fafc", fontSize: 15 },
+  searchInput: { flex: 1, color: "#f1f5f9", fontSize: 15 },
   filterRow: { paddingHorizontal: 12, gap: 6, marginBottom: 8 },
   filterPill: {
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   filterPillActive: { backgroundColor: "#14b8a6", borderColor: "#14b8a6" },
-  filterText: { fontSize: 12, fontWeight: "700", color: "#94a3b8" },
+  filterText: { fontSize: 12, fontWeight: "700", color: "#8b9bb5" },
   filterTextActive: { color: "#fff" },
   createBtn: {
     flexDirection: "row",
@@ -196,5 +196,5 @@ const styles = StyleSheet.create({
   createText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   list: { padding: 12, paddingTop: 0 },
   empty: { padding: 32, alignItems: "center" },
-  emptyText: { color: "#64748b", fontSize: 16 },
+  emptyText: { color: "#5a6a80", fontSize: 16 },
 });

@@ -10,18 +10,16 @@ import Animated, {
 import UrgencyBadge from "./UrgencyBadge";
 import CountdownTimer from "./CountdownTimer";
 import ViewerCount from "./ViewerCount";
+import { colors, spacing, radius, typography, getCategoryBorderColor } from "../constants/theme";
 import type { ServiceJob } from "../types";
 
 /** Compute a claim deadline = job start time minus 2 hours */
 function getClaimDeadline(job: ServiceJob): Timestamp | undefined {
   if (!job.scheduledDate || !job.scheduledTimeStart) return undefined;
   try {
-    // scheduledDate format: "2026-02-20" or "Feb 20, 2026"
-    // scheduledTimeStart format: "9:00 AM" or "14:00"
     const dateStr = `${job.scheduledDate} ${job.scheduledTimeStart}`;
     const parsed = new Date(dateStr);
     if (isNaN(parsed.getTime())) return undefined;
-    // Subtract 2 hours as claim buffer
     const deadline = new Date(parsed.getTime() - 2 * 60 * 60 * 1000);
     if (deadline.getTime() <= Date.now()) return undefined;
     return Timestamp.fromDate(deadline);
@@ -35,29 +33,32 @@ type Props = {
   onPress: () => void;
   onLongPress?: () => void;
   showStatus?: boolean;
+  actionLabel?: string;
+  onAction?: () => void;
 };
 
-export default function JobCard({ job, onPress, onLongPress, showStatus }: Props) {
+export default function JobCard({ job, onPress, onLongPress, showStatus, actionLabel, onAction }: Props) {
   const payout = (job.payout || 0) + (job.rushBonus || 0);
   const scale = useSharedValue(1);
   const claimDeadline = useMemo(() => getClaimDeadline(job), [job.scheduledDate, job.scheduledTimeStart]);
+  const borderColor = getCategoryBorderColor(job.urgencyLevel);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   const statusColors: Record<string, { bg: string; text: string }> = {
-    UPCOMING: { bg: "#dbeafe", text: "#1d4ed8" },
-    IN_PROGRESS: { bg: "#dcfce7", text: "#16a34a" },
-    REVIEW_PENDING: { bg: "#fef9c3", text: "#a16207" },
-    COMPLETED: { bg: "#d1fae5", text: "#059669" },
-    CANCELLED: { bg: "#fee2e2", text: "#dc2626" },
+    UPCOMING: { bg: "#1d4ed820", text: "#60a5fa" },
+    IN_PROGRESS: { bg: "#16a34a20", text: "#4ade80" },
+    REVIEW_PENDING: { bg: "#a1620720", text: "#fbbf24" },
+    COMPLETED: { bg: "#05966920", text: "#34d399" },
+    CANCELLED: { bg: "#dc262620", text: "#f87171" },
   };
 
   return (
     <Animated.View style={animatedStyle}>
       <Pressable
-        style={styles.card}
+        style={[styles.card, { borderLeftColor: borderColor }]}
         onPress={onPress}
         onLongPress={onLongPress}
         onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 300 }); }}
@@ -73,15 +74,13 @@ export default function JobCard({ job, onPress, onLongPress, showStatus }: Props
               <View
                 style={[
                   styles.statusBadge,
-                  {
-                    backgroundColor: statusColors[job.status]?.bg || "#f1f5f9",
-                  },
+                  { backgroundColor: statusColors[job.status]?.bg || "#47556920" },
                 ]}
               >
                 <Text
                   style={[
                     styles.statusText,
-                    { color: statusColors[job.status]?.text || "#475569" },
+                    { color: statusColors[job.status]?.text || colors.text.secondary },
                   ]}
                 >
                   {job.status.replace(/_/g, " ")}
@@ -102,14 +101,14 @@ export default function JobCard({ job, onPress, onLongPress, showStatus }: Props
         </Text>
 
         <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={14} color="#64748b" />
+          <Ionicons name="location-outline" size={14} color={colors.text.muted} />
           <Text style={styles.infoText} numberOfLines={1}>
             {job.address}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Ionicons name="calendar-outline" size={14} color="#64748b" />
+          <Ionicons name="calendar-outline" size={14} color={colors.text.muted} />
           <Text style={styles.infoText}>
             {job.scheduledDate} at {job.scheduledTimeStart}
             {job.scheduledTimeEnd ? ` - ${job.scheduledTimeEnd}` : ""}
@@ -117,8 +116,16 @@ export default function JobCard({ job, onPress, onLongPress, showStatus }: Props
         </View>
 
         <View style={styles.bottomRow}>
-          <CountdownTimer deadline={claimDeadline} />
-          <ViewerCount count={job.currentViewers || 0} />
+          <View style={styles.bottomLeft}>
+            <CountdownTimer deadline={claimDeadline} />
+            <ViewerCount count={job.currentViewers || 0} />
+          </View>
+          {actionLabel && onAction && (
+            <Pressable style={styles.actionButton} onPress={onAction}>
+              <Text style={styles.actionText}>{actionLabel}</Text>
+              <Ionicons name="arrow-forward" size={14} color="#ffffff" />
+            </Pressable>
+          )}
         </View>
       </Pressable>
     </Animated.View>
@@ -127,12 +134,12 @@ export default function JobCard({ job, onPress, onLongPress, showStatus }: Props
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#1e293b",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#334155",
+    backgroundColor: colors.bg.card,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.category.default,
   },
   topRow: {
     flexDirection: "row",
@@ -148,46 +155,67 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: radius.xs,
   },
   statusText: {
     fontSize: 10,
     fontWeight: "700",
+    letterSpacing: 0.5,
   },
   payout: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
-    color: "#10b981",
+    color: colors.status.success,
+    letterSpacing: -0.5,
   },
   bonus: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#f59e0b",
+    color: colors.accent.amber,
   },
   title: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#f8fafc",
-    marginBottom: 8,
+    ...typography.heading3,
+    color: colors.text.heading,
+    marginBottom: spacing.sm,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginBottom: 4,
+    marginBottom: 5,
   },
   infoText: {
-    fontSize: 13,
-    color: "#94a3b8",
+    ...typography.caption,
+    color: colors.text.secondary,
     flex: 1,
   },
   bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#334155",
+    borderTopColor: colors.border.divider,
+  },
+  bottomLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.brand.teal,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.full,
+  },
+  actionText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

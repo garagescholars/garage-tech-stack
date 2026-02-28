@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 4,
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     gap: 10,
   },
   stat: {
@@ -83,16 +83,16 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   statNumber: {
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   divider: {
     width: 1,
     height: 14,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
   },
   liveIndicator: {
     flexDirection: "row",

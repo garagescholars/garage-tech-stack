@@ -27,7 +27,7 @@ export default function ScoreHistoryScreen() {
   if (scores.length === 0) {
     return (
       <View style={styles.center}>
-        <Ionicons name="star-outline" size={48} color="#334155" />
+        <Ionicons name="star-outline" size={48} color="#2a3545" />
         <Text style={styles.emptyText}>No scores yet</Text>
         <Text style={styles.emptySubtext}>
           Complete your first job to see your quality scores
@@ -134,18 +134,18 @@ function BreakdownRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 32,
   },
-  emptyText: { fontSize: 18, fontWeight: "700", color: "#f8fafc", marginTop: 16 },
-  emptySubtext: { fontSize: 14, color: "#64748b", marginTop: 6, textAlign: "center" },
+  emptyText: { fontSize: 18, fontWeight: "700", color: "#f1f5f9", marginTop: 16 },
+  emptySubtext: { fontSize: 14, color: "#5a6a80", marginTop: 6, textAlign: "center" },
   list: { padding: 12, paddingBottom: 32 },
   card: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  jobId: { fontSize: 13, fontWeight: "700", color: "#94a3b8" },
+  jobId: { fontSize: 13, fontWeight: "700", color: "#8b9bb5" },
   lockedBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -193,12 +193,12 @@ const styles = StyleSheet.create({
 
 const breakdownStyles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 6 },
-  label: { fontSize: 12, color: "#94a3b8", width: 90 },
+  label: { fontSize: 12, color: "#8b9bb5", width: 90 },
   weight: { fontSize: 10, color: "#475569", width: 32 },
   bar: {
     flex: 1,
     height: 6,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
     borderRadius: 3,
     overflow: "hidden",
   },

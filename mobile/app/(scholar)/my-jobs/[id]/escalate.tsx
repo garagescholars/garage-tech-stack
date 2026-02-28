@@ -227,7 +227,7 @@ export default function EscalateScreen() {
                       : "radio-button-off"
                   }
                   size={20}
-                  color={selectedEquipmentId === eq.id ? "#14b8a6" : "#64748b"}
+                  color={selectedEquipmentId === eq.id ? "#14b8a6" : "#5a6a80"}
                 />
                 <Text style={styles.equipText}>{eq.name}</Text>
               </TouchableOpacity>
@@ -313,20 +313,20 @@ export default function EscalateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { color: "#ef4444", fontSize: 16 },
   scroll: { padding: 16 },
   summaryCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
-  jobTitle: { fontSize: 18, fontWeight: "800", color: "#f8fafc", marginBottom: 4 },
-  jobAddress: { fontSize: 14, color: "#94a3b8" },
+  jobTitle: { fontSize: 18, fontWeight: "800", color: "#f1f5f9", marginBottom: 4 },
+  jobAddress: { fontSize: 14, color: "#8b9bb5" },
   section: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 12,
@@ -345,12 +345,12 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#2a3545",
   },
   equipOptionSelected: {
     backgroundColor: "#14b8a610",
   },
-  equipText: { fontSize: 15, color: "#f8fafc" },
+  equipText: { fontSize: 15, color: "#f1f5f9" },
   tipCard: {
     backgroundColor: "#042f2e",
     borderRadius: 12,
@@ -363,17 +363,17 @@ const styles = StyleSheet.create({
     borderColor: "#14b8a640",
   },
   tipTitle: { fontSize: 14, fontWeight: "700", color: "#14b8a6", marginBottom: 2 },
-  tipText: { fontSize: 13, color: "#94a3b8" },
+  tipText: { fontSize: 13, color: "#8b9bb5" },
   textArea: {
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 8,
     padding: 12,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     fontSize: 14,
     minHeight: 80,
     textAlignVertical: "top",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   bottomBar: {
     position: "absolute",
@@ -382,9 +382,9 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingBottom: 32,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderTopWidth: 1,
-    borderTopColor: "#1e293b",
+    borderTopColor: "#1a2332",
   },
   submitBtn: {
     backgroundColor: "#ef4444",

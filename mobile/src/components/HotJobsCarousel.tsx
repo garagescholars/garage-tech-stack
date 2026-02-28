@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import ViewerCount from "./ViewerCount";
+import { colors, spacing, radius, typography } from "../constants/theme";
 import type { ServiceJob } from "../types";
 
 type Props = {
@@ -39,12 +40,12 @@ function HotJobCard({ job, onPress }: { job: ServiceJob; onPress: () => void }) 
         <Text style={styles.title} numberOfLines={1}>{job.title}</Text>
 
         <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={12} color="#94a3b8" />
+          <Ionicons name="location-outline" size={12} color={colors.text.secondary} />
           <Text style={styles.infoText} numberOfLines={1}>{job.address}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Ionicons name="calendar-outline" size={12} color="#94a3b8" />
+          <Ionicons name="calendar-outline" size={12} color={colors.text.secondary} />
           <Text style={styles.infoText}>{job.scheduledDate}</Text>
         </View>
 
@@ -57,7 +58,6 @@ function HotJobCard({ job, onPress }: { job: ServiceJob; onPress: () => void }) 
 }
 
 export default function HotJobsCarousel({ jobs, onJobPress }: Props) {
-  // Filter for "hot" jobs: rush/same_day, high payout, or many viewers
   const hotJobs = jobs.filter(
     (j) =>
       j.urgencyLevel === "rush" ||
@@ -71,7 +71,7 @@ export default function HotJobsCarousel({ jobs, onJobPress }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="flame" size={18} color="#ef4444" />
+        <Ionicons name="flame" size={18} color={colors.accent.coral} />
         <Text style={styles.headerText}>Hot Jobs</Text>
       </View>
       <FlatList
@@ -90,31 +90,30 @@ export default function HotJobsCarousel({ jobs, onJobPress }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 4,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   headerText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#f8fafc",
+    ...typography.heading3,
+    color: colors.text.heading,
   },
   list: {
-    paddingRight: 12,
-    gap: 10,
+    paddingRight: spacing.md,
+    gap: spacing.sm + 2,
   },
   card: {
     width: 200,
-    backgroundColor: "#1e293b",
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#f59e0b40",
+    backgroundColor: colors.bg.card,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent.coral,
   },
   payoutRow: {
     flexDirection: "row",
@@ -125,17 +124,18 @@ const styles = StyleSheet.create({
   payout: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#10b981",
+    color: colors.status.success,
+    letterSpacing: -0.5,
   },
   bonus: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#f59e0b",
+    color: colors.accent.amber,
   },
   title: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: colors.text.heading,
     marginBottom: 6,
   },
   infoRow: {
@@ -145,14 +145,14 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   infoText: {
-    fontSize: 11,
-    color: "#94a3b8",
+    ...typography.micro,
+    color: colors.text.secondary,
     flex: 1,
   },
   footer: {
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "#334155",
+    borderTopColor: colors.border.divider,
   },
 });

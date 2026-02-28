@@ -163,7 +163,7 @@ export default function ProfileScreen() {
                 : "Set up direct deposit"}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+          <Ionicons name="chevron-forward" size={18} color="#5a6a80" />
         </TouchableOpacity>
         <TouchableOpacity
           style={paymentStyles.row}
@@ -174,7 +174,7 @@ export default function ProfileScreen() {
             <Text style={paymentStyles.label}>Payment History</Text>
             <Text style={paymentStyles.value}>View all payouts</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+          <Ionicons name="chevron-forward" size={18} color="#5a6a80" />
         </TouchableOpacity>
       </View>
       </FadeInView>
@@ -202,7 +202,7 @@ function StatItem({
   icon,
   label,
   value,
-  color = "#f8fafc",
+  color = "#f1f5f9",
 }: {
   icon: string;
   label: string;
@@ -226,7 +226,7 @@ function TierProgress({
   currentTier: string;
 }) {
   const tiers = [
-    { key: "new", label: "New", min: 0, color: "#64748b" },
+    { key: "new", label: "New", min: 0, color: "#5a6a80" },
     { key: "standard", label: "Standard", min: 2.5, color: "#3b82f6" },
     { key: "elite", label: "Elite", min: 3.5, color: "#8b5cf6" },
     { key: "top_hustler", label: "Top Hustler", min: 4.5, color: "#f59e0b" },
@@ -247,7 +247,7 @@ function TierProgress({
             <View
               style={[
                 tierStyles.dot,
-                { backgroundColor: isReached ? tier.color : "#334155" },
+                { backgroundColor: isReached ? tier.color : "#2a3545" },
                 isActive && tierStyles.dotActive,
               ]}
             />
@@ -278,10 +278,10 @@ function TierProgress({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   scroll: { padding: 16, paddingBottom: 40 },
   profileCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 16,
     padding: 24,
     alignItems: "center",
@@ -291,14 +291,14 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
     marginBottom: 12,
   },
-  name: { fontSize: 22, fontWeight: "800", color: "#f8fafc", marginBottom: 2 },
-  phone: { fontSize: 14, color: "#94a3b8", marginBottom: 8 },
+  name: { fontSize: 22, fontWeight: "800", color: "#f1f5f9", marginBottom: 2 },
+  phone: { fontSize: 14, color: "#8b9bb5", marginBottom: 8 },
   tierBadge: {
     paddingHorizontal: 14,
     paddingVertical: 5,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   tierText: { fontSize: 12, fontWeight: "800", letterSpacing: 0.5 },
   section: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -320,13 +320,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 12,
   },
   viewAll: { color: "#14b8a6", fontWeight: "700", fontSize: 13 },
-  scoreDesc: { color: "#64748b", fontSize: 13, marginTop: 8, lineHeight: 18 },
+  scoreDesc: { color: "#5a6a80", fontSize: 13, marginTop: 8, lineHeight: 18 },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderWidth: 1,
     borderColor: "#ef444440",
     marginTop: 4,
@@ -350,23 +350,23 @@ const styles = StyleSheet.create({
 const statStyles = StyleSheet.create({
   card: {
     width: "48%" as any,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 10,
     padding: 14,
     alignItems: "center",
     gap: 4,
   },
   value: { fontSize: 20, fontWeight: "800" },
-  label: { fontSize: 11, color: "#64748b", fontWeight: "600", textAlign: "center" },
+  label: { fontSize: 11, color: "#5a6a80", fontWeight: "600", textAlign: "center" },
 });
 
 const tierStyles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 16 },
   dot: { width: 14, height: 14, borderRadius: 7, marginTop: 3 },
-  dotActive: { borderWidth: 2, borderColor: "#f8fafc" },
+  dotActive: { borderWidth: 2, borderColor: "#f1f5f9" },
   info: { flex: 1 },
   label: { fontSize: 14, fontWeight: "600", color: "#cbd5e1" },
-  minScore: { fontSize: 12, color: "#64748b", marginBottom: 4 },
+  minScore: { fontSize: 12, color: "#5a6a80", marginBottom: 4 },
 });
 
 const paymentStyles = StyleSheet.create({
@@ -376,9 +376,9 @@ const paymentStyles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#0f1b2d",
+    borderBottomColor: "#0a0f1a",
   },
   info: { flex: 1 },
-  label: { fontSize: 14, fontWeight: "700", color: "#f8fafc" },
-  value: { fontSize: 12, color: "#94a3b8", marginTop: 2 },
+  label: { fontSize: 14, fontWeight: "700", color: "#f1f5f9" },
+  value: { fontSize: 12, color: "#8b9bb5", marginTop: 2 },
 });

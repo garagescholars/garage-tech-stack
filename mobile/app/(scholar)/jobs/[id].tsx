@@ -83,7 +83,7 @@ export default function JobDetailScreen() {
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scroll}>
           <FadeInView delay={0}>
-            <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 20, marginBottom: 12 }}>
+            <View style={{ backgroundColor: '#1a2332', borderRadius: 16, padding: 20, marginBottom: 12 }}>
               <SkeletonBox width={100} height={24} style={{ marginBottom: 12 }} />
               <SkeletonBox width="90%" height={20} style={{ marginBottom: 10 }} />
               <SkeletonBox width="70%" height={14} style={{ marginBottom: 6 }} />
@@ -92,7 +92,7 @@ export default function JobDetailScreen() {
             </View>
           </FadeInView>
           <FadeInView delay={100}>
-            <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 20, marginBottom: 12 }}>
+            <View style={{ backgroundColor: '#1a2332', borderRadius: 16, padding: 20, marginBottom: 12 }}>
               <SkeletonBox width={80} height={14} style={{ marginBottom: 10 }} />
               <SkeletonBox width="100%" height={60} style={{ marginBottom: 8 }} />
             </View>
@@ -196,9 +196,9 @@ export default function JobDetailScreen() {
                 <Ionicons
                   name={item.completed ? "checkbox" : "square-outline"}
                   size={item.isSubItem ? 16 : 18}
-                  color={item.completed ? "#10b981" : "#64748b"}
+                  color={item.completed ? "#10b981" : "#5a6a80"}
                 />
-                <Text style={[styles.checkText, item.isSubItem && { fontSize: 13, color: "#94a3b8" }]}>{item.text}</Text>
+                <Text style={[styles.checkText, item.isSubItem && { fontSize: 13, color: "#8b9bb5" }]}>{item.text}</Text>
               </View>
             ))}
           </View>
@@ -260,7 +260,7 @@ export default function JobDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { color: "#ef4444", fontSize: 16, marginTop: 12 },
   scroll: { padding: 16 },
@@ -272,9 +272,9 @@ const styles = StyleSheet.create({
   },
   payout: { fontSize: 28, fontWeight: "800", color: "#10b981" },
   bonus: { fontSize: 14, fontWeight: "600", color: "#f59e0b" },
-  title: { fontSize: 22, fontWeight: "800", color: "#f8fafc", marginBottom: 16 },
+  title: { fontSize: 22, fontWeight: "800", color: "#f1f5f9", marginBottom: 16 },
   infoSection: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     gap: 12,
@@ -287,13 +287,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
   },
   section: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 10,
@@ -316,9 +316,9 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingBottom: 32,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderTopWidth: 1,
-    borderTopColor: "#1e293b",
+    borderTopColor: "#1a2332",
   },
   claimBtn: {
     backgroundColor: "#14b8a6",
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   claimBtnDisabled: { opacity: 0.6 },
   claimText: { fontSize: 17, fontWeight: "800", color: "#fff" },
   takenBanner: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     paddingVertical: 16,
     flexDirection: "row",

@@ -133,7 +133,7 @@ export default function CreateAccountScreen() {
               <Ionicons
                 name="person-outline"
                 size={20}
-                color={nameFocused ? "#14b8a6" : "#64748b"}
+                color={nameFocused ? "#14b8a6" : "#5a6a80"}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -141,7 +141,7 @@ export default function CreateAccountScreen() {
                 value={fullName}
                 onChangeText={setFullName}
                 placeholder="John Doe"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5a6a80"
                 autoCapitalize="words"
                 autoCorrect={false}
                 onFocus={() => setNameFocused(true)}
@@ -162,7 +162,7 @@ export default function CreateAccountScreen() {
               <Ionicons
                 name="mail-outline"
                 size={20}
-                color={emailFocused ? "#14b8a6" : "#64748b"}
+                color={emailFocused ? "#14b8a6" : "#5a6a80"}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -170,7 +170,7 @@ export default function CreateAccountScreen() {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5a6a80"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -197,7 +197,7 @@ export default function CreateAccountScreen() {
                 <Ionicons
                   name="construct-outline"
                   size={22}
-                  color={role === "scholar" ? "#14b8a6" : "#64748b"}
+                  color={role === "scholar" ? "#14b8a6" : "#5a6a80"}
                 />
                 <Text
                   style={[
@@ -229,7 +229,7 @@ export default function CreateAccountScreen() {
                 <Ionicons
                   name="home-outline"
                   size={22}
-                  color={role === "customer" ? "#14b8a6" : "#64748b"}
+                  color={role === "customer" ? "#14b8a6" : "#5a6a80"}
                 />
                 <Text
                   style={[
@@ -261,7 +261,7 @@ export default function CreateAccountScreen() {
               <Ionicons
                 name="key-outline"
                 size={20}
-                color={passwordFocused ? "#14b8a6" : "#64748b"}
+                color={passwordFocused ? "#14b8a6" : "#5a6a80"}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -269,7 +269,7 @@ export default function CreateAccountScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="At least 6 characters"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5a6a80"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 onFocus={() => setPasswordFocused(true)}
@@ -285,7 +285,7 @@ export default function CreateAccountScreen() {
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color="#64748b"
+                  color="#5a6a80"
                 />
               </TouchableOpacity>
             </View>
@@ -301,7 +301,7 @@ export default function CreateAccountScreen() {
               <Ionicons
                 name="shield-checkmark-outline"
                 size={20}
-                color={confirmFocused ? "#14b8a6" : "#64748b"}
+                color={confirmFocused ? "#14b8a6" : "#5a6a80"}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -309,7 +309,7 @@ export default function CreateAccountScreen() {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Re-enter your password"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5a6a80"
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 onFocus={() => setConfirmFocused(true)}
@@ -326,7 +326,7 @@ export default function CreateAccountScreen() {
                 <Ionicons
                   name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color="#64748b"
+                  color="#5a6a80"
                 />
               </TouchableOpacity>
             </View>
@@ -372,7 +372,7 @@ export default function CreateAccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
   },
   scrollContent: {
     flexGrow: 1,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
@@ -410,12 +410,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textAlign: "center",
   },
   errorContainer: {
@@ -449,10 +449,10 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     marginBottom: 16,
   },
   inputWrapperFocused: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   eyeButton: {
     paddingHorizontal: 14,
@@ -482,10 +482,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     paddingVertical: 14,
     paddingHorizontal: 12,
     gap: 8,
@@ -497,10 +497,10 @@ const styles = StyleSheet.create({
   roleText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#64748b",
+    color: "#5a6a80",
   },
   roleTextActive: {
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   roleCheck: {
     marginLeft: 2,
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   linkTextAccent: {
     color: "#14b8a6",

@@ -45,7 +45,7 @@ function jobStatusColor(status: string): { bg: string; text: string } {
     case "UPCOMING":
       return { bg: "#312e81", text: "#a5b4fc" };
     default:
-      return { bg: "#334155", text: "#94a3b8" };
+      return { bg: "#2a3545", text: "#8b9bb5" };
   }
 }
 
@@ -60,7 +60,7 @@ function inventoryStatusColor(status: string): { bg: string; text: string } {
     case "Removed":
       return { bg: "#4c0519", text: "#fb7185" };
     default:
-      return { bg: "#334155", text: "#94a3b8" };
+      return { bg: "#2a3545", text: "#8b9bb5" };
   }
 }
 
@@ -90,7 +90,7 @@ function SkeletonBlock({ width, height = 14 }: { width: number | string; height?
         width: width as any,
         height,
         borderRadius: 6,
-        backgroundColor: "#1e293b",
+        backgroundColor: "#1a2332",
       }}
     />
   );
@@ -474,7 +474,7 @@ export default function UnifiedDashboardScreen() {
                 <Ionicons
                   name="briefcase-outline"
                   size={32}
-                  color="#334155"
+                  color="#2a3545"
                 />
                 <Text style={styles.emptyText}>No jobs yet</Text>
               </View>
@@ -509,7 +509,7 @@ export default function UnifiedDashboardScreen() {
             </View>
             {inventory.length === 0 ? (
               <View style={styles.emptyWrap}>
-                <Ionicons name="cube-outline" size={32} color="#334155" />
+                <Ionicons name="cube-outline" size={32} color="#2a3545" />
                 <Text style={styles.emptyText}>No inventory items</Text>
               </View>
             ) : (
@@ -537,7 +537,7 @@ export default function UnifiedDashboardScreen() {
               <Ionicons
                 name="briefcase-outline"
                 size={32}
-                color="#334155"
+                color="#2a3545"
               />
               <Text style={styles.emptyText}>No jobs found</Text>
             </View>
@@ -562,7 +562,7 @@ export default function UnifiedDashboardScreen() {
           </View>
           {inventory.length === 0 ? (
             <View style={styles.emptyWrap}>
-              <Ionicons name="cube-outline" size={32} color="#334155" />
+              <Ionicons name="cube-outline" size={32} color="#2a3545" />
               <Text style={styles.emptyText}>No inventory items</Text>
             </View>
           ) : (
@@ -637,7 +637,7 @@ function TabButton({
       <Ionicons
         name={icon}
         size={15}
-        color={active ? "#f8fafc" : "#94a3b8"}
+        color={active ? "#f1f5f9" : "#8b9bb5"}
       />
       <Text style={[tabStyles.label, active && tabStyles.labelActive]}>
         {label}
@@ -652,12 +652,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 2,
   },
   subtitle: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#5a6a80",
     marginBottom: 20,
   },
   metricsGrid: {
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     overflow: "hidden",
     marginBottom: 4,
@@ -689,12 +689,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#2a3545",
   },
   cardTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   viewAllRow: {
     flexDirection: "row",
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: "row",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 4,
     gap: 4,
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#5a6a80",
     fontWeight: "600",
   },
   errorCard: {
@@ -746,7 +746,7 @@ const metricStyles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 140,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     padding: 16,
     gap: 4,
@@ -754,7 +754,7 @@ const metricStyles = StyleSheet.create({
   cardHighlight: {
     borderWidth: 1,
     borderColor: "#fbbf2450",
-    backgroundColor: "#1e293bcc",
+    backgroundColor: "#1a2332cc",
   },
   headerRow: {
     flexDirection: "row",
@@ -765,18 +765,18 @@ const metricStyles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   value: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   subtitle: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
     fontWeight: "600",
   },
 });
@@ -792,15 +792,15 @@ const tabStyles = StyleSheet.create({
     borderRadius: 10,
   },
   buttonActive: {
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
   },
   label: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   labelActive: {
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
 });
 
@@ -811,22 +811,22 @@ const listStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#2a3545",
     gap: 10,
   },
   primary: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   secondary: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginTop: 2,
   },
   tertiary: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 2,
   },
   payout: {

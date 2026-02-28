@@ -97,7 +97,7 @@ export default function EmailLoginScreen() {
               <Ionicons
                 name="mail-outline"
                 size={20}
-                color={emailFocused ? "#14b8a6" : "#64748b"}
+                color={emailFocused ? "#14b8a6" : "#5a6a80"}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -105,7 +105,7 @@ export default function EmailLoginScreen() {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5a6a80"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -122,7 +122,7 @@ export default function EmailLoginScreen() {
               <Ionicons
                 name="key-outline"
                 size={20}
-                color={passwordFocused ? "#14b8a6" : "#64748b"}
+                color={passwordFocused ? "#14b8a6" : "#5a6a80"}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -130,7 +130,7 @@ export default function EmailLoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Enter your password"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5a6a80"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoComplete="password"
@@ -148,7 +148,7 @@ export default function EmailLoginScreen() {
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color="#64748b"
+                  color="#5a6a80"
                 />
               </TouchableOpacity>
             </View>
@@ -208,7 +208,7 @@ export default function EmailLoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
   },
   scrollContent: {
     flexGrow: 1,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
@@ -235,12 +235,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textAlign: "center",
   },
   errorContainer: {
@@ -274,10 +274,10 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     marginBottom: 16,
   },
   inputWrapperFocused: {
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   eyeButton: {
     paddingHorizontal: 14,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   linkTextAccent: {
     color: "#14b8a6",

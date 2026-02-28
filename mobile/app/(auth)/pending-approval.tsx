@@ -82,7 +82,7 @@ export default function PendingApprovalScreen() {
         {/* User email display */}
         {user?.email && (
           <View style={styles.emailContainer}>
-            <Ionicons name="mail-outline" size={16} color="#64748b" />
+            <Ionicons name="mail-outline" size={16} color="#5a6a80" />
             <Text style={styles.emailText}>{user.email}</Text>
           </View>
         )}
@@ -92,7 +92,7 @@ export default function PendingApprovalScreen() {
 
         {/* Info text */}
         <View style={styles.infoRow}>
-          <Ionicons name="information-circle-outline" size={18} color="#64748b" />
+          <Ionicons name="information-circle-outline" size={18} color="#5a6a80" />
           <Text style={styles.infoText}>
             This usually takes less than 24 hours. You will receive an email
             notification when your account is approved.
@@ -116,7 +116,7 @@ export default function PendingApprovalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
@@ -124,12 +124,12 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 20,
     padding: 32,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   iconCircle: {
     width: 96,
@@ -143,13 +143,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 12,
     textAlign: "center",
   },
   description: {
     fontSize: 15,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textAlign: "center",
     lineHeight: 22,
     marginBottom: 24,
@@ -185,12 +185,12 @@ const styles = StyleSheet.create({
   },
   emailText: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#5a6a80",
   },
   divider: {
     width: "100%",
     height: 1,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
     marginBottom: 20,
   },
   infoRow: {
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: "#64748b",
+    color: "#5a6a80",
     lineHeight: 19,
   },
   signOutButton: {

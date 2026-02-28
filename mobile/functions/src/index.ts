@@ -55,6 +55,14 @@ export {
   gsReviewCampaign,
 } from "./gs-review-campaign";
 
+// ── Garage Scholars Inventory & Item Capture functions ──
+export {
+  gsAnalyzeItem,
+  gsOnItemConfirmed,
+  gsOnGymPhotosUploaded,
+  gsOnDonationReceiptUploaded,
+} from "./gs-inventory";
+
 const db = getFirestore();
 const storage = getStorage();
 const adminAuth = getAuth();

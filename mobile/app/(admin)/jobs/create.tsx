@@ -138,7 +138,7 @@ export default function CreateJobScreen() {
         <View style={styles.urgencyRow}>
           {(["standard", "rush", "same_day"] as UrgencyLevel[]).map((level) => {
             const labels = { standard: "Standard", rush: "Rush", same_day: "Same Day" };
-            const colors = { standard: "#64748b", rush: "#ea580c", same_day: "#dc2626" };
+            const colors = { standard: "#5a6a80", rush: "#ea580c", same_day: "#dc2626" };
             return (
               <TouchableOpacity
                 key={level}
@@ -221,14 +221,14 @@ function Field({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   scroll: { padding: 16 },
   row: { flexDirection: "row", gap: 10 },
   half: { flex: 1 },
   fieldLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -238,12 +238,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     alignItems: "center",
   },
-  urgencyText: { fontSize: 13, fontWeight: "700", color: "#64748b" },
+  urgencyText: { fontSize: 13, fontWeight: "700", color: "#5a6a80" },
   submitBtn: {
     backgroundColor: "#14b8a6",
     borderRadius: 14,
@@ -263,19 +263,19 @@ const fieldStyles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 10,
     padding: 14,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     fontSize: 15,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   multiline: {
     minHeight: 80,

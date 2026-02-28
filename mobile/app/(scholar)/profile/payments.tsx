@@ -53,7 +53,7 @@ export default function PaymentsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#f8fafc" />
+          <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
         </TouchableOpacity>
         <Text style={styles.title}>Payment History</Text>
         <View style={{ width: 24 }} />
@@ -103,7 +103,7 @@ export default function PaymentsScreen() {
         renderItem={({ item }) => <PayoutCard payout={item} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="wallet-outline" size={48} color="#334155" />
+            <Ionicons name="wallet-outline" size={48} color="#2a3545" />
             <Text style={styles.emptyText}>No payouts yet</Text>
             <Text style={styles.emptySubtext}>
               Complete jobs to start earning
@@ -163,10 +163,10 @@ function PayoutCard({ payout }: { payout: GsPayout }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  title: { fontSize: 20, fontWeight: "800", color: "#f8fafc" },
+  title: { fontSize: 20, fontWeight: "800", color: "#f1f5f9" },
   summaryRow: {
     flexDirection: "row",
     paddingHorizontal: 16,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#64748b",
+    color: "#5a6a80",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -210,10 +210,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
   },
   tabActive: { backgroundColor: "#14b8a6" },
-  tabText: { fontSize: 13, fontWeight: "600", color: "#94a3b8" },
+  tabText: { fontSize: 13, fontWeight: "600", color: "#8b9bb5" },
   tabTextActive: { color: "#fff" },
   listContent: { paddingHorizontal: 16, paddingBottom: 40 },
   emptyContainer: {
@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
     gap: 8,
   },
-  emptyText: { fontSize: 16, fontWeight: "700", color: "#64748b" },
+  emptyText: { fontSize: 16, fontWeight: "700", color: "#5a6a80" },
   emptySubtext: { fontSize: 13, color: "#475569" },
 });
 
 const cardStyles = StyleSheet.create({
   card: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     flexDirection: "row",
@@ -239,8 +239,8 @@ const cardStyles = StyleSheet.create({
   left: { width: 28, alignItems: "center" },
   center: { flex: 1 },
   right: { alignItems: "flex-end" },
-  splitType: { fontSize: 14, fontWeight: "700", color: "#f8fafc" },
-  date: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  splitType: { fontSize: 14, fontWeight: "700", color: "#f1f5f9" },
+  date: { fontSize: 12, color: "#5a6a80", marginTop: 2 },
   holdReason: { fontSize: 11, color: "#ef4444", marginTop: 4 },
   amount: { fontSize: 18, fontWeight: "800" },
   status: { fontSize: 11, fontWeight: "600", marginTop: 2 },

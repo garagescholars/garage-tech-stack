@@ -142,7 +142,7 @@ export default function PrepScreen() {
               <Ionicons
                 name={isConfirmed ? "checkbox" : "square-outline"}
                 size={24}
-                color={isConfirmed ? "#10b981" : "#64748b"}
+                color={isConfirmed ? "#10b981" : "#5a6a80"}
               />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.equipName, isConfirmed && styles.equipNameDone]}>
@@ -200,29 +200,29 @@ export default function PrepScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
-  emptyText: { color: "#94a3b8", fontSize: 16, marginTop: 12, textAlign: "center" },
+  emptyText: { color: "#8b9bb5", fontSize: 16, marginTop: 12, textAlign: "center" },
   backBtn: {
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
   },
   backBtnText: { color: "#14b8a6", fontWeight: "700" },
   scroll: { padding: 16 },
   progressCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
-  progressTitle: { fontSize: 18, fontWeight: "800", color: "#f8fafc", marginBottom: 4 },
-  progressSubtitle: { fontSize: 14, color: "#94a3b8", marginBottom: 12 },
+  progressTitle: { fontSize: 18, fontWeight: "800", color: "#f1f5f9", marginBottom: 4 },
+  progressSubtitle: { fontSize: 14, color: "#8b9bb5", marginBottom: 12 },
   progressBar: {
     height: 8,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
     borderRadius: 4,
     overflow: "hidden",
   },
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   equipCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -250,9 +250,9 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 10,
   },
-  equipName: { fontSize: 15, fontWeight: "700", color: "#f8fafc" },
-  equipNameDone: { color: "#64748b", textDecorationLine: "line-through" },
-  equipMeta: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  equipName: { fontSize: 15, fontWeight: "700", color: "#f1f5f9" },
+  equipNameDone: { color: "#5a6a80", textDecorationLine: "line-through" },
+  equipMeta: { fontSize: 12, color: "#5a6a80", marginTop: 2 },
   equipActions: { flexDirection: "row", gap: 10 },
   watchBtn: {
     flex: 1,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   confirmBtnText: { fontSize: 13, fontWeight: "700", color: "#10b981" },
   supportTip: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 8,
     fontStyle: "italic",
   },
