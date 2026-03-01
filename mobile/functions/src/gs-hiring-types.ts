@@ -84,6 +84,9 @@ export interface HiringApplicant {
   q5_availability: string;
   q6_interest: string;
 
+  // ── Resume (optional upload) ──
+  resumePath?: string;  // Firebase Storage path to uploaded resume (PDF)
+
   // ── Application AI Scores (set by gsScoreHiringApplication) ──
   appScores?: AppScoringResult;
 

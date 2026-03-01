@@ -1,7 +1,7 @@
 <!-- config title: Join Our Team — Garage Transformation Technician | Garage Scholars Denver -->
 <!-- config description: Apply to join the Garage Scholars team. Earn $35-45/hr with flexible scheduling. Denver, CO. -->
 <!-- config activeNav: apply -->
-<!-- config firebase: app,firestore -->
+<!-- config firebase: app,firestore,storage -->
 <!-- config hasQuoteModal: false -->
 
 {{head}}
@@ -88,6 +88,13 @@
                     </select>
                 </div>
 
+                <!-- Resume Upload -->
+                <div class="form-group">
+                    <label for="resume">Resume (PDF, optional but recommended)</label>
+                    <input type="file" id="resume" name="resume" accept=".pdf,application/pdf" style="padding: 10px; background: var(--color-bg-dark); border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); width: 100%;">
+                    <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 4px;">PDF only, max 10MB. Your resume helps us evaluate your experience.</p>
+                </div>
+
                 <!-- Screening Questions (Spec Step 6.1) -->
                 <div style="border-top: 1px solid var(--color-border); margin: 28px 0; padding-top: 24px;">
                     <h3 style="color: var(--color-white); font-size: 1.1rem; margin-bottom: 4px;">Screening Questions</h3>
@@ -135,6 +142,7 @@
     <script>
         firebase.initializeApp(window.firebaseConfig);
         const db = firebase.firestore();
+        const storageRef = firebase.storage();
 
         const form = document.getElementById('applicationForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -142,7 +150,6 @@
         const errorMessage = document.getElementById('errorMessage');
 
         // ── Auto-detect source from URL param ──
-        // e.g. garagescholars.com/apply.html?source=indeed
         const urlParams = new URLSearchParams(window.location.search);
         const urlSource = urlParams.get('source');
         if (urlSource) {
@@ -169,6 +176,23 @@
             errorMessage.style.display = 'none';
 
             try {
+                // Upload resume if provided
+                let resumePath = '';
+                const resumeFile = document.getElementById('resume').files[0];
+                if (resumeFile) {
+                    if (resumeFile.type !== 'application/pdf') {
+                        throw new Error('Resume must be a PDF file.');
+                    }
+                    if (resumeFile.size > 10 * 1024 * 1024) {
+                        throw new Error('Resume must be under 10MB.');
+                    }
+                    submitBtn.textContent = 'Uploading resume...';
+                    const ts = Date.now();
+                    resumePath = `hiring-resumes/${ts}_${resumeFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+                    await storageRef.ref(resumePath).put(resumeFile, { contentType: 'application/pdf' });
+                }
+
+                submitBtn.textContent = 'Submitting...';
                 const data = {
                     name: document.getElementById('name').value.trim(),
                     email: document.getElementById('email').value.trim().toLowerCase(),
@@ -186,13 +210,14 @@
                     status: 'pending_ai',
                     appliedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
+                if (resumePath) data.resumePath = resumePath;
 
                 await db.collection('gs_hiringApplicants').add(data);
                 form.style.display = 'none';
                 successMessage.style.display = 'block';
             } catch (error) {
                 console.error('Submission failed:', error);
-                errorMessage.textContent = 'Something went wrong. Please try again or email us at garagescholars@gmail.com';
+                errorMessage.textContent = error.message || 'Something went wrong. Please try again or email us at garagescholars@gmail.com';
                 errorMessage.style.display = 'block';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Application';

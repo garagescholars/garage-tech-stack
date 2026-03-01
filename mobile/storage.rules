@@ -47,6 +47,14 @@ service firebase.storage {
                    && request.resource.contentType.matches('video/.*');
     }
 
+    // ── Hiring pipeline: candidate resume uploads (public — no auth) ──
+    match /hiring-resumes/{resumeFile} {
+      allow read: if request.auth != null;
+      // Public write: max 10MB, PDF only
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType == 'application/pdf';
+    }
+
     // Catch-all: read-only (covers old root-level resale images)
     match /{allPaths=**} {
       allow read: if request.auth != null;

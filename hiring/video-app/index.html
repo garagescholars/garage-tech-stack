@@ -5,94 +5,222 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Garage Scholars — Video Screen</title>
   <style>
+    /* ── ScholarHub Design Tokens (from mobile/src/constants/theme.ts) ── */
+    :root {
+      --bg-primary: #0a0f1a;
+      --bg-secondary: #111827;
+      --bg-card: #1a2332;
+      --bg-input: #141c2b;
+      --bg-elevated: #1e2a3a;
+      --border-default: #2a3545;
+      --border-divider: #1e293b;
+      --border-focus: #14b8a6;
+      --text-primary: #f1f5f9;
+      --text-secondary: #8b9bb5;
+      --text-muted: #5a6a80;
+      --text-heading: #ffffff;
+      --brand-teal: #14b8a6;
+      --brand-teal-dark: #0d9488;
+      --brand-teal-light: #2dd4bf;
+      --status-success: #10b981;
+      --status-warning: #f59e0b;
+      --status-error: #ef4444;
+      --status-info: #3b82f6;
+      --radius-xs: 6px;
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       min-height: 100dvh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* ── Header ── */
     .header {
       padding: 16px 20px;
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-      text-align: center;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border-divider);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 4px;
     }
-    .header h1 { font-size: 18px; font-weight: 700; color: #f8fafc; }
-    .header .step { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--brand-teal);
+      border-radius: var(--radius-xs);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-icon svg { width: 16px; height: 16px; fill: var(--text-heading); }
+    .header h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-heading);
+      letter-spacing: -0.2px;
+    }
+    .header .step {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── Progress Bar ── */
     .progress-bar {
       height: 4px;
-      background: #334155;
+      background: var(--border-default);
     }
     .progress-fill {
       height: 100%;
-      background: #2563eb;
-      transition: width 0.3s ease;
+      background: linear-gradient(90deg, var(--brand-teal), #0ea5e9);
+      border-radius: 0 2px 2px 0;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .main { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+    /* ── Main Content ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+    }
 
-    /* Screens */
+    /* ── Screens ── */
     .screen { display: none; flex-direction: column; flex: 1; }
     .screen.active { display: flex; }
 
-    /* Welcome screen */
+    /* ── Card Component ── */
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+    }
+
+    /* ── Welcome Screen ── */
     .welcome-card {
-      background: #1e293b;
-      border-radius: 12px;
       padding: 32px 24px;
       text-align: center;
       margin-top: 20px;
     }
-    .welcome-card h2 { font-size: 24px; margin-bottom: 16px; }
-    .welcome-card p { color: #94a3b8; font-size: 15px; line-height: 1.6; margin-bottom: 12px; }
-    .welcome-card .tips {
+    .welcome-card h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-heading);
+      letter-spacing: -0.2px;
+      margin-bottom: 12px;
+    }
+    .welcome-card .subtitle {
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    /* ── Tips List ── */
+    .tips-list {
       text-align: left;
-      background: #0f172a;
-      border-radius: 8px;
-      padding: 16px;
-      margin: 16px 0;
-    }
-    .welcome-card .tips li {
-      color: #cbd5e1;
-      font-size: 14px;
-      margin-bottom: 8px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+      margin: 16px 0 24px;
       list-style: none;
-      padding-left: 24px;
-      position: relative;
     }
-    .welcome-card .tips li::before {
-      content: "\2713";
+    .tips-list li {
+      color: var(--text-primary);
+      font-size: 14px;
+      padding: 8px 0;
+      padding-left: 28px;
+      position: relative;
+      border-bottom: 1px solid var(--border-divider);
+    }
+    .tips-list li:last-child { border-bottom: none; }
+    .tips-list li::before {
+      content: "";
       position: absolute;
       left: 0;
-      color: #22c55e;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(20, 184, 166, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tips-list li::after {
+      content: "\2713";
+      position: absolute;
+      left: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--brand-teal);
+      font-size: 11px;
       font-weight: 700;
     }
-
-    /* Prompt screen */
-    .prompt-card {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
+    .tips-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.2px;
     }
-    .prompt-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .prompt-text { font-size: 17px; line-height: 1.5; color: #e2e8f0; }
 
-    /* Video preview */
+    /* ── Prompt Card ── */
+    .prompt-card {
+      margin-bottom: 14px;
+    }
+    .prompt-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .prompt-text {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ── Video Container ── */
     .video-container {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       overflow: hidden;
       background: #000;
       min-height: 280px;
-      max-height: 400px;
+      max-height: 420px;
+      border: 1px solid var(--border-default);
     }
     .video-container video {
       width: 100%;
@@ -101,27 +229,36 @@
       transform: scaleX(-1);
     }
 
-    /* Timer overlay */
+    /* ── Timer Overlay ── */
     .timer-overlay {
       position: absolute;
       top: 12px;
       right: 12px;
-      background: rgba(0,0,0,0.7);
       border-radius: 20px;
       padding: 6px 14px;
-      font-size: 14px;
-      font-weight: 600;
-      backdrop-filter: blur(4px);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
-    .timer-overlay.recording { color: #ef4444; }
-    .timer-overlay.prep { color: #fbbf24; }
+    .timer-overlay.recording {
+      color: var(--status-error);
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .timer-overlay.prep {
+      color: var(--status-warning);
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
 
-    /* Recording indicator */
+    /* ── Recording Dot ── */
     .rec-dot {
       display: inline-block;
       width: 8px;
       height: 8px;
-      background: #ef4444;
+      background: var(--status-error);
       border-radius: 50%;
       margin-right: 6px;
       animation: pulse 1s infinite;
@@ -131,78 +268,151 @@
       50% { opacity: 0.3; }
     }
 
-    /* Buttons */
+    /* ── Buttons ── */
     .btn {
       display: block;
       width: 100%;
       padding: 16px;
       border: none;
-      border-radius: 12px;
+      border-radius: var(--radius-md);
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
       margin-top: 16px;
-      transition: opacity 0.2s;
+      transition: all 0.2s ease;
+      letter-spacing: 0.1px;
+      min-height: 52px;
     }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
-    .btn-danger { background: #dc2626; color: #fff; }
-    .btn-success { background: #16a34a; color: #fff; }
-    .btn-secondary { background: #334155; color: #cbd5e1; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    /* Upload progress */
-    .upload-bar {
+    .btn-primary {
+      background: var(--brand-teal);
+      color: var(--text-heading);
+      box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--brand-teal-dark); }
+
+    .btn-danger {
+      background: var(--status-error);
+      color: var(--text-heading);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+    }
+
+    /* ── Upload Progress ── */
+    .upload-track {
       width: 100%;
-      height: 6px;
-      background: #334155;
-      border-radius: 3px;
-      margin-top: 12px;
+      height: 8px;
+      background: var(--border-default);
+      border-radius: 4px;
+      margin-top: 20px;
       overflow: hidden;
     }
     .upload-fill {
       height: 100%;
-      background: #22c55e;
-      border-radius: 3px;
-      transition: width 0.3s;
+      background: linear-gradient(90deg, var(--brand-teal), #0ea5e9);
+      border-radius: 4px;
+      transition: width 0.3s ease;
     }
 
-    /* Done screen */
+    /* ── Done Screen ── */
     .done-card {
-      background: #1e293b;
-      border-radius: 12px;
       padding: 40px 24px;
       text-align: center;
       margin-top: 40px;
     }
-    .done-icon { font-size: 48px; margin-bottom: 16px; }
-    .done-card h2 { font-size: 22px; margin-bottom: 12px; }
-    .done-card p { color: #94a3b8; font-size: 15px; line-height: 1.6; }
+    .done-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .done-icon svg { width: 32px; height: 32px; stroke: var(--status-success); fill: none; stroke-width: 2.5; }
+    .done-card h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-heading);
+      margin-bottom: 12px;
+    }
+    .done-card p { color: var(--text-secondary); font-size: 15px; line-height: 1.6; }
 
-    /* Error screen */
+    /* ── Error Screen ── */
     .error-card {
-      background: #1e293b;
-      border-radius: 12px;
       padding: 32px 24px;
       text-align: center;
       margin-top: 40px;
     }
-    .error-card h2 { color: #ef4444; font-size: 20px; margin-bottom: 12px; }
-    .error-card p { color: #94a3b8; font-size: 14px; line-height: 1.6; }
+    .error-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .error-icon svg { width: 32px; height: 32px; stroke: var(--status-error); fill: none; stroke-width: 2.5; }
+    .error-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--status-error);
+      margin-bottom: 12px;
+    }
+    .error-card p { color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
 
-    /* Status message */
+    /* ── Status Message ── */
     .status-msg {
       text-align: center;
-      font-size: 14px;
-      color: #94a3b8;
+      font-size: 13px;
+      color: var(--text-muted);
       margin-top: 8px;
+      font-weight: 500;
+    }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: var(--radius-xs);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .badge-teal {
+      background: rgba(20, 184, 166, 0.15);
+      color: var(--brand-teal);
+    }
+    .badge-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
     }
   </style>
 </head>
 <body>
   <!-- Header -->
   <div class="header">
-    <h1>Garage Scholars</h1>
+    <div class="header-brand">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      </div>
+      <h1>Garage Scholars</h1>
+    </div>
     <div class="step" id="stepIndicator">Video Screen</div>
   </div>
   <div class="progress-bar">
@@ -212,32 +422,33 @@
   <div class="main">
     <!-- Screen: Welcome -->
     <div class="screen active" id="screenWelcome">
-      <div class="welcome-card">
+      <div class="card welcome-card">
+        <div style="margin-bottom:16px;">
+          <span class="badge badge-teal"><span class="badge-dot"></span>5 Questions</span>
+        </div>
         <h2>Video Screen</h2>
-        <p>You'll answer 5 quick questions on camera. Each recording is 60-90 seconds. The whole thing takes about 5 minutes.</p>
-        <ul class="tips">
+        <p class="subtitle">Answer 5 quick questions on camera. Each recording is 60-90 seconds. The whole thing takes about 5 minutes.</p>
+        <ul class="tips-list">
           <li>Find a quiet, well-lit spot</li>
           <li>Use your front-facing camera</li>
           <li>Speak naturally — no prep needed</li>
           <li>You'll see each question before recording starts</li>
           <li>One take per question — just be yourself</li>
         </ul>
-        <p style="font-size:13px;color:#64748b;">Your camera and microphone will be requested on the next step.</p>
+        <p class="tips-note">Your camera and microphone will be requested on the next step.</p>
         <button class="btn btn-primary" id="btnStart">Start Video Screen</button>
       </div>
     </div>
 
     <!-- Screen: Recording -->
     <div class="screen" id="screenRecord">
-      <div class="prompt-card">
+      <div class="card prompt-card">
         <div class="prompt-label">Question <span id="promptNum">1</span> of 5</div>
         <div class="prompt-text" id="promptText"></div>
       </div>
       <div class="video-container">
         <video id="videoPreview" autoplay muted playsinline></video>
-        <div class="timer-overlay prep" id="timerOverlay">
-          Get ready...
-        </div>
+        <div class="timer-overlay prep" id="timerOverlay">Get ready...</div>
       </div>
       <button class="btn btn-primary" id="btnRecord" disabled>Recording starts automatically</button>
       <div class="status-msg" id="statusMsg"></div>
@@ -245,10 +456,10 @@
 
     <!-- Screen: Uploading -->
     <div class="screen" id="screenUpload">
-      <div class="welcome-card">
+      <div class="card welcome-card">
         <h2>Uploading your videos...</h2>
-        <p>Please don't close this page.</p>
-        <div class="upload-bar">
+        <p class="subtitle">Please don't close this page.</p>
+        <div class="upload-track">
           <div class="upload-fill" id="uploadFill" style="width: 0%"></div>
         </div>
         <p class="status-msg" id="uploadStatus" style="margin-top:16px;">Uploading video 1 of 5...</p>
@@ -257,20 +468,25 @@
 
     <!-- Screen: Done -->
     <div class="screen" id="screenDone">
-      <div class="done-card">
-        <div class="done-icon">&#10003;</div>
+      <div class="card done-card">
+        <div class="done-icon">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
         <h2>You're all set!</h2>
         <p>Your video screen has been submitted. We'll review it and get back to you soon.</p>
-        <p style="margin-top:16px;color:#64748b;font-size:13px;">You can close this page now.</p>
+        <p style="margin-top:16px;font-size:12px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">You can close this page now</p>
       </div>
     </div>
 
     <!-- Screen: Error -->
     <div class="screen" id="screenError">
-      <div class="error-card">
+      <div class="card error-card">
+        <div class="error-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
         <h2>Something went wrong</h2>
         <p id="errorMsg">We couldn't access your camera. Please make sure you've granted camera and microphone permissions, then try again.</p>
-        <button class="btn btn-secondary" onclick="location.reload()">Try Again</button>
+        <button class="btn btn-secondary" onclick="location.reload()" style="margin-top:20px;">Try Again</button>
       </div>
     </div>
   </div>
@@ -313,7 +529,7 @@
     let mediaStream = null;
     let mediaRecorder = null;
     let recordedChunks = [];
-    let recordedBlobs = []; // Store all 5 video blobs
+    let recordedBlobs = [];
     let timerInterval = null;
 
     // ── DOM refs ──
@@ -358,7 +574,6 @@
     function startRecording() {
       recordedChunks = [];
 
-      // Determine best supported MIME type
       const mimeTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
       let mimeType = '';
       for (const mt of mimeTypes) {
@@ -374,7 +589,7 @@
         recordedBlobs.push(blob);
         onRecordingComplete();
       };
-      mediaRecorder.start(1000); // Collect data every second
+      mediaRecorder.start(1000);
     }
 
     function stopRecording() {
@@ -410,22 +625,21 @@
       $('promptText').textContent = PROMPTS[currentPrompt];
       $('btnRecord').disabled = true;
       $('btnRecord').textContent = 'Recording starts automatically';
+      $('btnRecord').className = 'btn btn-primary';
       $('statusMsg').textContent = '';
 
-      // Prep countdown
       const overlay = $('timerOverlay');
       overlay.className = 'timer-overlay prep';
 
       startTimer(PREP_SECONDS,
         (rem) => { overlay.textContent = `Get ready... ${rem}s`; },
         () => {
-          // Start recording
           overlay.className = 'timer-overlay recording';
           overlay.innerHTML = '<span class="rec-dot"></span> REC';
           $('btnRecord').disabled = false;
           $('btnRecord').textContent = 'Stop Early';
           $('btnRecord').className = 'btn btn-danger';
-          $('statusMsg').textContent = 'Speak naturally. Recording will auto-stop at 90 seconds.';
+          $('statusMsg').textContent = 'Speak naturally. Recording auto-stops at 90 seconds.';
           startRecording();
 
           startTimer(RECORD_SECONDS,
@@ -441,7 +655,6 @@
       currentPrompt++;
 
       if (currentPrompt < PROMPTS.length) {
-        // Next prompt
         $('timerOverlay').className = 'timer-overlay prep';
         $('timerOverlay').textContent = 'Next question...';
         $('btnRecord').disabled = true;
@@ -449,7 +662,6 @@
         $('btnRecord').className = 'btn btn-primary';
         setTimeout(() => showPrompt(), 1500);
       } else {
-        // All done — upload
         uploadAll();
       }
     }
@@ -474,7 +686,6 @@
           $('uploadFill').style.width = `${((i + 1) / recordedBlobs.length) * 100}%`;
         }
 
-        // Signal completion to Firestore (triggers gsProcessVideoCompletion)
         $('uploadStatus').textContent = 'Finalizing...';
         await db.collection('gs_hiringVideoCompletions').add({
           applicantId: applicantId,
@@ -482,7 +693,6 @@
           completedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Stop camera
         if (mediaStream) {
           mediaStream.getTracks().forEach(t => t.stop());
         }
@@ -490,7 +700,7 @@
         showScreen('screenDone');
       } catch (err) {
         console.error('Upload failed:', err);
-        $('errorMsg').textContent = 'Upload failed. Please check your connection and try again. Your recordings are saved locally.';
+        $('errorMsg').textContent = 'Upload failed. Please check your connection and try again.';
         showScreen('screenError');
       }
     }
@@ -512,7 +722,6 @@
         return;
       }
 
-      // Verify applicant exists and is in correct status
       try {
         const doc = await db.collection('gs_hiringApplicants').doc(applicantId).get();
         if (!doc.exists) {
@@ -531,13 +740,11 @@
           return;
         }
 
-        // Update status to pending_video
         await db.collection('gs_hiringApplicants').doc(applicantId).update({
           status: 'pending_video'
         });
       } catch (err) {
         console.error('Verification failed:', err);
-        // Continue anyway — don't block candidate on read errors
       }
 
       const cameraOk = await setupCamera();

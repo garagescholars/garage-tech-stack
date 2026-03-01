@@ -71,11 +71,17 @@ const CAL_LINK = process.env.CAL_LINK || "https://cal.com/garagescholars/intervi
 // ════════════════════════════════════════════════════════════════════
 const APP_SCORING_SYSTEM_PROMPT = `You are an applicant screening AI for Garage Scholars, a garage transformation startup in Denver. You evaluate applicants for a hands-on role: installing shelves/wall-mounted storage, cleaning/organizing garages, basic handyman work, interacting with homeowners professionally.
 
-Score 6 answers on 0-100 across four dimensions:
-1. SKILLS FIT (30%): Tool experience, physical project history, handy work.
-2. RELIABILITY (15%): Transportation, availability, consistency signals.
-3. CONSCIENTIOUSNESS (25%): Detail in answers, initiative, follow-through.
+Score 6 screening answers (and resume if provided) on 0-100 across four dimensions:
+1. SKILLS FIT (30%): Tool experience, physical project history, handy work. If a resume is attached, factor in relevant work history, trades experience, and hands-on skills.
+2. RELIABILITY (15%): Transportation, availability, consistency signals. Resume work tenure and job stability are relevant.
+3. CONSCIENTIOUSNESS (25%): Detail in answers, initiative, follow-through. Resume formatting and completeness reflect this.
 4. PROBLEM-SOLVING (30%): Independent thinking in Q4 scenario.
+
+If a resume is attached, also consider:
+- Relevant work experience (construction, handyman, trades, physical labor, customer-facing)
+- Education (trade schools, certifications, relevant coursework)
+- Employment gaps or short tenures (not auto-fail, but factor into reliability)
+- Overall presentation and effort
 
 RED FLAGS (auto-fail):
 - No transportation and no realistic plan
@@ -84,7 +90,7 @@ RED FLAGS (auto-fail):
 - Hostile or deeply unprofessional tone
 
 OUTPUT (JSON only, no other text):
-{"skills_fit":<0-100>,"reliability":<0-100>,"conscientiousness":<0-100>,"problem_solving":<0-100>,"composite_score":<weighted avg>,"red_flags":[],"pass":true/false,"summary":"<2-3 sentences>"}
+{"skills_fit":<0-100>,"reliability":<0-100>,"conscientiousness":<0-100>,"problem_solving":<0-100>,"composite_score":<weighted avg>,"red_flags":[],"pass":true/false,"summary":"<2-3 sentences>","resume_summary":"<1-2 sentences about resume highlights, or null if no resume>"}
 
 PASS: composite >= 60 AND zero red flags.`;
 const APP_SCORING_FEW_SHOT_STRONG = `Example - Strong Applicant:
@@ -407,13 +413,23 @@ async function sendHiringEmail(to, subject, html) {
         createdAt: firestore_2.FieldValue.serverTimestamp(),
     });
 }
-/** Call Claude API for JSON scoring */
-async function callClaudeForScoring(systemPrompt, userMessage) {
+/** Call Claude API for JSON scoring (supports optional PDF resume attachment) */
+async function callClaudeForScoring(systemPrompt, userMessage, resumeBase64) {
     const anthropic = new sdk_1.default();
+    // Build content blocks — include resume PDF if provided
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const content = [];
+    if (resumeBase64) {
+        content.push({
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: resumeBase64 },
+        });
+    }
+    content.push({ type: "text", text: userMessage });
     const response = await anthropic.messages.create({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 1024,
-        messages: [{ role: "user", content: userMessage }],
+        messages: [{ role: "user", content }],
         system: systemPrompt,
     });
     const textBlock = response.content.find((b) => b.type === "text");
@@ -490,7 +506,24 @@ exports.gsScoreHiringApplication = (0, firestore_1.onDocumentCreated)({
             await docRef.update({ status: "rejected", decision: "reject", decisionAt: firestore_2.FieldValue.serverTimestamp() });
             return;
         }
+        // Download resume if uploaded
+        let resumeBase64;
+        if (appData.resumePath) {
+            try {
+                console.log(`[Hiring] Downloading resume: ${appData.resumePath}`);
+                const [buffer] = await storage.bucket().file(appData.resumePath).download();
+                resumeBase64 = buffer.toString("base64");
+                console.log(`[Hiring] Resume loaded (${Math.round(buffer.length / 1024)}KB)`);
+            }
+            catch (err) {
+                console.warn(`[Hiring] Could not download resume: ${err}`);
+                // Continue scoring without resume
+            }
+        }
         // Build the scoring prompt with few-shot examples
+        const resumeNote = resumeBase64
+            ? "\n\nA resume (PDF) is attached above. Factor it into your scoring."
+            : "\n\nNo resume was uploaded.";
         const userMessage = `${APP_SCORING_FEW_SHOT_STRONG}
 
 ${APP_SCORING_FEW_SHOT_WEAK}
@@ -501,8 +534,8 @@ Now score this applicant:
 <applicant_answer question="3_project">${appData.q3_project}</applicant_answer>
 <applicant_answer question="4_problem">${appData.q4_problem}</applicant_answer>
 <applicant_answer question="5_availability">${appData.q5_availability}</applicant_answer>
-<applicant_answer question="6_interest">${appData.q6_interest}</applicant_answer>`;
-        const rawResponse = await callClaudeForScoring(APP_SCORING_SYSTEM_PROMPT, userMessage);
+<applicant_answer question="6_interest">${appData.q6_interest}</applicant_answer>${resumeNote}`;
+        const rawResponse = await callClaudeForScoring(APP_SCORING_SYSTEM_PROMPT, userMessage, resumeBase64);
         const scores = parseClaudeJson(rawResponse);
         console.log(`[Hiring] App scores for ${appId}: composite=${scores.composite_score}, pass=${scores.pass}`);
         if (scores.pass) {

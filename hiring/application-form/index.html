@@ -152,6 +152,12 @@
         </select>
       </div>
 
+      <div class="form-group">
+        <label>Resume (PDF, optional but recommended)</label>
+        <input type="file" name="resume" accept=".pdf,application/pdf" style="padding:12px 14px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;font-size:15px;width:100%;color:#1e293b;">
+        <p style="font-size:12px;color:#64748b;margin-top:4px;">PDF only, max 10MB. Helps us evaluate your experience.</p>
+      </div>
+
       <hr class="divider">
 
       <!-- Screening Questions (Step 6.1) -->
@@ -201,6 +207,7 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -214,6 +221,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const storageRef = firebase.storage();
 
     const form = document.getElementById('applicationForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -234,30 +242,45 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitting...';
 
-      const data = new FormData(form);
+      const fd = new FormData(form);
 
       try {
-        // Write to gs_hiringApplicants — triggers gsScoreHiringApplication
-        await db.collection('gs_hiringApplicants').add({
-          name: data.get('name').trim(),
-          email: data.get('email').trim().toLowerCase(),
-          phone: data.get('phone').trim(),
-          source: data.get('source'),
-          q1_transport: data.get('q1_transport').trim(),
-          q2_tools: data.get('q2_tools').trim(),
-          q3_project: data.get('q3_project').trim(),
-          q4_problem: data.get('q4_problem').trim(),
-          q5_availability: data.get('q5_availability').trim(),
-          q6_interest: data.get('q6_interest').trim(),
+        // Upload resume if provided
+        let resumePath = '';
+        const resumeInput = form.querySelector('[name="resume"]');
+        const resumeFile = resumeInput && resumeInput.files[0];
+        if (resumeFile) {
+          if (resumeFile.type !== 'application/pdf') throw new Error('Resume must be a PDF file.');
+          if (resumeFile.size > 10 * 1024 * 1024) throw new Error('Resume must be under 10MB.');
+          submitBtn.textContent = 'Uploading resume...';
+          const ts = Date.now();
+          resumePath = `hiring-resumes/${ts}_${resumeFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+          await storageRef.ref(resumePath).put(resumeFile, { contentType: 'application/pdf' });
+        }
+
+        submitBtn.textContent = 'Submitting...';
+        const doc = {
+          name: fd.get('name').trim(),
+          email: fd.get('email').trim().toLowerCase(),
+          phone: fd.get('phone').trim(),
+          source: fd.get('source'),
+          q1_transport: fd.get('q1_transport').trim(),
+          q2_tools: fd.get('q2_tools').trim(),
+          q3_project: fd.get('q3_project').trim(),
+          q4_problem: fd.get('q4_problem').trim(),
+          q5_availability: fd.get('q5_availability').trim(),
+          q6_interest: fd.get('q6_interest').trim(),
           status: 'pending_ai',
           appliedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        };
+        if (resumePath) doc.resumePath = resumePath;
 
+        await db.collection('gs_hiringApplicants').add(doc);
         form.style.display = 'none';
         document.getElementById('successCard').style.display = 'block';
       } catch (err) {
         console.error('Submission failed:', err);
-        alert('Something went wrong. Please try again.');
+        alert(err.message || 'Something went wrong. Please try again.');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Application';
       }
