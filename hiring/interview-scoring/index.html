@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garage Scholars — Interview Scoring</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --brand: #2563eb;
+      --brand-hover: #1d4ed8;
+      --green: #166534;
+      --green-bg: #f0fdf4;
+      --yellow: #d97706;
+      --yellow-bg: #fffbeb;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --blue-bg: #eff6ff;
+      --blue: #1e40af;
+      --radius: 10px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h1 { font-size: 18px; font-weight: 700; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-email { font-size: 13px; color: var(--text-muted); }
+    .btn-signout {
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-signout:hover { background: var(--bg-hover); }
+
+    /* ── Screens ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Login Screen ── */
+    .login-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 24px;
+    }
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .login-card h2 { font-size: 24px; margin-bottom: 8px; }
+    .login-card p { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+    .btn-google {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 28px;
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-google:hover:not(:disabled) { background: var(--brand-hover); }
+    .btn-google:disabled { opacity: 0.6; cursor: not-allowed; }
+    .login-error {
+      color: var(--red);
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    /* ── Candidate List ── */
+    .content { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .empty-state {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .candidate-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .candidate-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .candidate-table td {
+      padding: 14px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .candidate-table tr:last-child td { border-bottom: none; }
+    .candidate-table tr:hover td { background: var(--bg-hover); cursor: pointer; }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-indeed { background: #dbeafe; color: #1e40af; }
+    .badge-handshake { background: #dcfce7; color: #166534; }
+    .badge-direct { background: #f1f5f9; color: #475569; }
+    .badge-referral { background: #f3e8ff; color: #7c3aed; }
+    .score-pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .score-high { background: var(--green-bg); color: var(--green); }
+    .score-mid { background: var(--yellow-bg); color: var(--yellow); }
+    .score-low { background: var(--red-bg); color: var(--red); }
+    .loading { text-align: center; padding: 60px; color: var(--text-muted); }
+
+    /* ── Scoring Form ── */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--brand);
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    .scoring-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 1024px) {
+      .scoring-layout { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .panel h3 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dossier-section { margin-bottom: 20px; }
+    .dossier-section h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .score-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .score-box {
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .score-box-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .score-box-value { font-size: 22px; font-weight: 700; }
+    .score-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .score-bar-label { width: 140px; color: var(--text-secondary); flex-shrink: 0; }
+    .score-bar-track { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 4px; }
+    .score-bar-val { width: 36px; text-align: right; font-weight: 600; font-size: 13px; }
+    .ai-summary {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .flags-list { list-style: none; }
+    .flags-list li {
+      font-size: 13px;
+      padding: 4px 0;
+    }
+    .flag-strength { color: var(--green); }
+    .flag-concern { color: var(--red); }
+    .contact-row {
+      display: flex;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .contact-label { font-weight: 600; width: 60px; }
+
+    /* ── Rating Questions ── */
+    .question-block { margin-bottom: 24px; }
+    .question-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+    .question-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+    .rating-btns { display: flex; gap: 8px; }
+    .rating-btn {
+      width: 44px;
+      height: 44px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-card);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .rating-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .rating-btn.selected {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
+    /* ── Gut Check ── */
+    .gut-check-btns { display: flex; gap: 10px; }
+    .gut-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-card);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .gut-btn:hover { border-color: var(--brand); }
+    .gut-btn.selected-yes { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+    .gut-btn.selected-maybe { background: var(--yellow-bg); border-color: var(--yellow); color: var(--yellow); }
+    .gut-btn.selected-no { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+
+    .notes-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+    }
+    .notes-textarea:focus { outline: none; border-color: var(--brand); }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+    .btn-submit:hover { background: var(--brand-hover); }
+    .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* ── Confirmation ── */
+    .confirm-container {
+      text-align: center;
+      padding: 80px 24px;
+    }
+    .confirm-icon { font-size: 48px; margin-bottom: 16px; }
+    .confirm-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .confirm-sub { color: var(--text-secondary); font-size: 15px; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      background: var(--text);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1000;
+      display: none;
+      animation: fadeIn 0.2s;
+    }
+    .toast.error { background: var(--red); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <!-- Screen 1: Login -->
+  <div id="screen-login" class="screen active">
+    <div class="login-container">
+      <div class="login-card">
+        <h2>Interview Scoring</h2>
+        <p>Garage Scholars founder access only</p>
+        <button class="btn-google" onclick="signIn()">Sign in with Google</button>
+        <p id="login-error" class="login-error"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 2: Candidate List -->
+  <div id="screen-list" class="screen">
+    <div class="header">
+      <h1>Interview Scoring</h1>
+      <div class="header-right">
+        <span id="user-email" class="header-email"></span>
+        <button class="btn-signout" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+    <div class="content">
+      <div id="candidate-loading" class="loading">Loading candidates...</div>
+      <div id="candidate-empty" class="empty-state" style="display:none;">No candidates awaiting scoring</div>
+      <table id="candidate-table" class="candidate-table" style="display:none;">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Source</th>
+            <th>App Score</th>
+            <th>Video Score</th>
+            <th>Scheduled</th>
+          </tr>
+        </thead>
+        <tbody id="candidate-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Screen 3: Scoring Form -->
+  <div id="screen-scoring" class="screen">
+    <div class="header">
+      <h1 id="scoring-header">Score Candidate</h1>
+      <div class="header-right">
+        <span id="user-email-2" class="header-email"></span>
+        <button class="btn-signout" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+    <div class="content">
+      <button class="back-btn" onclick="showList()">&larr; Back to list</button>
+      <div class="scoring-layout">
+        <!-- Dossier Panel -->
+        <div class="panel" id="dossier-panel">
+          <h3>Candidate Dossier</h3>
+          <div id="dossier-content"></div>
+        </div>
+
+        <!-- Scoring Form Panel -->
+        <div class="panel">
+          <h3>Interview Assessment</h3>
+          <form id="scoring-form" onsubmit="submitScore(event)">
+            <div class="question-block">
+              <div class="question-label">1. Dependability</div>
+              <div class="question-desc">Would they show up on time every day?</div>
+              <div class="rating-btns" data-field="q1_dependability">
+                <button type="button" class="rating-btn" data-val="1">1</button>
+                <button type="button" class="rating-btn" data-val="2">2</button>
+                <button type="button" class="rating-btn" data-val="3">3</button>
+                <button type="button" class="rating-btn" data-val="4">4</button>
+                <button type="button" class="rating-btn" data-val="5">5</button>
+              </div>
+            </div>
+            <div class="question-block">
+              <div class="question-label">2. Problem-Solving</div>
+              <div class="question-desc">Can they think through problems independently?</div>
+              <div class="rating-btns" data-field="q2_problem_solving">
+                <button type="button" class="rating-btn" data-val="1">1</button>
+                <button type="button" class="rating-btn" data-val="2">2</button>
+                <button type="button" class="rating-btn" data-val="3">3</button>
+                <button type="button" class="rating-btn" data-val="4">4</button>
+                <button type="button" class="rating-btn" data-val="5">5</button>
+              </div>
+            </div>
+            <div class="question-block">
+              <div class="question-label">3. Customer Interaction</div>
+              <div class="question-desc">Would you trust them alone at a customer's house?</div>
+              <div class="rating-btns" data-field="q3_customer_interaction">
+                <button type="button" class="rating-btn" data-val="1">1</button>
+                <button type="button" class="rating-btn" data-val="2">2</button>
+                <button type="button" class="rating-btn" data-val="3">3</button>
+                <button type="button" class="rating-btn" data-val="4">4</button>
+                <button type="button" class="rating-btn" data-val="5">5</button>
+              </div>
+            </div>
+            <div class="question-block">
+              <div class="question-label">4. Practical Skills</div>
+              <div class="question-desc">Could they install a shelf today?</div>
+              <div class="rating-btns" data-field="q4_practical_skills">
+                <button type="button" class="rating-btn" data-val="1">1</button>
+                <button type="button" class="rating-btn" data-val="2">2</button>
+                <button type="button" class="rating-btn" data-val="3">3</button>
+                <button type="button" class="rating-btn" data-val="4">4</button>
+                <button type="button" class="rating-btn" data-val="5">5</button>
+              </div>
+            </div>
+            <div class="question-block">
+              <div class="question-label">5. Coachability</div>
+              <div class="question-desc">Are they open to feedback and learning?</div>
+              <div class="rating-btns" data-field="q5_coachability">
+                <button type="button" class="rating-btn" data-val="1">1</button>
+                <button type="button" class="rating-btn" data-val="2">2</button>
+                <button type="button" class="rating-btn" data-val="3">3</button>
+                <button type="button" class="rating-btn" data-val="4">4</button>
+                <button type="button" class="rating-btn" data-val="5">5</button>
+              </div>
+            </div>
+            <div class="question-block">
+              <div class="question-label">6. Growth Mindset</div>
+              <div class="question-desc">Do they want to grow, or just collect a paycheck?</div>
+              <div class="rating-btns" data-field="q6_growth_mindset">
+                <button type="button" class="rating-btn" data-val="1">1</button>
+                <button type="button" class="rating-btn" data-val="2">2</button>
+                <button type="button" class="rating-btn" data-val="3">3</button>
+                <button type="button" class="rating-btn" data-val="4">4</button>
+                <button type="button" class="rating-btn" data-val="5">5</button>
+              </div>
+            </div>
+
+            <div class="question-block">
+              <div class="question-label">Gut Check</div>
+              <div class="question-desc">Overall feeling about this candidate</div>
+              <div class="gut-check-btns">
+                <button type="button" class="gut-btn" data-gut="yes" onclick="selectGut('yes')">Yes</button>
+                <button type="button" class="gut-btn" data-gut="maybe" onclick="selectGut('maybe')">Maybe</button>
+                <button type="button" class="gut-btn" data-gut="no" onclick="selectGut('no')">No</button>
+              </div>
+            </div>
+
+            <div class="question-block">
+              <div class="question-label">Notes</div>
+              <textarea id="notes-field" class="notes-textarea" placeholder="Interview notes (optional)..."></textarea>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn-submit" disabled>Submit Score</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Confirmation -->
+  <div id="screen-confirm" class="screen">
+    <div class="header">
+      <h1>Interview Scoring</h1>
+      <div class="header-right">
+        <button class="btn-signout" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="confirm-container">
+        <div class="confirm-icon">&#10003;</div>
+        <div class="confirm-title">Score Submitted</div>
+        <div class="confirm-sub">The decision engine is processing...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // ── Firebase Init ──
+    firebase.initializeApp({
+      apiKey: "AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8",
+      authDomain: "garage-scholars-v2.firebaseapp.com",
+      projectId: "garage-scholars-v2",
+      storageBucket: "garage-scholars-v2.firebasestorage.app",
+      messagingSenderId: "583159785746",
+      appId: "1:583159785746:web:87d8ed8f5634ea79c26bcb"
+    });
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const ADMIN_EMAILS = ['tylerzsodia@gmail.com', 'zach.harmon25@gmail.com'];
+
+    let candidates = [];
+    let selectedCandidate = null;
+    let selectedCandidateId = null;
+    let scores = {};
+    let gutCheck = null;
+    let submitting = false;
+
+    // ── Helpers ──
+    function esc(str) {
+      if (!str) return '';
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function toast(msg, isError) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (isError ? ' error' : '');
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 4000);
+    }
+
+    function scoreClass(score) {
+      if (score >= 80) return 'score-high';
+      if (score >= 60) return 'score-mid';
+      return 'score-low';
+    }
+
+    function barColor(score) {
+      if (score >= 80) return '#16a34a';
+      if (score >= 60) return '#d97706';
+      return '#dc2626';
+    }
+
+    function badgeClass(source) {
+      return 'badge badge-' + (source || 'direct');
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '—';
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+
+    // ── Auth ──
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+    async function signIn() {
+      const btn = document.querySelector('.btn-google');
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      try {
+        // Use popup — works when domain is in Firebase authorized domains list
+        const result = await auth.signInWithPopup(googleProvider);
+        console.log('Sign-in successful:', result.user.email);
+      } catch (err) {
+        console.error('Popup sign-in error:', err.code, err.message);
+        // If popup was blocked, fall back to redirect
+        if (err.code === 'auth/popup-blocked') {
+          console.log('Popup blocked, falling back to redirect...');
+          try {
+            await auth.signInWithRedirect(googleProvider);
+            return; // page will navigate away
+          } catch (redirectErr) {
+            console.error('Redirect also failed:', redirectErr);
+          }
+        }
+        btn.disabled = false;
+        btn.textContent = 'Sign in with Google';
+        // Show user-friendly error messages
+        let msg = 'Sign-in failed. ';
+        if (err.code === 'auth/popup-closed-by-user') {
+          msg = 'Sign-in cancelled.';
+        } else if (err.code === 'auth/unauthorized-domain') {
+          msg = 'This domain is not authorized for sign-in. Contact admin.';
+        } else if (err.code === 'auth/internal-error') {
+          msg += 'Internal error — try again.';
+        } else {
+          msg += err.message;
+        }
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+      }
+    }
+
+    // Handle redirect result (fallback from popup-blocked)
+    auth.getRedirectResult().then(result => {
+      if (result && result.user) {
+        console.log('Redirect sign-in successful:', result.user.email);
+      }
+    }).catch(err => {
+      console.error('Redirect result error:', err.code, err.message);
+      if (err.code !== 'auth/popup-closed-by-user') {
+        const errEl = document.getElementById('login-error');
+        errEl.textContent = 'Sign-in error: ' + err.message;
+        errEl.style.display = 'block';
+      }
+    });
+
+    function signOut() {
+      auth.signOut();
+      showScreen('screen-login');
+      const btn = document.querySelector('.btn-google');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Sign in with Google';
+      }
+    }
+
+    auth.onAuthStateChanged(user => {
+      const btn = document.querySelector('.btn-google');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Sign in with Google';
+      }
+
+      if (user) {
+        if (!ADMIN_EMAILS.includes(user.email)) {
+          auth.signOut();
+          document.getElementById('login-error').textContent = 'Access denied. Admin accounts only.';
+          document.getElementById('login-error').style.display = 'block';
+          return;
+        }
+        document.getElementById('user-email').textContent = user.email;
+        document.getElementById('user-email-2').textContent = user.email;
+        showScreen('screen-list');
+        loadCandidates();
+      }
+    });
+
+    // ── Candidate List ──
+    async function loadCandidates() {
+      document.getElementById('candidate-loading').style.display = 'block';
+      document.getElementById('candidate-table').style.display = 'none';
+      document.getElementById('candidate-empty').style.display = 'none';
+
+      try {
+        const snap = await db.collection('gs_hiringApplicants')
+          .where('status', '==', 'zoom_scheduled')
+          .orderBy('zoomScheduledAt', 'desc')
+          .get();
+
+        candidates = [];
+        snap.forEach(doc => {
+          candidates.push({ id: doc.id, ...doc.data() });
+        });
+
+        document.getElementById('candidate-loading').style.display = 'none';
+
+        if (candidates.length === 0) {
+          document.getElementById('candidate-empty').style.display = 'block';
+          return;
+        }
+
+        const tbody = document.getElementById('candidate-tbody');
+        tbody.innerHTML = '';
+        candidates.forEach(c => {
+          const appScore = c.appScores?.composite_score ?? '—';
+          const vidScore = c.videoScores?.composite_score ?? '—';
+          const tr = document.createElement('tr');
+          tr.onclick = () => openScoring(c.id);
+          tr.innerHTML = `
+            <td><strong>${esc(c.name)}</strong></td>
+            <td><span class="${badgeClass(c.source)}">${esc(c.source)}</span></td>
+            <td><span class="score-pill ${typeof appScore === 'number' ? scoreClass(appScore) : ''}">${appScore}</span></td>
+            <td><span class="score-pill ${typeof vidScore === 'number' ? scoreClass(vidScore) : ''}">${vidScore}</span></td>
+            <td style="color:var(--text-secondary)">${formatDate(c.zoomScheduledAt)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        document.getElementById('candidate-table').style.display = 'table';
+      } catch (err) {
+        document.getElementById('candidate-loading').textContent = 'Error loading candidates';
+        toast('Failed to load candidates: ' + err.message, true);
+      }
+    }
+
+    // ── Scoring Form ──
+    function openScoring(id) {
+      selectedCandidate = candidates.find(c => c.id === id);
+      selectedCandidateId = id;
+      scores = {};
+      gutCheck = null;
+      submitting = false;
+
+      document.getElementById('scoring-header').textContent = `Score: ${selectedCandidate.name}`;
+      renderDossier();
+      resetForm();
+      showScreen('screen-scoring');
+    }
+
+    function showList() {
+      showScreen('screen-list');
+      loadCandidates();
+    }
+
+    function renderDossier() {
+      const c = selectedCandidate;
+      const app = c.appScores;
+      const vid = c.videoScores;
+      let html = '';
+
+      // Contact info
+      html += `<div class="dossier-section">
+        <h4>Contact</h4>
+        <div class="contact-row"><span class="contact-label">Name</span>${esc(c.name)}</div>
+        <div class="contact-row"><span class="contact-label">Phone</span><a href="tel:${esc(c.phone)}" style="color:var(--brand)">${esc(c.phone)}</a></div>
+        <div class="contact-row"><span class="contact-label">Email</span><a href="mailto:${esc(c.email)}" style="color:var(--brand)">${esc(c.email)}</a></div>
+        <div class="contact-row"><span class="contact-label">Source</span><span class="${badgeClass(c.source)}">${esc(c.source)}</span></div>
+      </div>`;
+
+      // App Score
+      if (app) {
+        html += `<div class="dossier-section">
+          <h4>Application Score</h4>
+          <div class="score-grid">
+            <div class="score-box" style="background:var(--green-bg);grid-column:span 2;">
+              <div class="score-box-label">Composite</div>
+              <div class="score-box-value" style="color:var(--green)">${app.composite_score}/100</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            ${renderBar('Skills Fit (30%)', app.skills_fit)}
+            ${renderBar('Reliability (15%)', app.reliability)}
+            ${renderBar('Conscientiousness (25%)', app.conscientiousness)}
+            ${renderBar('Problem-Solving (30%)', app.problem_solving)}
+          </div>
+          ${app.summary ? `<div class="ai-summary">${esc(app.summary)}</div>` : ''}
+          ${app.red_flags?.length ? `<ul class="flags-list">${app.red_flags.map(f => `<li class="flag-concern">&#9888; ${esc(f)}</li>`).join('')}</ul>` : ''}
+        </div>`;
+      }
+
+      // Video Score
+      if (vid) {
+        html += `<div class="dossier-section">
+          <h4>Video Score</h4>
+          <div class="score-grid">
+            <div class="score-box" style="background:var(--blue-bg);grid-column:span 2;">
+              <div class="score-box-label">Composite</div>
+              <div class="score-box-value" style="color:var(--blue)">${vid.composite_score}/100</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            ${renderBar('Communication (20%)', vid.communication)}
+            ${renderBar('Mechanical Apt. (25%)', vid.mechanical_aptitude)}
+            ${renderBar('Problem-Solving (20%)', vid.problem_solving_honesty)}
+            ${renderBar('Reliability (20%)', vid.reliability_conscientiousness)}
+            ${renderBar('Startup Fit (15%)', vid.startup_fit)}
+          </div>
+          ${vid.summary ? `<div class="ai-summary">${esc(vid.summary)}</div>` : ''}
+          ${vid.strengths?.length ? `<ul class="flags-list">${vid.strengths.map(s => `<li class="flag-strength">&#10003; ${esc(s)}</li>`).join('')}</ul>` : ''}
+          ${vid.concerns?.length ? `<ul class="flags-list">${vid.concerns.map(c => `<li class="flag-concern">&#9888; ${esc(c)}</li>`).join('')}</ul>` : ''}
+          ${vid.red_flags?.length ? `<ul class="flags-list">${vid.red_flags.map(f => `<li class="flag-concern">&#9888; RED FLAG: ${esc(f)}</li>`).join('')}</ul>` : ''}
+        </div>`;
+      }
+
+      document.getElementById('dossier-content').innerHTML = html;
+    }
+
+    function renderBar(label, score) {
+      if (score === undefined || score === null) return '';
+      return `<div class="score-bar-row">
+        <span class="score-bar-label">${esc(label)}</span>
+        <div class="score-bar-track"><div class="score-bar-fill" style="width:${score}%;background:${barColor(score)}"></div></div>
+        <span class="score-bar-val">${score}</span>
+      </div>`;
+    }
+
+    function resetForm() {
+      document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.gut-btn').forEach(b => {
+        b.classList.remove('selected-yes', 'selected-maybe', 'selected-no');
+      });
+      document.getElementById('notes-field').value = '';
+      document.getElementById('submit-btn').disabled = true;
+    }
+
+    // Rating button handlers
+    document.querySelectorAll('.rating-btns').forEach(group => {
+      const field = group.dataset.field;
+      group.querySelectorAll('.rating-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          group.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          scores[field] = parseInt(btn.dataset.val);
+          checkFormComplete();
+        });
+      });
+    });
+
+    function selectGut(val) {
+      gutCheck = val;
+      document.querySelectorAll('.gut-btn').forEach(b => {
+        b.classList.remove('selected-yes', 'selected-maybe', 'selected-no');
+      });
+      document.querySelector(`[data-gut="${val}"]`).classList.add('selected-' + val);
+      checkFormComplete();
+    }
+
+    function checkFormComplete() {
+      const fields = ['q1_dependability', 'q2_problem_solving', 'q3_customer_interaction',
+                       'q4_practical_skills', 'q5_coachability', 'q6_growth_mindset'];
+      const allRated = fields.every(f => scores[f] !== undefined);
+      document.getElementById('submit-btn').disabled = !(allRated && gutCheck && !submitting);
+    }
+
+    async function submitScore(e) {
+      e.preventDefault();
+      if (submitting) return;
+      submitting = true;
+      document.getElementById('submit-btn').disabled = true;
+      document.getElementById('submit-btn').textContent = 'Submitting...';
+
+      try {
+        await db.collection('gs_hiringInterviewScores').add({
+          applicantId: selectedCandidateId,
+          scores: {
+            q1_dependability: scores.q1_dependability,
+            q2_problem_solving: scores.q2_problem_solving,
+            q3_customer_interaction: scores.q3_customer_interaction,
+            q4_practical_skills: scores.q4_practical_skills,
+            q5_coachability: scores.q5_coachability,
+            q6_growth_mindset: scores.q6_growth_mindset,
+            gut_check: gutCheck,
+            notes: document.getElementById('notes-field').value || '',
+          },
+          submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+
+        showScreen('screen-confirm');
+        setTimeout(() => {
+          showScreen('screen-list');
+          loadCandidates();
+        }, 3000);
+      } catch (err) {
+        toast('Failed to submit score: ' + err.message, true);
+        submitting = false;
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('submit-btn').textContent = 'Submit Score';
+      }
+    }
+  </script>
+</body>
+</html>

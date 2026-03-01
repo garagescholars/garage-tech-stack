@@ -71,6 +71,7 @@ export {
   gsProcessInterviewScore,
   gsHiringWeeklyDigest,
   gsVerifyVideoAccess,
+  gsHiringVideoReminder,
 } from "./gs-hiring";
 
 const db = getFirestore();

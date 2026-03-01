@@ -1,0 +1,13 @@
+{
+  "name": "gs-hiring-e2e",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node run-e2e.mjs",
+    "test:keep": "node run-e2e.mjs --keep-data"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

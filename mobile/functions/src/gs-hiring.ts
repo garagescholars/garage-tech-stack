@@ -37,7 +37,7 @@ const storage = getStorage();
 // ── Configuration ──
 
 const FOUNDER_EMAILS = ["garagescholars@gmail.com", "admin@garagescholars.com"];
-const VIDEO_APP_BASE_URL = process.env.VIDEO_APP_URL || "https://screen.garagescholars.com";
+const VIDEO_APP_BASE_URL = process.env.VIDEO_APP_URL || "https://gs-video-screen.vercel.app";
 const CAL_LINK = process.env.CAL_LINK || "https://cal.com/garagescholars/interview";
 
 // ════════════════════════════════════════════════════════════════════
@@ -173,6 +173,24 @@ function videoInviteEmail(name: string, videoLink: string): string {
     </div>
     <p style="color:#94a3b8;font-size:13px;line-height:1.5;margin:0;">
       Please complete within 48 hours. The link is unique to you.
+    </p>
+    <p style="color:#475569;font-size:15px;margin-top:24px;">— The Garage Scholars Team</p>`);
+}
+
+function videoReminderEmail(name: string, videoLink: string): string {
+  const safe = escapeHtml(name);
+  return emailWrapper("Garage Scholars", "Friendly Reminder", `
+    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${safe},</p>
+    <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
+      We noticed you haven't completed your video screen yet. It only takes about 5 minutes — just answer 5 quick questions on camera.
+    </p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${escapeHtml(videoLink)}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
+        Complete Video Screen
+      </a>
+    </div>
+    <p style="color:#94a3b8;font-size:13px;line-height:1.5;margin:0;">
+      Please complete within the next 48 hours. After that, your application may be automatically closed.
     </p>
     <p style="color:#475569;font-size:15px;margin-top:24px;">— The Garage Scholars Team</p>`);
 }
@@ -1098,6 +1116,44 @@ export const gsHiringWeeklyDigest = onSchedule(
         (a) => a.decision === "reject" && a.decisionAt && a.decisionAt.toMillis() > weekAgo.toMillis(),
       ).length;
 
+      // ── Funnel Metrics ──
+      const totalApplicants = applicants.length;
+      const passedApp = applicants.filter((a) => a.appScores?.pass).length;
+      const passedVideo = applicants.filter((a) => a.videoScores?.pass).length;
+      const hiredAllTime = applicants.filter((a) => a.decision === "hire").length;
+      const appPassRate = totalApplicants > 0 ? Math.round((passedApp / totalApplicants) * 100) : 0;
+      const videoPassRate = passedApp > 0 ? Math.round((passedVideo / passedApp) * 100) : 0;
+      const zoomToHire = passedVideo > 0 ? Math.round((hiredAllTime / passedVideo) * 100) : 0;
+
+      // Video drop-off: invited but never completed and rejected
+      const videoDropoffs = applicants.filter(
+        (a) => a.videoInvitedAt && !a.videoCompletedAt && a.status === "rejected",
+      ).length;
+      const videoDropoffRate = passedApp > 0 ? Math.round((videoDropoffs / passedApp) * 100) : 0;
+
+      // Time-to-hire (avg days for hired candidates)
+      const hiredWithTimes = applicants.filter(
+        (a) => a.decision === "hire" && a.appliedAt && a.decisionAt,
+      );
+      const avgDaysToHire = hiredWithTimes.length > 0
+        ? Math.round(
+            hiredWithTimes.reduce(
+              (sum, a) => sum + (a.decisionAt!.toMillis() - a.appliedAt.toMillis()) / (1000 * 60 * 60 * 24),
+              0,
+            ) / hiredWithTimes.length,
+          )
+        : null;
+
+      // Source breakdown
+      const bySource: Record<string, number> = {};
+      const bySourceWeek: Record<string, number> = {};
+      for (const a of applicants) {
+        bySource[a.source] = (bySource[a.source] || 0) + 1;
+        if (a.appliedAt && a.appliedAt.toMillis() > weekAgo.toMillis()) {
+          bySourceWeek[a.source] = (bySourceWeek[a.source] || 0) + 1;
+        }
+      }
+
       const rows = [
         ["New Applications (7d)", String(newThisWeek)],
         ["Pending AI Score", String(counts["pending_ai"] || 0)],
@@ -1112,24 +1168,139 @@ export const gsHiringWeeklyDigest = onSchedule(
         ["Total All-Time", String(applicants.length)],
       ];
 
-      const tableRows = rows
-        .map(
-          ([label, val]) =>
-            `<tr><td style="padding:8px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">${label}</td>
-             <td style="padding:8px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600;">${val}</td></tr>`,
-        )
-        .join("");
+      const funnelRows = [
+        ["App Pass Rate", `${appPassRate}%`],
+        ["Video Pass Rate", `${videoPassRate}%`],
+        ["Zoom → Hire Rate", `${zoomToHire}%`],
+        ["Video Drop-off", `${videoDropoffRate}%`],
+        ["Avg Days to Hire", avgDaysToHire !== null ? `${avgDaysToHire} days` : "—"],
+      ];
+
+      const sourceRows = Object.entries(bySource)
+        .sort((a, b) => b[1] - a[1])
+        .map(([src, count]) => [src, `${count} total (${bySourceWeek[src] || 0} this week)`]);
+
+      const makeTable = (data: string[][]) =>
+        data
+          .map(
+            ([label, val]) =>
+              `<tr><td style="padding:8px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">${label}</td>
+               <td style="padding:8px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600;">${val}</td></tr>`,
+          )
+          .join("");
 
       await sendHiringEmail(
         FOUNDER_EMAILS,
         `[GS Hiring] Weekly Pipeline Digest — ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
         emailWrapper("Hiring Pipeline Digest", "Weekly Summary", `
-          <table style="width:100%;border-collapse:collapse;font-size:14px;">${tableRows}</table>`),
+          <h3 style="margin:0 0 12px;color:#1e293b;font-size:16px;">Pipeline Status</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">${makeTable(rows)}</table>
+          <h3 style="margin:0 0 12px;color:#1e293b;font-size:16px;">Funnel Metrics</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">${makeTable(funnelRows)}</table>
+          <h3 style="margin:0 0 12px;color:#1e293b;font-size:16px;">Source Breakdown</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">${makeTable(sourceRows)}</table>`),
       );
 
       console.log("[Hiring] Weekly digest sent");
     } catch (error) {
       console.error("[Hiring] Weekly digest failed:", error);
+    }
+  },
+);
+
+// ════════════════════════════════════════════════════════════════════
+// SECTION 9: PIPELINE FUNCTION 6 — Video Reminder & Auto-Reject
+// ════════════════════════════════════════════════════════════════════
+
+/**
+ * Runs every 6 hours. Finds candidates who were invited to video screen
+ * but haven't completed it:
+ * - After 48 hours: sends one reminder email
+ * - After 96 hours: auto-rejects with notification to founders
+ */
+export const gsHiringVideoReminder = onSchedule(
+  {
+    schedule: "0 */6 * * *",
+    timeZone: "America/Denver",
+    memory: "256MiB",
+    timeoutSeconds: 60,
+  },
+  async () => {
+    console.log("[Hiring] Running video reminder check");
+
+    try {
+      const snapshot = await db
+        .collection(GS_COLLECTIONS.HIRING_APPLICANTS)
+        .where("status", "==", "video_invited")
+        .get();
+
+      if (snapshot.empty) {
+        console.log("[Hiring] No candidates awaiting video completion");
+        return;
+      }
+
+      const now = Date.now();
+      const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+      const NINETY_SIX_HOURS = 96 * 60 * 60 * 1000;
+
+      for (const doc of snapshot.docs) {
+        const applicant = doc.data() as HiringApplicant;
+        if (!applicant.videoInvitedAt) continue;
+
+        const invitedAtMs = applicant.videoInvitedAt.toMillis();
+        const elapsed = now - invitedAtMs;
+
+        if (elapsed >= NINETY_SIX_HOURS) {
+          // 96+ hours: auto-reject
+          await doc.ref.update({
+            status: "rejected",
+            decision: "reject",
+            decisionAt: FieldValue.serverTimestamp(),
+          });
+
+          await sendHiringEmail(
+            [applicant.email],
+            "Update on Your Garage Scholars Application",
+            rejectionEmail(firstName(applicant.name), "video"),
+          );
+
+          await sendHiringEmail(
+            FOUNDER_EMAILS,
+            `[GS Hiring] ${escapeHtml(applicant.name)} auto-rejected (video timeout 96h)`,
+            emailWrapper("Video Timeout", escapeHtml(applicant.name), `
+              <p style="color:#991b1b;font-size:14px;">Candidate never completed video screen after 96 hours. Auto-rejected.</p>
+              <p style="color:#475569;font-size:13px;">Invited at: ${new Date(invitedAtMs).toLocaleString("en-US", { timeZone: "America/Denver" })}</p>`),
+          );
+
+          console.log(`[Hiring] Auto-rejected ${applicant.name} — video timeout 96h`);
+
+        } else if (elapsed >= FORTY_EIGHT_HOURS && !applicant.videoReminderSent) {
+          // 48-96 hours AND no reminder sent yet
+          const tokenDoc = await db
+            .collection(GS_COLLECTIONS.HIRING_VIDEO_TOKENS)
+            .doc(doc.id)
+            .get();
+
+          const token = tokenDoc.data()?.token;
+          if (!token) {
+            console.warn(`[Hiring] No video token found for ${applicant.name} (${doc.id})`);
+            continue;
+          }
+
+          const videoLink = `${VIDEO_APP_BASE_URL}?id=${doc.id}&token=${token}`;
+
+          await sendHiringEmail(
+            [applicant.email],
+            "Reminder — Complete Your Garage Scholars Video Screen",
+            videoReminderEmail(firstName(applicant.name), videoLink),
+          );
+
+          await doc.ref.update({ videoReminderSent: true });
+          console.log(`[Hiring] Sent video reminder to ${applicant.name}`);
+        }
+      }
+    } catch (error) {
+      console.error("[Hiring] Video reminder check failed:", error);
     }
   },
 );

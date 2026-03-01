@@ -111,6 +111,9 @@ export interface HiringApplicant {
   zoomInvitedAt?: Timestamp;
   zoomScheduledAt?: Timestamp;
   decisionAt?: Timestamp;
+
+  // ── Video Reminder (set by gsHiringVideoReminder) ──
+  videoReminderSent?: boolean;
 }
 
 // ── Event Documents (trigger separate pipeline stages) ──
