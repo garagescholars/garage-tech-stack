@@ -29,9 +29,13 @@ function gaussianRandom(mean, stdDev) {
  * @param {number} maxMs - Maximum delay
  */
 async function humanDelay(minMs, maxMs) {
-    const mean = (minMs + maxMs) / 2;
-    const stdDev = (maxMs - minMs) / 4;
-    const ms = Math.max(minMs, Math.min(maxMs, gaussianRandom(mean, stdDev)));
+    // DEV_SPEED=true cuts all delays to 25% for faster iteration
+    const speedFactor = process.env.DEV_SPEED === 'true' ? 0.25 : 1;
+    const adjMin = Math.round(minMs * speedFactor);
+    const adjMax = Math.round(maxMs * speedFactor);
+    const mean = (adjMin + adjMax) / 2;
+    const stdDev = (adjMax - adjMin) / 4;
+    const ms = Math.max(adjMin, Math.min(adjMax, gaussianRandom(mean, stdDev)));
     return new Promise(resolve => setTimeout(resolve, Math.round(ms)));
 }
 
@@ -65,8 +69,9 @@ async function humanType(page, element, text, { clearFirst = true, typoChance = 
         }
 
         // Type the correct character
-        const delay = gaussianRandom(100, 40); // 60-140ms per char
-        await page.keyboard.type(char, { delay: Math.max(30, delay) });
+        const speedFactor = process.env.DEV_SPEED === 'true' ? 0.25 : 1;
+        const delay = gaussianRandom(100 * speedFactor, 40 * speedFactor);
+        await page.keyboard.type(char, { delay: Math.max(10, delay) });
 
         // Occasional pause (like thinking) every 5-15 chars
         if (Math.random() < 0.05) {

@@ -17,6 +17,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onRequest } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
+import * as crypto from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GS_COLLECTIONS } from "./gs-constants";
@@ -137,7 +138,8 @@ function emailWrapper(title: string, subtitle: string, bodyHtml: string): string
 </body></html>`;
 }
 
-function rejectionEmail(firstName: string, stage: "application" | "video" | "final"): string {
+function rejectionEmail(name: string, stage: "application" | "video" | "final"): string {
+  const safe = escapeHtml(name);
   const stageText = stage === "application"
     ? "After reviewing your application, we've decided to move forward with other candidates."
     : stage === "video"
@@ -145,20 +147,21 @@ function rejectionEmail(firstName: string, stage: "application" | "video" | "fin
     : "Thanks for going through our full process. We've decided to go in a different direction.";
 
   return emailWrapper("Garage Scholars", "", `
-    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${firstName},</p>
+    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${safe},</p>
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">${stageText}</p>
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0;">We appreciate your time.</p>
     <p style="color:#475569;font-size:15px;margin-top:24px;">— The Garage Scholars Team</p>`);
 }
 
-function videoInviteEmail(firstName: string, videoLink: string): string {
+function videoInviteEmail(name: string, videoLink: string): string {
+  const safe = escapeHtml(name);
   return emailWrapper("Garage Scholars", "Next Step: Video Screen", `
-    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${firstName},</p>
+    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${safe},</p>
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
       Nice work on your application. The next step is a quick video screen — just 5 short responses, takes about 5 minutes. No prep needed.
     </p>
     <div style="text-align:center;margin:24px 0;">
-      <a href="${videoLink}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
+      <a href="${escapeHtml(videoLink)}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
         Start Video Screen
       </a>
     </div>
@@ -168,30 +171,47 @@ function videoInviteEmail(firstName: string, videoLink: string): string {
     <p style="color:#475569;font-size:15px;margin-top:24px;">— The Garage Scholars Team</p>`);
 }
 
-function zoomInviteEmail(firstName: string, calLink: string): string {
+function zoomInviteEmail(name: string, calLink: string): string {
+  const safe = escapeHtml(name);
   return emailWrapper("Garage Scholars", "Final Step: Let's Talk", `
-    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${firstName},</p>
+    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${safe},</p>
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
       We liked what we saw. The final step is a quick 15-minute Zoom call. Pick a time that works:
     </p>
     <div style="text-align:center;margin:24px 0;">
-      <a href="${calLink}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
+      <a href="${escapeHtml(calLink)}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
         Schedule Your Interview
       </a>
     </div>
     <p style="color:#475569;font-size:15px;margin-top:24px;">— Zach & Tyler</p>`);
 }
 
-function founderDossierEmail(applicant: HiringApplicant, zoomTime: string): string {
+async function founderDossierEmail(applicant: HiringApplicant, zoomTime: string): Promise<string> {
   const app = applicant.appScores;
   const vid = applicant.videoScores;
-  const videoLinks = (applicant.videoStoragePaths || [])
-    .map((_, i) => `<a href="#" style="color:#2563eb;">Video ${i + 1}</a>`)
-    .join(" | ");
+  const safeName = escapeHtml(applicant.name);
+  const safePhone = escapeHtml(applicant.phone);
+  const safeEmail = escapeHtml(applicant.email);
+  const safeSource = escapeHtml(applicant.source);
+
+  // Generate signed URLs for video playback (valid 7 days)
+  const videoLinkParts: string[] = [];
+  for (let i = 0; i < (applicant.videoStoragePaths || []).length; i++) {
+    try {
+      const [url] = await storage.bucket().file(applicant.videoStoragePaths![i]).getSignedUrl({
+        action: "read",
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      });
+      videoLinkParts.push(`<a href="${escapeHtml(url)}" style="color:#2563eb;">Video ${i + 1}</a>`);
+    } catch {
+      videoLinkParts.push(`Video ${i + 1} (unavailable)`);
+    }
+  }
+  const videoLinks = videoLinkParts.join(" | ");
 
   return emailWrapper(
-    `Interview: ${applicant.name}`,
-    zoomTime,
+    `Interview: ${safeName}`,
+    escapeHtml(zoomTime),
     `
     <div style="display:flex;gap:16px;margin-bottom:20px;">
       <div style="flex:1;padding:16px;background:#f0fdf4;border-radius:8px;text-align:center;">
@@ -206,42 +226,42 @@ function founderDossierEmail(applicant: HiringApplicant, zoomTime: string): stri
 
     <div style="margin-bottom:16px;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
       <p style="margin:0 0 8px;font-weight:600;color:#475569;font-size:13px;">AI App Summary</p>
-      <p style="margin:0;color:#1e293b;font-size:14px;line-height:1.5;">${app?.summary ?? "No summary"}</p>
+      <p style="margin:0;color:#1e293b;font-size:14px;line-height:1.5;">${escapeHtml(app?.summary ?? "No summary")}</p>
     </div>
 
     <div style="margin-bottom:16px;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
       <p style="margin:0 0 8px;font-weight:600;color:#475569;font-size:13px;">AI Video Summary</p>
-      <p style="margin:0;color:#1e293b;font-size:14px;line-height:1.5;">${vid?.summary ?? "No summary"}</p>
+      <p style="margin:0;color:#1e293b;font-size:14px;line-height:1.5;">${escapeHtml(vid?.summary ?? "No summary")}</p>
     </div>
 
     ${vid?.strengths?.length ? `
     <div style="margin-bottom:16px;padding:16px;background:#f0fdf4;border-radius:8px;">
       <p style="margin:0 0 8px;font-weight:600;color:#166534;font-size:13px;">Strengths</p>
-      <p style="margin:0;color:#1e293b;font-size:14px;">${vid.strengths.join(", ")}</p>
+      <p style="margin:0;color:#1e293b;font-size:14px;">${vid.strengths.map(s => escapeHtml(s)).join(", ")}</p>
     </div>` : ""}
 
     ${vid?.concerns?.length ? `
     <div style="margin-bottom:16px;padding:16px;background:#fef2f2;border-radius:8px;">
       <p style="margin:0 0 8px;font-weight:600;color:#991b1b;font-size:13px;">Concerns</p>
-      <p style="margin:0;color:#1e293b;font-size:14px;">${vid.concerns.join(", ")}</p>
+      <p style="margin:0;color:#1e293b;font-size:14px;">${vid.concerns.map(c => escapeHtml(c)).join(", ")}</p>
     </div>` : ""}
 
     <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
       <tr>
         <td style="padding:8px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Name</td>
-        <td style="padding:8px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${applicant.name}</td>
+        <td style="padding:8px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${safeName}</td>
       </tr>
       <tr>
         <td style="padding:8px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Phone</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;"><a href="tel:${applicant.phone}" style="color:#2563eb;">${applicant.phone}</a></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;"><a href="tel:${safePhone}" style="color:#2563eb;">${safePhone}</a></td>
       </tr>
       <tr>
         <td style="padding:8px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Email</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;"><a href="mailto:${applicant.email}" style="color:#2563eb;">${applicant.email}</a></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;"><a href="mailto:${safeEmail}" style="color:#2563eb;">${safeEmail}</a></td>
       </tr>
       <tr>
         <td style="padding:8px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Source</td>
-        <td style="padding:8px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${applicant.source}</td>
+        <td style="padding:8px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${safeSource}</td>
       </tr>
       <tr>
         <td style="padding:8px 12px;font-weight:600;color:#475569;">Videos</td>
@@ -251,9 +271,10 @@ function founderDossierEmail(applicant: HiringApplicant, zoomTime: string): stri
   );
 }
 
-function offerEmail(firstName: string): string {
+function offerEmail(name: string): string {
+  const safe = escapeHtml(name);
   return emailWrapper("Welcome to Garage Scholars", "", `
-    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${firstName},</p>
+    <p style="color:#1e293b;font-size:16px;line-height:1.6;margin:0 0 16px;">Hi ${safe},</p>
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
       We'd like to bring you on board.
     </p>
@@ -308,7 +329,7 @@ function decisionSummaryEmail(
   const decisionBg =
     decision === "HIRE" ? "#f0fdf4" : decision === "REJECT" ? "#fef2f2" : "#fffbeb";
 
-  return emailWrapper(`Decision: ${applicant.name}`, decision, `
+  return emailWrapper(`Decision: ${escapeHtml(applicant.name)}`, decision, `
     <div style="padding:16px;background:${decisionBg};border-radius:8px;text-align:center;margin-bottom:20px;">
       <p style="margin:0;color:${decisionColor};font-size:28px;font-weight:700;">${finalScore}/100</p>
       <p style="margin:4px 0 0;color:${decisionColor};font-size:14px;font-weight:600;">${decision}</p>
@@ -333,26 +354,65 @@ function decisionSummaryEmail(
       </tr>
       ${interview?.notes ? `<tr>
         <td style="padding:8px 12px;font-weight:600;color:#475569;">Notes</td>
-        <td style="padding:8px 12px;color:#1e293b;">${interview.notes}</td>
+        <td style="padding:8px 12px;color:#1e293b;">${escapeHtml(interview.notes)}</td>
       </tr>` : ""}
     </table>`);
 }
 
-function founderReviewEmail(applicant: HiringApplicant, finalScore: number): string {
+async function founderReviewEmail(applicant: HiringApplicant, finalScore: number): Promise<string> {
+  const dossierHtml = await founderDossierEmail(applicant, "Review — no Zoom scheduled");
+  const innerHtml = dossierHtml.replace(/<!DOCTYPE[\s\S]*?<body[^>]*>/, "").replace(/<\/body>[\s\S]*$/, "");
   return emailWrapper(
-    `Review Needed: ${applicant.name}`,
+    `Review Needed: ${escapeHtml(applicant.name)}`,
     `Score: ${finalScore}/100 — needs your call`,
     `
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
       This candidate scored in the review zone (60-74) or had a "maybe"/"no" gut check. Review their dossier and reply with <strong>HIRE</strong> or <strong>REJECT</strong>.
     </p>
-    ${founderDossierEmail(applicant, "Review — no Zoom scheduled").replace(/<!DOCTYPE[\s\S]*?<body[^>]*>/, "").replace(/<\/body>[\s\S]*$/, "")}`
+    ${innerHtml}`
   );
 }
 
 // ════════════════════════════════════════════════════════════════════
 // SECTION 3: HELPER FUNCTIONS
 // ════════════════════════════════════════════════════════════════════
+
+/** Escape HTML entities to prevent XSS in email templates */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Validate and sanitize applicant data. Throws on invalid input. */
+function validateApplicantData(data: HiringApplicant): void {
+  // Field length limits
+  const textFields = [
+    data.q1_transport, data.q2_tools, data.q3_project,
+    data.q4_problem, data.q5_availability, data.q6_interest,
+  ];
+  for (const field of textFields) {
+    if (typeof field !== "string" || field.length > 3000) {
+      throw new Error("Invalid or oversized answer field");
+    }
+  }
+  if (typeof data.name !== "string" || data.name.length > 200) {
+    throw new Error("Invalid name");
+  }
+  if (typeof data.email !== "string" || !data.email.includes("@") || data.email.length > 320) {
+    throw new Error("Invalid email");
+  }
+  if (typeof data.phone !== "string" || data.phone.length > 30) {
+    throw new Error("Invalid phone");
+  }
+  const validSources = ["indeed", "handshake", "direct", "referral"];
+  if (!validSources.includes(data.source)) {
+    throw new Error("Invalid source");
+  }
+}
 
 /** Send email via Firestore mail collection (uses existing Firebase extension) */
 async function sendHiringEmail(to: string[], subject: string, html: string): Promise<void> {
@@ -443,6 +503,7 @@ export const gsScoreHiringApplication = onDocumentCreated(
     document: `${GS_COLLECTIONS.HIRING_APPLICANTS}/{appId}`,
     memory: "512MiB",
     timeoutSeconds: 120,
+    secrets: ["ANTHROPIC_API_KEY"],
   },
   async (event) => {
     const appData = event.data?.data() as HiringApplicant | undefined;
@@ -450,21 +511,38 @@ export const gsScoreHiringApplication = onDocumentCreated(
 
     const appId = event.params.appId;
     const docRef = db.collection(GS_COLLECTIONS.HIRING_APPLICANTS).doc(appId);
+    const safeName = escapeHtml(appData.name || "Unknown");
     console.log(`[Hiring] Scoring application: ${appId} (${appData.name})`);
 
     try {
+      // Validate input data
+      validateApplicantData(appData);
+
+      // Deduplicate: skip if another application with same email already exists and was scored
+      const dupeCheck = await db
+        .collection(GS_COLLECTIONS.HIRING_APPLICANTS)
+        .where("email", "==", appData.email)
+        .where("status", "!=", "pending_ai")
+        .limit(1)
+        .get();
+      if (!dupeCheck.empty) {
+        console.log(`[Hiring] Duplicate email ${appData.email} — skipping scoring for ${appId}`);
+        await docRef.update({ status: "rejected", decision: "reject", decisionAt: FieldValue.serverTimestamp() });
+        return;
+      }
+
       // Build the scoring prompt with few-shot examples
       const userMessage = `${APP_SCORING_FEW_SHOT_STRONG}
 
 ${APP_SCORING_FEW_SHOT_WEAK}
 
 Now score this applicant:
-Q1 (Transportation): ${appData.q1_transport}
-Q2 (Tools): ${appData.q2_tools}
-Q3 (Physical project): ${appData.q3_project}
-Q4 (Unexpected situation): ${appData.q4_problem}
-Q5 (Availability): ${appData.q5_availability}
-Q6 (Why this job): ${appData.q6_interest}`;
+<applicant_answer question="1_transport">${appData.q1_transport}</applicant_answer>
+<applicant_answer question="2_tools">${appData.q2_tools}</applicant_answer>
+<applicant_answer question="3_project">${appData.q3_project}</applicant_answer>
+<applicant_answer question="4_problem">${appData.q4_problem}</applicant_answer>
+<applicant_answer question="5_availability">${appData.q5_availability}</applicant_answer>
+<applicant_answer question="6_interest">${appData.q6_interest}</applicant_answer>`;
 
       const rawResponse = await callClaudeForScoring(APP_SCORING_SYSTEM_PROMPT, userMessage);
       const scores = parseClaudeJson<AppScoringResult>(rawResponse);
@@ -488,10 +566,10 @@ Q6 (Why this job): ${appData.q6_interest}`;
         // Notify founders
         await sendHiringEmail(
           FOUNDER_EMAILS,
-          `[GS Hiring] ${appData.name} PASSED app screen (${scores.composite_score}/100)`,
-          emailWrapper("Applicant Passed", `${appData.name} — Score: ${scores.composite_score}/100`, `
-            <p style="color:#475569;font-size:14px;line-height:1.6;">${scores.summary}</p>
-            <p style="color:#475569;font-size:13px;">Video invite sent. Source: ${appData.source}</p>`),
+          `[GS Hiring] ${safeName} PASSED app screen (${scores.composite_score}/100)`,
+          emailWrapper("Applicant Passed", `${safeName} — Score: ${scores.composite_score}/100`, `
+            <p style="color:#475569;font-size:14px;line-height:1.6;">${escapeHtml(scores.summary)}</p>
+            <p style="color:#475569;font-size:13px;">Video invite sent. Source: ${escapeHtml(appData.source)}</p>`),
         );
       } else {
         // FAIL → send rejection
@@ -511,11 +589,11 @@ Q6 (Why this job): ${appData.q6_interest}`;
         // Notify founders
         await sendHiringEmail(
           FOUNDER_EMAILS,
-          `[GS Hiring] ${appData.name} REJECTED at app screen (${scores.composite_score}/100)`,
-          emailWrapper("Applicant Rejected", `${appData.name} — Score: ${scores.composite_score}/100`, `
-            <p style="color:#475569;font-size:14px;line-height:1.6;">${scores.summary}</p>
-            ${scores.red_flags.length ? `<p style="color:#991b1b;font-size:13px;">Red flags: ${scores.red_flags.join(", ")}</p>` : ""}
-            <p style="color:#475569;font-size:13px;">Rejection email sent. Source: ${appData.source}</p>`),
+          `[GS Hiring] ${safeName} REJECTED at app screen (${scores.composite_score}/100)`,
+          emailWrapper("Applicant Rejected", `${safeName} — Score: ${scores.composite_score}/100`, `
+            <p style="color:#475569;font-size:14px;line-height:1.6;">${escapeHtml(scores.summary)}</p>
+            ${scores.red_flags.length ? `<p style="color:#991b1b;font-size:13px;">Red flags: ${scores.red_flags.map(f => escapeHtml(f)).join(", ")}</p>` : ""}
+            <p style="color:#475569;font-size:13px;">Rejection email sent. Source: ${escapeHtml(appData.source)}</p>`),
         );
       }
     } catch (error) {
@@ -523,11 +601,11 @@ Q6 (Why this job): ${appData.q6_interest}`;
       // Alert founders on failure
       await sendHiringEmail(
         FOUNDER_EMAILS,
-        `[GS Hiring ERROR] Failed to score: ${appData.name}`,
+        `[GS Hiring ERROR] Failed to score: ${safeName}`,
         emailWrapper("Scoring Error", appId, `
           <p style="color:#991b1b;font-size:14px;">Application scoring failed. Manual review needed.</p>
-          <p style="color:#475569;font-size:13px;">Applicant: ${appData.name} (${appData.email})</p>
-          <p style="color:#475569;font-size:13px;">Error: ${error instanceof Error ? error.message : "Unknown"}</p>`),
+          <p style="color:#475569;font-size:13px;">Applicant: ${safeName} (${escapeHtml(appData.email || "")})</p>
+          <p style="color:#475569;font-size:13px;">Error: ${escapeHtml(error instanceof Error ? error.message : "Unknown")}</p>`),
       );
     }
   },
@@ -547,6 +625,7 @@ export const gsProcessVideoCompletion = onDocumentCreated(
     document: `${GS_COLLECTIONS.HIRING_VIDEO_COMPLETIONS}/{completionId}`,
     memory: "1GiB",
     timeoutSeconds: 300,
+    secrets: ["GEMINI_API_KEY"],
   },
   async (event) => {
     const completion = event.data?.data() as VideoCompletionEvent | undefined;
@@ -594,11 +673,11 @@ export const gsProcessVideoCompletion = onDocumentCreated(
         // Notify founders
         await sendHiringEmail(
           FOUNDER_EMAILS,
-          `[GS Hiring] ${applicant.name} PASSED video screen (${scores.composite_score}/100)`,
-          emailWrapper("Video Screen Passed", `${applicant.name} — Video: ${scores.composite_score}/100`, `
-            <p style="color:#475569;font-size:14px;line-height:1.6;">${scores.summary}</p>
-            ${scores.strengths.length ? `<p style="color:#166534;font-size:13px;">Strengths: ${scores.strengths.join(", ")}</p>` : ""}
-            ${scores.concerns.length ? `<p style="color:#92400e;font-size:13px;">Concerns: ${scores.concerns.join(", ")}</p>` : ""}
+          `[GS Hiring] ${escapeHtml(applicant.name)} PASSED video screen (${scores.composite_score}/100)`,
+          emailWrapper("Video Screen Passed", `${escapeHtml(applicant.name)} — Video: ${scores.composite_score}/100`, `
+            <p style="color:#475569;font-size:14px;line-height:1.6;">${escapeHtml(scores.summary)}</p>
+            ${scores.strengths.length ? `<p style="color:#166534;font-size:13px;">Strengths: ${scores.strengths.map(s => escapeHtml(s)).join(", ")}</p>` : ""}
+            ${scores.concerns.length ? `<p style="color:#92400e;font-size:13px;">Concerns: ${scores.concerns.map(c => escapeHtml(c)).join(", ")}</p>` : ""}
             <p style="color:#475569;font-size:13px;">Zoom invite sent.</p>`),
         );
       } else {
@@ -618,10 +697,10 @@ export const gsProcessVideoCompletion = onDocumentCreated(
 
         await sendHiringEmail(
           FOUNDER_EMAILS,
-          `[GS Hiring] ${applicant.name} REJECTED at video screen (${scores.composite_score}/100)`,
-          emailWrapper("Video Screen Failed", `${applicant.name} — Video: ${scores.composite_score}/100`, `
-            <p style="color:#475569;font-size:14px;line-height:1.6;">${scores.summary}</p>
-            ${scores.red_flags.length ? `<p style="color:#991b1b;font-size:13px;">Red flags: ${scores.red_flags.join(", ")}</p>` : ""}
+          `[GS Hiring] ${escapeHtml(applicant.name)} REJECTED at video screen (${scores.composite_score}/100)`,
+          emailWrapper("Video Screen Failed", `${escapeHtml(applicant.name)} — Video: ${scores.composite_score}/100`, `
+            <p style="color:#475569;font-size:14px;line-height:1.6;">${escapeHtml(scores.summary)}</p>
+            ${scores.red_flags.length ? `<p style="color:#991b1b;font-size:13px;">Red flags: ${scores.red_flags.map(f => escapeHtml(f)).join(", ")}</p>` : ""}
             <p style="color:#475569;font-size:13px;">Rejection email sent.</p>`),
         );
       }
@@ -629,11 +708,11 @@ export const gsProcessVideoCompletion = onDocumentCreated(
       console.error(`[Hiring] Failed to process videos for ${applicantId}:`, error);
       await sendHiringEmail(
         FOUNDER_EMAILS,
-        `[GS Hiring ERROR] Video processing failed: ${applicant.name}`,
+        `[GS Hiring ERROR] Video processing failed: ${escapeHtml(applicant.name)}`,
         emailWrapper("Video Processing Error", applicantId, `
-          <p style="color:#991b1b;font-size:14px;">Video transcription/scoring failed. Manual review needed.</p>
-          <p style="color:#475569;font-size:13px;">Applicant: ${applicant.name} (${applicant.email})</p>
-          <p style="color:#475569;font-size:13px;">Error: ${error instanceof Error ? error.message : "Unknown"}</p>`),
+          <p style="color:#991b1b;font-size:14px;">Video scoring failed. Manual review needed.</p>
+          <p style="color:#475569;font-size:13px;">Applicant: ${escapeHtml(applicant.name)} (${escapeHtml(applicant.email)})</p>
+          <p style="color:#475569;font-size:13px;">Error: ${escapeHtml(error instanceof Error ? error.message : "Unknown")}</p>`),
       );
     }
   },
@@ -648,11 +727,26 @@ export const gsProcessVideoCompletion = onDocumentCreated(
  * Sends a founder dossier email with all scores + video links.
  */
 export const gsCalBookingWebhook = onRequest(
-  { memory: "256MiB", timeoutSeconds: 30 },
+  { memory: "256MiB", timeoutSeconds: 30, secrets: ["CAL_WEBHOOK_SECRET"] },
   async (req, res) => {
     if (req.method !== "POST") {
       res.status(405).send("Method not allowed");
       return;
+    }
+
+    // Verify Cal.com webhook signature
+    const calSecret = process.env.CAL_WEBHOOK_SECRET;
+    if (calSecret) {
+      const signature = req.headers["x-cal-signature-256"] as string | undefined;
+      const expectedSig = crypto
+        .createHmac("sha256", calSecret)
+        .update(JSON.stringify(req.body))
+        .digest("hex");
+      if (!signature || signature !== expectedSig) {
+        console.error("[Hiring] Cal.com webhook signature mismatch");
+        res.status(401).send("Invalid signature");
+        return;
+      }
     }
 
     try {
@@ -705,8 +799,8 @@ export const gsCalBookingWebhook = onRequest(
       // Send dossier to founders
       await sendHiringEmail(
         FOUNDER_EMAILS,
-        `[GS INTERVIEW] ${applicant.name} — ${zoomTime}`,
-        founderDossierEmail(applicant, zoomTime),
+        `[GS INTERVIEW] ${escapeHtml(applicant.name)} — ${escapeHtml(zoomTime)}`,
+        await founderDossierEmail(applicant, zoomTime),
       );
 
       console.log(`[Hiring] Dossier sent for ${applicant.name}, Zoom at ${zoomTime}`);
@@ -783,14 +877,9 @@ export const gsProcessInterviewScore = onDocumentCreated(
         decision = "hire";
         decisionLabel = "HIRE";
       } else if (finalComposite >= DECISION_THRESHOLDS.REVIEW_MIN) {
-        // 60-74 range
-        if (scores.gut_check === "maybe") {
-          decision = "review";
-          decisionLabel = "REVIEW";
-        } else {
-          decision = "review";
-          decisionLabel = "REVIEW";
-        }
+        // 60-74 range → always route to founder review
+        decision = "review";
+        decisionLabel = "REVIEW";
       } else {
         decision = "reject";
         decisionLabel = "REJECT";
@@ -824,12 +913,13 @@ export const gsProcessInterviewScore = onDocumentCreated(
       // For "review" — no email to candidate until founder decides
 
       // Always send decision summary to founders
+      const founderEmailHtml = decision === "review"
+        ? await founderReviewEmail({ ...applicant, interviewScores: scores }, finalComposite)
+        : decisionSummaryEmail({ ...applicant, interviewScores: scores }, decisionLabel, finalComposite);
       await sendHiringEmail(
         FOUNDER_EMAILS,
-        `[GS DECISION] ${applicant.name} — ${decisionLabel} (${finalComposite}/100)`,
-        decision === "review"
-          ? founderReviewEmail({ ...applicant, interviewScores: scores }, finalComposite)
-          : decisionSummaryEmail({ ...applicant, interviewScores: scores }, decisionLabel, finalComposite),
+        `[GS DECISION] ${escapeHtml(applicant.name)} — ${decisionLabel} (${finalComposite}/100)`,
+        founderEmailHtml,
       );
 
       console.log(`[Hiring] Decision for ${applicant.name}: ${decisionLabel} (${finalComposite}/100)`);
@@ -837,10 +927,10 @@ export const gsProcessInterviewScore = onDocumentCreated(
       console.error(`[Hiring] Decision engine failed for ${applicantId}:`, error);
       await sendHiringEmail(
         FOUNDER_EMAILS,
-        `[GS Hiring ERROR] Decision engine failed: ${applicant.name}`,
+        `[GS Hiring ERROR] Decision engine failed: ${escapeHtml(applicant.name)}`,
         emailWrapper("Decision Error", applicantId, `
           <p style="color:#991b1b;font-size:14px;">Decision calculation failed. Manual review needed.</p>
-          <p style="color:#475569;font-size:13px;">Error: ${error instanceof Error ? error.message : "Unknown"}</p>`),
+          <p style="color:#475569;font-size:13px;">Error: ${escapeHtml(error instanceof Error ? error.message : "Unknown")}</p>`),
       );
     }
   },

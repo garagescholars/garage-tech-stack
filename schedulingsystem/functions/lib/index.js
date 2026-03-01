@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.createAccount = exports.approveSignup = exports.generateSopForJob = exports.gsExportPaymentData = exports.gsGeneratePaymentReport = exports.gsMarkPayoutPaid = exports.gsResalePayout = exports.gsCreateRetentionSubscription = exports.gsCreateCustomerPayment = exports.gsStripeWebhook = exports.gsCreateStripeAccount = exports.gsReleaseCompletionPayouts = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
+exports.onScholarApplicationCreated = exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.createAccount = exports.approveSignup = exports.generateSopForJob = exports.gsExportPaymentData = exports.gsGeneratePaymentReport = exports.gsMarkPayoutPaid = exports.gsResalePayout = exports.gsCreateRetentionSubscription = exports.gsCreateCustomerPayment = exports.gsStripeWebhook = exports.gsCreateStripeAccount = exports.gsReleaseCompletionPayouts = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const app_1 = require("firebase-admin/app");
@@ -965,5 +965,155 @@ exports.submitQuoteRequest = (0, https_1.onCall)({ cors: true, timeoutSeconds: 1
     catch (error) {
         console.error('Error submitting quote request:', error.message, error.stack);
         throw new https_1.HttpsError("internal", `Failed to submit quote request: ${error.message}`);
+    }
+});
+// ── Scholar Application: email notifications on new submission ──
+exports.onScholarApplicationCreated = (0, firestore_1.onDocumentCreated)("scholarApplications/{appId}", async (event) => {
+    const appData = event.data?.data();
+    if (!appData)
+        return;
+    const appId = event.params.appId;
+    console.log(`New scholar application received: ${appId} from ${appData.name}`);
+    const appliedDate = appData.appliedAt?.toDate
+        ? appData.appliedAt.toDate().toLocaleString("en-US", { timeZone: "America/Denver" })
+        : new Date().toLocaleString("en-US", { timeZone: "America/Denver" });
+    const resumeLink = appData.resumeURL
+        ? `<a href="${appData.resumeURL}" style="color:#2563eb;text-decoration:underline;">Download Resume</a>`
+        : '<span style="color:#9ca3af;">No resume uploaded</span>';
+    // ── Admin notification email ──
+    const adminEmailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;background:#f8fafc;">
+  <div style="max-width:600px;margin:0 auto;padding:24px;">
+    <div style="background:#1e293b;border-radius:12px 12px 0 0;padding:24px 32px;">
+      <h1 style="margin:0;color:#ffffff;font-size:22px;">New Scholar Application</h1>
+      <p style="margin:6px 0 0;color:#94a3b8;font-size:14px;">Submitted ${appliedDate} MST</p>
+    </div>
+    <div style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:32px;">
+
+      <table style="width:100%;border-collapse:collapse;font-size:15px;">
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;width:40%;border-bottom:1px solid #f1f5f9;">Name</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${appData.name}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Phone</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;">
+            <a href="tel:${appData.phone}" style="color:#2563eb;text-decoration:none;">${appData.phone}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Email</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;">
+            <a href="mailto:${appData.email}" style="color:#2563eb;text-decoration:none;">${appData.email}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Student</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${appData.isStudent}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">School</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${appData.school || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Year</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${appData.year || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Availability</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${appData.availability} hrs/week</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Has Car</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${appData.hasCar}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Referral</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${appData.referralSource || 'Not specified'}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;">Resume</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;">${resumeLink}</td>
+        </tr>
+      </table>
+
+      ${appData.whyJoin ? `
+      <div style="margin-top:20px;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+        <p style="margin:0 0 8px;font-weight:600;color:#475569;font-size:14px;">Why They Want to Join:</p>
+        <p style="margin:0;color:#1e293b;font-size:14px;line-height:1.5;">${appData.whyJoin}</p>
+      </div>` : ''}
+
+      <div style="margin-top:24px;text-align:center;">
+        <a href="tel:${appData.phone}" style="display:inline-block;padding:12px 28px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;margin-right:8px;">Call ${appData.name.split(' ')[0]}</a>
+        <a href="mailto:${appData.email}" style="display:inline-block;padding:12px 28px;background:#1e293b;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;">Email ${appData.name.split(' ')[0]}</a>
+      </div>
+    </div>
+
+    <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:16px;">
+      Garage Scholars — Scholar Application Pipeline
+    </p>
+  </div>
+</body>
+</html>`;
+    // ── Auto-response email to applicant ──
+    const applicantEmailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;background:#f8fafc;">
+  <div style="max-width:600px;margin:0 auto;padding:24px;">
+    <div style="background:#1e293b;border-radius:12px 12px 0 0;padding:24px 32px;">
+      <h1 style="margin:0;color:#ffffff;font-size:22px;">Garage Scholars</h1>
+    </div>
+    <div style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:32px;">
+      <h2 style="margin:0 0 16px;color:#1e293b;font-size:20px;">Thanks for applying, ${appData.name.split(' ')[0]}!</h2>
+      <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
+        We've received your application and we're excited to learn more about you. Our team reviews every application personally.
+      </p>
+      <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
+        <strong>What happens next:</strong> You'll hear from us within 24 hours for a quick phone interview. Keep an eye on your phone — we'll reach out via call or text.
+      </p>
+      <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 8px;">
+        Questions in the meantime? Text us directly:
+      </p>
+      <p style="margin:0 0 24px;">
+        <a href="tel:7205073969" style="color:#2563eb;font-size:16px;font-weight:600;text-decoration:none;">(720) 507-3969</a>
+      </p>
+      <p style="color:#475569;font-size:15px;line-height:1.6;margin:0;">
+        — The Garage Scholars Team
+      </p>
+    </div>
+    <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:16px;">
+      Garage Scholars | Denver, CO | garagescholars.com
+    </p>
+  </div>
+</body>
+</html>`;
+    try {
+        // Send admin notification to both inboxes
+        await db.collection('mail').add({
+            to: ['garagescholars@gmail.com', 'admin@garagescholars.com'],
+            message: {
+                subject: `New Scholar Application: ${appData.name} — ${appData.school || 'N/A'} (${appData.availability} hrs/wk)`,
+                html: adminEmailHtml,
+            },
+            createdAt: firestore_2.FieldValue.serverTimestamp()
+        });
+        // Send auto-confirmation to applicant
+        await db.collection('mail').add({
+            to: [appData.email],
+            message: {
+                subject: 'Application Received — Garage Scholars',
+                html: applicantEmailHtml,
+            },
+            createdAt: firestore_2.FieldValue.serverTimestamp()
+        });
+        console.log(`Scholar application emails sent for ${appId}: admin + applicant (${appData.email})`);
+    }
+    catch (error) {
+        console.error(`Failed to send scholar application emails for ${appId}:`, error);
     }
 });

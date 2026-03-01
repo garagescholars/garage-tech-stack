@@ -241,17 +241,24 @@ service cloud.firestore {
     // Hiring Pipeline Collections
     // ═══════════════════════════════════════════════════════════
 
-    // gs_hiringApplicants — public create (candidates submit), public read (video app verifies status)
+    // gs_hiringApplicants — public create (candidates submit), limited read/update for video app
     match /gs_hiringApplicants/{applicantId} {
       allow create: if true;
-      allow read: if true;
-      allow update, delete: if isAdminByEmail();
+      // Only allow reading a specific doc by ID (video app needs status check)
+      // Collection-level queries are blocked — get() by doc ID only
+      allow get: if true;
+      allow list: if isAdminByEmail();
+      // Allow video app to set status to pending_video (unauthenticated)
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+                       && request.resource.data.status == 'pending_video')
+                    || isAdminByEmail();
+      allow delete: if isAdminByEmail();
     }
 
     // gs_hiringVideoCompletions — public create (video app signals upload done)
     match /gs_hiringVideoCompletions/{completionId} {
       allow create: if true;
-      allow read: if true;
+      allow read: if isAdminByEmail();
       allow update, delete: if isAdminByEmail();
     }
 

@@ -40,8 +40,11 @@ service firebase.storage {
 
     // ── Hiring pipeline: candidate video uploads (public — no auth) ──
     match /hiring-videos/{applicantId}/{videoFile} {
-      allow read: if true;
-      allow write: if true;
+      // Cloud Functions read videos for AI scoring (admin SDK bypasses rules)
+      allow read: if request.auth != null;
+      // Public write with constraints: max 100MB, video content types only
+      allow write: if request.resource.size < 100 * 1024 * 1024
+                   && request.resource.contentType.matches('video/.*');
     }
 
     // Catch-all: read-only (covers old root-level resale images)

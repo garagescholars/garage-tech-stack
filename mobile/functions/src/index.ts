@@ -55,6 +55,14 @@ export {
   gsReviewCampaign,
 } from "./gs-review-campaign";
 
+// ── Garage Scholars Inventory functions ──
+export {
+  gsAnalyzeItem,
+  gsOnItemConfirmed,
+  gsOnGymPhotosUploaded,
+  gsOnDonationReceiptUploaded,
+} from "./gs-inventory";
+
 // ── Garage Scholars Hiring Pipeline functions ──
 export {
   gsScoreHiringApplication,

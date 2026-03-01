@@ -23,6 +23,14 @@ exports.GS_COLLECTIONS = {
     PAYMENT_PERIODS: "gs_paymentPeriods",
     STRIPE_ACCOUNTS: "gs_stripeAccounts",
     PLATFORM_CONFIG: "gs_platformConfig",
+    // Escalation & prep collections
+    ESCALATIONS: "gs_escalations",
+    JOB_PREP: "gs_jobPrep",
+    // Activity feed
+    ACTIVITY_FEED: "gs_activityFeed",
+    // Social media & review campaigns
+    SOCIAL_CONTENT_QUEUE: "gs_socialContentQueue",
+    REVIEW_CAMPAIGNS: "gs_reviewCampaigns",
 };
 /** Quality score weights — must total 1.0 */
 exports.SCORING_WEIGHTS = {

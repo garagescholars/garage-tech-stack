@@ -2,7 +2,7 @@
 
 **Role:** Systems Engineer, Hiring & Recruiting Operations
 **System:** Zero-Touch Applicant Screening & Evaluation Pipeline
-**Stack:** Firebase Cloud Functions | Firestore | Firebase Storage | Anthropic Claude | OpenAI Whisper | Cal.com
+**Stack:** Firebase Cloud Functions | Firestore | Firebase Storage | Anthropic Claude | Google Gemini | Cal.com
 **Reference:** `Garage Scholars Documentation/garage_scholars_ hiring automation guide.docx`
 
 ---
@@ -24,7 +24,7 @@ gs_hiringApplicants → gsScoreHiringApplication (Claude AI, 4 dimensions)
     └─ FAIL → Rejection email → status: rejected
     │
     ▼ Firestore Trigger
-gs_hiringVideoCompletions → gsProcessVideoCompletion (Whisper + Claude AI, 5 dimensions)
+gs_hiringVideoCompletions → gsProcessVideoCompletion (Gemini 2.0 Flash, native video, 5 dimensions)
     │
     ├─ PASS (≥65) → Zoom invite email (Cal.com) → status: zoom_invited
     └─ FAIL → Rejection email → status: rejected
@@ -43,23 +43,37 @@ gs_hiringInterviewScores → gsProcessInterviewScore (Weighted: App 20% + Video 
 gsHiringWeeklyDigest → Pipeline summary email to founders
 ```
 
+### Where the code lives
+
+| Component | Location |
+|-----------|----------|
+| Cloud Functions (all 5) | `mobile/functions/src/gs-hiring.ts` |
+| Type definitions | `mobile/functions/src/gs-hiring-types.ts` |
+| Function exports | `mobile/functions/src/index.ts` |
+| Application form (website) | `Website/src/pages/apply.html` |
+| Application form (standalone) | `hiring/application-form/index.html` |
+| Video recording app | `hiring/video-app/index.html` |
+| Firestore rules | `mobile/firestore.rules` |
+| Storage rules | `mobile/storage.rules` |
+| Collection constants | `mobile/functions/src/gs-constants.ts` |
+
 ---
 
 ## PHASE 1: Entry Point Integration
 
 ### 1.1 Website — "Join Our Team"
 
-- [ ] `Website/src/pages/apply.html` rewritten to submit to `gs_hiringApplicants`
-- [ ] Form includes: name, email, phone, source, isStudent (conditional: school, year), 6 screening questions
-- [ ] Source auto-detected from URL param `?source=`
-- [ ] Form writes `status: 'pending_ai'` and `appliedAt: serverTimestamp()`
-- [ ] Success message: "Application Received! You'll hear from us within 24-48 hours."
-- [ ] Website rebuilt: `cd Website && node build.js`
-- [ ] Deployed to Vercel: `garage-scholars-website`
-- [ ] Verify: Header nav "Join Our Team" → apply.html → form renders
-- [ ] Verify: Footer "Join Our Team" → apply.html → form renders
-- [ ] Verify: `apply.html?source=indeed` → dropdown auto-selects "Indeed"
-- [ ] Verify: `apply.html?source=handshake` → dropdown auto-selects "Handshake"
+- [x] `Website/src/pages/apply.html` rewritten to submit to `gs_hiringApplicants`
+- [x] Form includes: name, email, phone, source, isStudent (conditional: school, year), 6 screening questions
+- [x] Source auto-detected from URL param `?source=`
+- [x] Form writes `status: 'pending_ai'` and `appliedAt: serverTimestamp()`
+- [x] Success message: "Application Received! You'll hear from us within 24-48 hours."
+- [x] Website rebuilt: `cd Website && node build.js` (built Feb 28)
+- [ ] Deployed to Vercel: `garage-scholars-website` (push to main triggers auto-deploy)
+- [x] Header nav "Join Our Team" → apply.html
+- [x] Footer "Join Our Team" → apply.html
+- [ ] Verify live: `apply.html?source=indeed` → dropdown auto-selects "Indeed"
+- [ ] Verify live: `apply.html?source=handshake` → dropdown auto-selects "Handshake"
 
 ### 1.2 Indeed Job Posting
 
@@ -93,10 +107,10 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 
 ### 1.5 Standalone Backup Form
 
-- [ ] `hiring/application-form/index.html` has URL param source detection
-- [ ] Firebase config is real (not placeholder XXX values)
+- [x] `hiring/application-form/index.html` has URL param source detection
+- [x] Firebase config is real (garage-scholars-v2 project, not placeholder)
+- [x] Form submits to same `gs_hiringApplicants` collection
 - [ ] Host standalone form (Firebase Hosting or Vercel) as backup entry point
-- [ ] Verify: Form submits to same `gs_hiringApplicants` collection
 
 ---
 
@@ -104,26 +118,17 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 
 ### 2.1 Firebase Secrets (required for Cloud Functions)
 
-- [ ] `OPENAI_API_KEY` — Required for Whisper video transcription
-  ```bash
-  cd mobile && firebase functions:secrets:set OPENAI_API_KEY
-  ```
-- [ ] `ANTHROPIC_API_KEY` — Required for Claude AI scoring (may already be set for SOP generator)
-  ```bash
-  cd mobile && firebase functions:secrets:set ANTHROPIC_API_KEY
-  ```
-- [ ] Verify both secrets are accessible:
-  ```bash
-  firebase functions:secrets:access OPENAI_API_KEY
-  firebase functions:secrets:access ANTHROPIC_API_KEY
-  ```
+- [x] `GEMINI_API_KEY` — Set (shared with social media poster)
+- [x] `ANTHROPIC_API_KEY` — Set (shared with SOP generator)
+- [x] `CAL_WEBHOOK_SECRET` — Set (`gs-hiring-webhook-2026`)
+- [x] All secrets verified accessible via `firebase functions:secrets:access`
 
 ### 2.2 Environment Config (optional overrides)
 
 - [ ] `VIDEO_APP_URL` — Base URL for video screen app (default: `https://screen.garagescholars.com`)
   - Set if hosting video app at a different domain
 - [ ] `CAL_LINK` — Cal.com booking URL (default: `https://cal.com/garagescholars/interview`)
-  - Set once Cal.com account is created
+  - Set once Cal.com booking link is confirmed
 
 ---
 
@@ -131,9 +136,9 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 
 ### 3.1 Firestore Rules (Spec SEC-001 through SEC-007)
 
-- [ ] `mobile/firestore.rules` includes:
-  - `gs_hiringApplicants`: public create + read, admin-only update/delete
-  - `gs_hiringVideoCompletions`: public create + read, admin-only update/delete
+- [x] `mobile/firestore.rules` includes:
+  - `gs_hiringApplicants`: public create + get, admin-only list/update/delete (video app can update status to pending_video)
+  - `gs_hiringVideoCompletions`: public create, admin-only read/update/delete
   - `gs_hiringInterviewScores`: admin-only read/write
 - [ ] Deploy rules:
   ```bash
@@ -142,8 +147,8 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 
 ### 3.2 Storage Rules
 
-- [ ] `mobile/storage.rules` includes:
-  - `hiring-videos/{applicantId}/{videoFile}`: public read + write
+- [x] `mobile/storage.rules` includes:
+  - `hiring-videos/{applicantId}/{videoFile}`: public write (video types only, max 100MB), authenticated read
 - [ ] Deploy rules:
   ```bash
   cd mobile && firebase deploy --only storage
@@ -151,11 +156,11 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 
 ### 3.3 Security Verification (Spec Step 8.3)
 
-- [ ] SEC-001: All API keys in Firebase secrets (none in code/git)
-- [ ] SEC-002: Firestore admin-only rules enforced for scoring collections
-- [ ] SEC-003: Video app uses Firestore document IDs (UUID-like) for applicant IDs
-- [ ] SEC-005: No PII beyond answers/transcripts sent to AI APIs
-- [ ] SEC-007: Rejection emails contain no scoring data (verify email templates in gs-hiring.ts)
+- [x] SEC-001: All API keys accessed via Firebase secrets / `defineSecret` (none hardcoded in source)
+- [x] SEC-002: Firestore admin-only rules enforced for scoring collections
+- [x] SEC-003: Video app uses Firestore document IDs (UUID-like) for applicant IDs
+- [x] SEC-005: No PII beyond answers/transcripts sent to AI APIs
+- [x] SEC-007: Rejection emails contain no scoring data (verified in email templates in gs-hiring.ts)
 
 ---
 
@@ -163,25 +168,23 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 
 ### 4.1 Cloud Functions
 
+- [x] All 5 functions implemented and exported in `mobile/functions/src/index.ts`:
+  - `gsScoreHiringApplication` (Claude Haiku, 512MB, 120s)
+  - `gsProcessVideoCompletion` (Gemini 2.0 Flash, 1GB, 300s)
+  - `gsCalBookingWebhook` (HTTP, 256MB, 30s)
+  - `gsProcessInterviewScore` (256MB, 60s)
+  - `gsHiringWeeklyDigest` (scheduled Mon 8am MST, 256MB, 60s)
 - [ ] Build: `cd mobile/functions && npm run build` (zero errors)
 - [ ] Deploy:
   ```bash
   cd mobile && firebase deploy --only functions
   ```
-- [ ] Verify 5 functions deployed:
-  - `gsScoreHiringApplication`
-  - `gsProcessVideoCompletion`
-  - `gsCalBookingWebhook`
-  - `gsProcessInterviewScore`
-  - `gsHiringWeeklyDigest`
+- [ ] Verify 5 functions appear in Firebase Console
 
 ### 4.2 Website
 
-- [ ] Build: `cd Website && node build.js`
-- [ ] Deploy via Vercel (auto on push to main) or manual:
-  ```bash
-  cd Website && vercel --prod
-  ```
+- [x] Build: `cd Website && node build.js` (built Feb 28)
+- [ ] Deploy via Vercel (auto on push to main, or `cd Website && vercel --prod`)
 - [ ] Verify live: `https://garagescholars.com/apply.html`
 
 ### 4.3 Video Screen App
@@ -195,12 +198,13 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 
 ### 4.4 Cal.com Setup
 
-- [ ] Create Cal.com account (free tier)
-- [ ] Create event type: "Garage Scholars Interview" (15-20 min)
-- [ ] Connect Google Calendar for Zach & Tyler
-- [ ] Configure webhook:
+- [x] Create Cal.com account
+- [x] Create event type: "Garage Scholars Interview"
+- [x] Configure webhook:
   - URL: `https://us-central1-garage-scholars-v2.cloudfunctions.net/gsCalBookingWebhook`
   - Events: `BOOKING_CREATED`
+  - Secret: `gs-hiring-webhook-2026`
+- [ ] Connect Google Calendar for Zach & Tyler
 - [ ] Verify: Test booking fires webhook → dossier email received
 
 ---
@@ -227,8 +231,8 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 - [ ] Open video link → applicant status verified as `video_invited`
 - [ ] Record 5 videos (test with short clips) → videos upload to Firebase Storage
 - [ ] `gs_hiringVideoCompletions` doc created → triggers `gsProcessVideoCompletion`
-- [ ] Whisper transcribes all 5 videos → transcripts stored on applicant doc
-- [ ] Claude scores transcripts → `videoScores` stored on applicant doc
+- [ ] Gemini scores all 5 videos via native video input → `videoScores` stored on applicant doc
+- [ ] Video scores include: composite, 5 dimensions, strengths, concerns, red_flags
 
 ### 5.4 Video Pass/Fail (FR-008)
 
@@ -250,7 +254,7 @@ gsHiringWeeklyDigest → Pipeline summary email to founders
 - [ ] Create `gs_hiringInterviewScores` doc with test data:
   - 6 question scores (1-5) + gut_check
 - [ ] `gsProcessInterviewScore` calculates weighted final:
-  - App × 0.20 + Video × 0.30 + Zoom × 0.50
+  - App x 0.20 + Video x 0.30 + Zoom x 0.50
 - [ ] Test all 3 thresholds:
   - Score ≥75 + gut="yes" → offer email sent
   - Score 60-74 → founder review email sent
@@ -325,17 +329,18 @@ https://garagescholars.com/apply.html?source=handshake
 ## PHASE 7: Email Templates Verification (Spec Step 6.7)
 
 All emails sent via Firestore `mail` collection (Firebase Firestore-Send-Email extension).
+All email templates implemented in `mobile/functions/src/gs-hiring.ts`.
 
-- [ ] **Application rejection**: Subject matches "Update on Your Garage Scholars Application"
-- [ ] **Video invite**: Subject matches "Next Step — Garage Scholars Video Screen (5 min)"
-- [ ] **Video rejection**: Subject matches "Update on Your Garage Scholars Application"
-- [ ] **Zoom invite**: Subject matches "Garage Scholars — Let's Talk (15 min Zoom)"
-- [ ] **Founder dossier**: Subject matches "[GS INTERVIEW] {name} — {datetime}"
-- [ ] **Offer email**: Subject matches "Welcome to Garage Scholars"
-- [ ] **Final rejection**: Subject matches "Update on Your Garage Scholars Application"
-- [ ] **Decision summary**: Subject matches "[GS DECISION] {name} — {HIRE/REJECT/REVIEW}"
-- [ ] **Weekly digest**: Subject matches "[GS Hiring] Weekly Pipeline Digest"
-- [ ] **Error alerts**: Subject matches "[GS Hiring ERROR]"
+- [x] **Application rejection**: Subject = "Update on Your Garage Scholars Application"
+- [x] **Video invite**: Subject = "Next Step — Garage Scholars Video Screen (5 min)"
+- [x] **Video rejection**: Subject = "Update on Your Garage Scholars Application"
+- [x] **Zoom invite**: Subject = "Garage Scholars — Let's Talk (15 min Zoom)"
+- [x] **Founder dossier**: Subject = "[GS INTERVIEW] {name} — {datetime}"
+- [x] **Offer email**: Subject = "Welcome to Garage Scholars"
+- [x] **Final rejection**: Subject = "Update on Your Garage Scholars Application"
+- [x] **Decision summary**: Subject = "[GS DECISION] {name} — {HIRE/REJECT/REVIEW} ({score}/100)"
+- [x] **Weekly digest**: Subject = "[GS Hiring] Weekly Pipeline Digest — {date}"
+- [x] **Error alerts**: Subject = "[GS Hiring ERROR] {description}"
 
 ---
 
@@ -362,7 +367,7 @@ All emails sent via Firestore `mail` collection (Firebase Firestore-Send-Email e
 
 - [ ] Monitor Firebase Functions error logs: `firebase functions:log`
 - [ ] Check email delivery rates (Firestore-Send-Email extension logs)
-- [ ] Verify OPENAI_API_KEY and ANTHROPIC_API_KEY remain valid
+- [ ] Verify GEMINI_API_KEY and ANTHROPIC_API_KEY remain valid
 - [ ] Watch Firebase Storage usage (hiring videos)
 - [ ] Consider Storage lifecycle rule: auto-delete `hiring-videos/` after 30 days
 

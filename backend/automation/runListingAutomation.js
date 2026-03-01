@@ -85,15 +85,21 @@ const FB_SELECTORS = {
     ],
     categoryButton: [
         'xpath///label[.//span[contains(text(), "Category")]]/following::div[@role="button"][1]',
-        'xpath///span[contains(text(), "Category")]/ancestor::label/following-sibling::div'
+        'xpath///label[.//span[contains(text(), "Category")]]//input',
+        'xpath///span[contains(text(), "Category")]/ancestor::label//input',
+        'xpath///span[contains(text(), "Category")]/ancestor::label/following-sibling::div',
+        'xpath///label[.//span[contains(text(), "Category")]]',
     ],
     conditionDropdown: [
         'xpath///label[.//span[contains(text(), "Condition")]]',
         'xpath///span[contains(text(), "Condition")]/ancestor::label'
     ],
     imageUpload: [
-        'div[aria-label="Add photos"] input[type="file"]',
         'input[type="file"][accept*="image"]',
+        'input[type="file"][accept*="video"]',
+        'div[aria-label="Add photos"] input[type="file"]',
+        'xpath///div[contains(@aria-label, "photo")]//input[@type="file"]',
+        'xpath///div[contains(@aria-label, "Photo")]//input[@type="file"]',
         'input[type="file"]'
     ],
     nextButton: [
@@ -343,6 +349,12 @@ async function runListingAutomation(docId, item, db, admin) {
     let pageFB = null;
     let proxyCleanup = () => {};
 
+    // Detect browser crashes — fail fast instead of hanging on timeouts
+    let browserDisconnected = false;
+    const ensureBrowserAlive = () => {
+        if (browserDisconnected) throw new Error('Browser disconnected unexpectedly');
+    };
+
     try {
         if (shouldRunCraigslist || shouldRunFacebook) {
             const launchArgs = [
@@ -370,20 +382,16 @@ async function runListingAutomation(docId, item, db, admin) {
             browser = await puppeteer.launch({
                 headless: HEADLESS,
                 defaultViewport: null,
+                executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
                 userDataDir: "./chrome_profile",
                 args: launchArgs
             });
             openBrowsers.add(browser);
 
-            // Detect browser crashes — fail fast instead of hanging on timeouts
-            let browserDisconnected = false;
             browser.on('disconnected', () => {
                 browserDisconnected = true;
                 log.error('Browser disconnected unexpectedly');
             });
-            const ensureBrowserAlive = () => {
-                if (browserDisconnected) throw new Error('Browser disconnected unexpectedly');
-            };
 
             if (shouldRunCraigslist) {
                 ensureBrowserAlive();
@@ -739,32 +747,53 @@ async function runListingAutomation(docId, item, db, admin) {
                 // Step 3: Upload images
                 if (downloadedPaths.length > 0) {
                     await retryStep(async () => {
-                        log.info('Uploading images to FB', { count: downloadedPaths.length });
+                        log.info('Uploading images to FB', { count: downloadedPaths.length, paths: downloadedPaths.map(p => p.split('/').pop()) });
 
-                        // Count images before upload for accurate verification
-                        const imgCountBefore = await page.evaluate(() => {
-                            const uploadArea = document.querySelector('div[aria-label="Add photos"]');
-                            const container = uploadArea ? uploadArea.closest('div') : document;
-                            return container.querySelectorAll('img').length;
+                        // Verify files exist on disk
+                        const validPaths = downloadedPaths.filter(p => {
+                            const exists = require('fs').existsSync(p);
+                            if (!exists) log.warn('Image file missing from disk', { path: p });
+                            return exists;
+                        });
+                        if (validPaths.length === 0) {
+                            log.error('No valid image files to upload', { platform: 'FB' });
+                            return;
+                        }
+
+                        // Find ALL file inputs on the page (FB hides them)
+                        const fileInputs = await page.$$('input[type="file"]');
+                        log.info('Found file inputs on page', { count: fileInputs.length });
+
+                        let uploaded = false;
+                        for (const fileInput of fileInputs) {
+                            try {
+                                await fileInput.uploadFile(...validPaths);
+                                uploaded = true;
+                                log.info('Files sent to input', { platform: 'FB' });
+                                break;
+                            } catch (e) {
+                                log.warn('File input rejected upload, trying next', { error: e.message });
+                            }
+                        }
+
+                        if (!uploaded) {
+                            log.error('Could not upload to any file input', { platform: 'FB' });
+                            await captureScreenshot('FB_no_file_input', page);
+                            return;
+                        }
+
+                        // Wait for thumbnails to appear
+                        await page.waitForFunction((expectedCount) => {
+                            const imgs = document.querySelectorAll('img[src^="blob:"], img[src*="scontent"]');
+                            return imgs.length >= expectedCount;
+                        }, { timeout: 25000 }, validPaths.length).catch(() => {
+                            log.warn('Image thumbnail verification timed out — may still have uploaded', { platform: 'FB' });
                         });
 
-                        const fileInput = await trySelectors(page, FB_SELECTORS.imageUpload, 10000);
-                        if (fileInput) {
-                            await fileInput.uploadFile(...downloadedPaths);
-
-                            // Wait for uploaded image count to increase by expected amount
-                            const expectedTotal = imgCountBefore + downloadedPaths.length;
-                            await page.waitForFunction((expected) => {
-                                const uploadArea = document.querySelector('div[aria-label="Add photos"]');
-                                const container = uploadArea ? uploadArea.closest('div') : document;
-                                return container.querySelectorAll('img').length >= expected;
-                            }, { timeout: 20000 }, expectedTotal).catch(() => {
-                                log.warn('Image upload verification timed out', { expected: expectedTotal, before: imgCountBefore });
-                            });
-                            await humanDelay(1000, 2000);
-                        }
+                        await captureScreenshot('FB_after_image_upload', page);
+                        await humanDelay(500, 1000);
                         await page.keyboard.press('Escape').catch(() => {});
-                        await humanDelay(300, 600);
+                        await humanDelay(200, 400);
                     }, { maxRetries: 2, stepName: 'fb_images', page, captureScreenshot, log });
                 }
 
@@ -784,15 +813,101 @@ async function runListingAutomation(docId, item, db, admin) {
                     await humanScroll(page, 10);
                 }, { maxRetries: 2, stepName: 'fb_fill_form', page, captureScreenshot, log });
 
-                // Step 5: Category
-                try {
+                // Step 5: Category — FB uses a combobox (click → type → pick from results)
+                await retryStep(async () => {
+                    log.info('Selecting category', { platform: 'FB' });
+                    await captureScreenshot('FB_before_category', page);
+
+                    const categoryMap = {
+                        'furniture': 'Furniture', 'electronics': 'Electronics',
+                        'clothing': 'Clothing', 'vehicles': 'Vehicles',
+                        'home': 'Home', 'sporting': 'Sporting Goods',
+                        'toys': 'Toys', 'tools': 'Tools',
+                        'appliances': 'Appliances', 'bikes': 'Bicycles',
+                        'musical instruments': 'Musical Instruments', 'jewelry': 'Jewelry',
+                        'books': 'Books', 'baby+kid': 'Baby',
+                        'auto parts': 'Auto Parts', 'collectibles': 'Collectibles',
+                        'antiques': 'Antiques', 'general': 'Miscellaneous',
+                        'other': 'Miscellaneous',
+                    };
+                    const itemCategory = (item.category || '').toLowerCase();
+                    const targetCategory = categoryMap[itemCategory] || process.env.FB_CATEGORY || 'Miscellaneous';
+
+                    // Strategy 1: Find a combobox/input inside the category label and type into it
+                    const catInput = await trySelectors(page, [
+                        'xpath///label[.//span[contains(text(), "Category")]]//input',
+                        'xpath///span[contains(text(), "Category")]/ancestor::label//input',
+                    ], 3000);
+
+                    if (catInput) {
+                        log.info('Found category input field — typing search', { platform: 'FB', target: targetCategory });
+                        await humanClick(page, catInput);
+                        await humanDelay(300, 600);
+                        await humanType(page, catInput, targetCategory, { clearFirst: true, typoChance: 0 });
+                        await humanDelay(800, 1500);
+
+                        // Pick the first matching result from the dropdown
+                        const picked = await page.evaluate((target) => {
+                            const options = Array.from(document.querySelectorAll(
+                                '[role="option"], [role="listbox"] [role="option"], [role="menuitem"], [role="listbox"] > div'
+                            ));
+                            const match = options.find(el =>
+                                el.textContent.trim().toLowerCase().includes(target.toLowerCase()) && el.offsetParent !== null
+                            );
+                            if (match) { match.click(); return match.textContent.trim().slice(0, 50); }
+                            return null;
+                        }, targetCategory);
+
+                        if (picked) {
+                            log.info('Category selected via search', { platform: 'FB', picked });
+                        } else {
+                            // Try just clicking the first visible option
+                            log.warn('No matching option found, clicking first result', { platform: 'FB' });
+                            await page.keyboard.press('ArrowDown');
+                            await humanDelay(200, 400);
+                            await page.keyboard.press('Enter');
+                        }
+                        await humanDelay(300, 600);
+                        return;
+                    }
+
+                    // Strategy 2: Click the category button/dropdown
                     const catBtn = await trySelectors(page, FB_SELECTORS.categoryButton, 3000);
-                    if (catBtn) { await humanClick(page, catBtn); await humanDelay(500, 1000); }
-                } catch (_) {}
+                    if (catBtn) {
+                        log.info('Found category button — clicking', { platform: 'FB' });
+                        await humanClick(page, catBtn);
+                        await humanDelay(800, 1500);
+                        await captureScreenshot('FB_category_opened', page);
+
+                        const picked = await page.evaluate((target) => {
+                            const candidates = Array.from(document.querySelectorAll(
+                                '[role="option"], [role="listbox"] [role="option"], [role="menuitem"], [role="listbox"] > div, [role="menu"] > div'
+                            ));
+                            const match = candidates.find(el =>
+                                el.textContent.trim().toLowerCase().includes(target.toLowerCase()) && el.offsetParent !== null
+                            );
+                            if (match) { match.click(); return match.textContent.trim().slice(0, 50); }
+                            return null;
+                        }, targetCategory);
+
+                        if (picked) {
+                            log.info('Category selected via dropdown', { platform: 'FB', picked });
+                        } else {
+                            log.warn('Could not find category in dropdown', { platform: 'FB', target: targetCategory });
+                            await page.keyboard.press('Escape');
+                        }
+                        await humanDelay(300, 600);
+                        return;
+                    }
+
+                    log.warn('No category control found — continuing without category', { platform: 'FB' });
+                    await captureScreenshot('FB_no_category', page);
+                }, { maxRetries: 1, stepName: 'fb_category', page, captureScreenshot, log });
 
                 // Step 6: Condition — find by text instead of arrow-key counting
                 try {
-                    const condDrop = await trySelectors(page, FB_SELECTORS.conditionDropdown, 3000);
+                    log.info('Selecting condition', { platform: 'FB' });
+                    const condDrop = await trySelectors(page, FB_SELECTORS.conditionDropdown, 5000);
                     if (condDrop) {
                         await humanClick(page, condDrop);
                         await humanDelay(400, 800);
@@ -818,14 +933,22 @@ async function runListingAutomation(docId, item, db, admin) {
                             return false;
                         }, targetCondition);
 
-                        if (!clicked) {
+                        if (clicked) {
+                            log.info('Condition selected', { platform: 'FB', condition: targetCondition });
+                        } else {
                             log.warn('Could not find condition by text, falling back to ArrowDown', { target: targetCondition });
                             for (let i = 0; i < 3; i++) { await page.keyboard.press("ArrowDown"); await humanDelay(50, 150); }
                             await page.keyboard.press("Enter");
                         }
                         await humanDelay(300, 600);
+                    } else {
+                        log.warn('Condition dropdown not found', { platform: 'FB' });
+                        await captureScreenshot('FB_no_condition', page);
                     }
-                } catch (_) {}
+                } catch (e) {
+                    log.warn('Condition selection failed', { platform: 'FB', error: e.message });
+                    await captureScreenshot('FB_condition_error', page);
+                }
 
                 // Step 7: Next → Delivery
                 await retryStep(async () => {
@@ -861,39 +984,48 @@ async function runListingAutomation(docId, item, db, admin) {
                     const nextBtn = await trySelectors(page, FB_SELECTORS.nextButton, 5000);
                     if (nextBtn) { await humanClick(page, nextBtn); await humanDelay(1500, 3000); }
 
-                    const publishBtn = await trySelectors(page, FB_SELECTORS.publishButton, 5000);
-                    if (publishBtn) {
-                        await humanClick(page, publishBtn);
-                        await humanDelay(2000, 4000);
-                        log.info('Clicked Publish', { platform: 'FB' });
+                    const publishBtn = await trySelectors(page, FB_SELECTORS.publishButton, 10000);
+                    if (!publishBtn) {
+                        await captureScreenshot('FB_no_publish_btn', page);
+                        throw new Error('Publish button not found — listing was not posted');
+                    }
 
-                        // Verify publish succeeded
-                        const publishResult = await page.waitForFunction(() => {
-                            const body = document.body.innerText.toLowerCase();
-                            if (body.includes('your listing is published') ||
-                                body.includes('listed on marketplace') ||
-                                body.includes('your item is listed')) {
-                                return { success: true };
-                            }
-                            const alerts = document.querySelectorAll('[role="alert"]');
-                            for (const alert of alerts) {
-                                const text = alert.textContent.trim();
-                                if (text.length > 5) return { success: false, error: text.slice(0, 300) };
-                            }
-                            return null; // keep waiting
-                        }, { timeout: 30000 }).catch(() => null);
+                    await humanClick(page, publishBtn);
+                    await humanDelay(2000, 4000);
+                    log.info('Clicked Publish', { platform: 'FB' });
 
-                        if (publishResult) {
-                            const result = await publishResult.jsonValue();
-                            if (result && result.success) {
-                                log.info('Listing confirmed published', { platform: 'FB' });
-                            } else if (result && !result.success) {
-                                throw new Error(`FB publish failed: ${result.error}`);
-                            }
-                        } else {
-                            await captureScreenshot('FB_publish_uncertain', page);
-                            log.warn('Publish verification timed out — may have succeeded', { platform: 'FB' });
+                    // Verify publish succeeded
+                    const publishResult = await page.waitForFunction(() => {
+                        const body = document.body.innerText.toLowerCase();
+                        if (body.includes('your listing is published') ||
+                            body.includes('listed on marketplace') ||
+                            body.includes('your item is listed') ||
+                            body.includes('you\'re all set')) {
+                            return { success: true };
                         }
+                        // Check if URL changed to marketplace (another success signal)
+                        if (window.location.href.includes('/marketplace/') && !window.location.href.includes('/create/')) {
+                            return { success: true };
+                        }
+                        const alerts = document.querySelectorAll('[role="alert"]');
+                        for (const alert of alerts) {
+                            const text = alert.textContent.trim();
+                            if (text.length > 5) return { success: false, error: text.slice(0, 300) };
+                        }
+                        return null; // keep waiting
+                    }, { timeout: 30000 }).catch(() => null);
+
+                    if (publishResult) {
+                        const result = await publishResult.jsonValue();
+                        if (result && result.success) {
+                            log.info('Listing confirmed published', { platform: 'FB' });
+                        } else if (result && !result.success) {
+                            throw new Error(`FB publish failed: ${result.error}`);
+                        }
+                    } else {
+                        await captureScreenshot('FB_publish_uncertain', page);
+                        log.warn('Publish verification timed out — could not confirm listing was posted', { platform: 'FB' });
+                        throw new Error('Could not verify listing was published — check FB manually');
                     }
                 }, { maxRetries: 2, stepName: 'fb_finalize', page, captureScreenshot, log });
 

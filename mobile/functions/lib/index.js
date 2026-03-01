@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.approveSignup = exports.gsGenerateAssemblyGuide = exports.generateSopForJob = exports.gsHiringWeeklyDigest = exports.gsProcessInterviewScore = exports.gsCalBookingWebhook = exports.gsProcessVideoCompletion = exports.gsScoreHiringApplication = exports.gsReviewCampaign = exports.gsRefreshMetaToken = exports.gsProcessSocialContent = exports.gsExportPaymentData = exports.gsGeneratePaymentReport = exports.gsMarkPayoutPaid = exports.gsResalePayout = exports.gsCreateRetentionSubscription = exports.gsCreateCustomerPayment = exports.gsStripeWebhook = exports.gsCreateStripeAccount = exports.gsReleaseCompletionPayouts = exports.gsJobPrepReminders = exports.gsOnEscalationCreated = exports.gsMultiNotify = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
+exports.submitQuoteRequest = exports.sendJobReviewEmail = exports.declineSignup = exports.approveSignup = exports.gsGenerateAssemblyGuide = exports.generateSopForJob = exports.gsHiringWeeklyDigest = exports.gsProcessInterviewScore = exports.gsCalBookingWebhook = exports.gsProcessVideoCompletion = exports.gsScoreHiringApplication = exports.gsOnDonationReceiptUploaded = exports.gsOnGymPhotosUploaded = exports.gsOnItemConfirmed = exports.gsAnalyzeItem = exports.gsReviewCampaign = exports.gsRefreshMetaToken = exports.gsProcessSocialContent = exports.gsExportPaymentData = exports.gsGeneratePaymentReport = exports.gsMarkPayoutPaid = exports.gsResalePayout = exports.gsCreateRetentionSubscription = exports.gsCreateCustomerPayment = exports.gsStripeWebhook = exports.gsCreateStripeAccount = exports.gsReleaseCompletionPayouts = exports.gsJobPrepReminders = exports.gsOnEscalationCreated = exports.gsMultiNotify = exports.gsSendPush = exports.gsSubmitComplaint = exports.gsComputeAnalytics = exports.gsMonthlyGoalReset = exports.gsResetViewerCounts = exports.gsExpireTransfers = exports.gsLockScores = exports.gsOnRescheduleUpdated = exports.gsOnTransferCreated = exports.gsOnJobUpdated = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const app_1 = require("firebase-admin/app");
@@ -82,6 +82,12 @@ Object.defineProperty(exports, "gsRefreshMetaToken", { enumerable: true, get: fu
 // ── Garage Scholars Review Campaign functions ──
 var gs_review_campaign_1 = require("./gs-review-campaign");
 Object.defineProperty(exports, "gsReviewCampaign", { enumerable: true, get: function () { return gs_review_campaign_1.gsReviewCampaign; } });
+// ── Garage Scholars Inventory functions ──
+var gs_inventory_1 = require("./gs-inventory");
+Object.defineProperty(exports, "gsAnalyzeItem", { enumerable: true, get: function () { return gs_inventory_1.gsAnalyzeItem; } });
+Object.defineProperty(exports, "gsOnItemConfirmed", { enumerable: true, get: function () { return gs_inventory_1.gsOnItemConfirmed; } });
+Object.defineProperty(exports, "gsOnGymPhotosUploaded", { enumerable: true, get: function () { return gs_inventory_1.gsOnGymPhotosUploaded; } });
+Object.defineProperty(exports, "gsOnDonationReceiptUploaded", { enumerable: true, get: function () { return gs_inventory_1.gsOnDonationReceiptUploaded; } });
 // ── Garage Scholars Hiring Pipeline functions ──
 var gs_hiring_1 = require("./gs-hiring");
 Object.defineProperty(exports, "gsScoreHiringApplication", { enumerable: true, get: function () { return gs_hiring_1.gsScoreHiringApplication; } });
