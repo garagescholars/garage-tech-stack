@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Garage Scholars — Video Screen</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 16px 20px;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      text-align: center;
+    }
+    .header h1 { font-size: 18px; font-weight: 700; color: #f8fafc; }
+    .header .step { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .progress-bar {
+      height: 4px;
+      background: #334155;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #2563eb;
+      transition: width 0.3s ease;
+    }
+
+    .main { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+
+    /* Screens */
+    .screen { display: none; flex-direction: column; flex: 1; }
+    .screen.active { display: flex; }
+
+    /* Welcome screen */
+    .welcome-card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .welcome-card h2 { font-size: 24px; margin-bottom: 16px; }
+    .welcome-card p { color: #94a3b8; font-size: 15px; line-height: 1.6; margin-bottom: 12px; }
+    .welcome-card .tips {
+      text-align: left;
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    .welcome-card .tips li {
+      color: #cbd5e1;
+      font-size: 14px;
+      margin-bottom: 8px;
+      list-style: none;
+      padding-left: 24px;
+      position: relative;
+    }
+    .welcome-card .tips li::before {
+      content: "\2713";
+      position: absolute;
+      left: 0;
+      color: #22c55e;
+      font-weight: 700;
+    }
+
+    /* Prompt screen */
+    .prompt-card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .prompt-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .prompt-text { font-size: 17px; line-height: 1.5; color: #e2e8f0; }
+
+    /* Video preview */
+    .video-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+      min-height: 280px;
+      max-height: 400px;
+    }
+    .video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    /* Timer overlay */
+    .timer-overlay {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+    }
+    .timer-overlay.recording { color: #ef4444; }
+    .timer-overlay.prep { color: #fbbf24; }
+
+    /* Recording indicator */
+    .rec-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Buttons */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: opacity 0.2s;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-secondary { background: #334155; color: #cbd5e1; }
+
+    /* Upload progress */
+    .upload-bar {
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    .upload-fill {
+      height: 100%;
+      background: #22c55e;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    /* Done screen */
+    .done-card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 40px 24px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    .done-icon { font-size: 48px; margin-bottom: 16px; }
+    .done-card h2 { font-size: 22px; margin-bottom: 12px; }
+    .done-card p { color: #94a3b8; font-size: 15px; line-height: 1.6; }
+
+    /* Error screen */
+    .error-card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    .error-card h2 { color: #ef4444; font-size: 20px; margin-bottom: 12px; }
+    .error-card p { color: #94a3b8; font-size: 14px; line-height: 1.6; }
+
+    /* Status message */
+    .status-msg {
+      text-align: center;
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>Garage Scholars</h1>
+    <div class="step" id="stepIndicator">Video Screen</div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+  </div>
+
+  <div class="main">
+    <!-- Screen: Welcome -->
+    <div class="screen active" id="screenWelcome">
+      <div class="welcome-card">
+        <h2>Video Screen</h2>
+        <p>You'll answer 5 quick questions on camera. Each recording is 60-90 seconds. The whole thing takes about 5 minutes.</p>
+        <ul class="tips">
+          <li>Find a quiet, well-lit spot</li>
+          <li>Use your front-facing camera</li>
+          <li>Speak naturally — no prep needed</li>
+          <li>You'll see each question before recording starts</li>
+          <li>One take per question — just be yourself</li>
+        </ul>
+        <p style="font-size:13px;color:#64748b;">Your camera and microphone will be requested on the next step.</p>
+        <button class="btn btn-primary" id="btnStart">Start Video Screen</button>
+      </div>
+    </div>
+
+    <!-- Screen: Recording -->
+    <div class="screen" id="screenRecord">
+      <div class="prompt-card">
+        <div class="prompt-label">Question <span id="promptNum">1</span> of 5</div>
+        <div class="prompt-text" id="promptText"></div>
+      </div>
+      <div class="video-container">
+        <video id="videoPreview" autoplay muted playsinline></video>
+        <div class="timer-overlay prep" id="timerOverlay">
+          Get ready...
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btnRecord" disabled>Recording starts automatically</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+
+    <!-- Screen: Uploading -->
+    <div class="screen" id="screenUpload">
+      <div class="welcome-card">
+        <h2>Uploading your videos...</h2>
+        <p>Please don't close this page.</p>
+        <div class="upload-bar">
+          <div class="upload-fill" id="uploadFill" style="width: 0%"></div>
+        </div>
+        <p class="status-msg" id="uploadStatus" style="margin-top:16px;">Uploading video 1 of 5...</p>
+      </div>
+    </div>
+
+    <!-- Screen: Done -->
+    <div class="screen" id="screenDone">
+      <div class="done-card">
+        <div class="done-icon">&#10003;</div>
+        <h2>You're all set!</h2>
+        <p>Your video screen has been submitted. We'll review it and get back to you soon.</p>
+        <p style="margin-top:16px;color:#64748b;font-size:13px;">You can close this page now.</p>
+      </div>
+    </div>
+
+    <!-- Screen: Error -->
+    <div class="screen" id="screenError">
+      <div class="error-card">
+        <h2>Something went wrong</h2>
+        <p id="errorMsg">We couldn't access your camera. Please make sure you've granted camera and microphone permissions, then try again.</p>
+        <button class="btn btn-secondary" onclick="location.reload()">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // ── Firebase Config ──
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8",
+      authDomain: "garage-scholars-v2.firebaseapp.com",
+      projectId: "garage-scholars-v2",
+      storageBucket: "garage-scholars-v2.firebasestorage.app",
+      messagingSenderId: "583159785746",
+      appId: "1:583159785746:web:87d8ed8f5634ea79c26bcb"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const storageRef = firebase.storage();
+    const db = firebase.firestore();
+
+    // ── Video Prompts (from Spec Step 6.3) ──
+    const PROMPTS = [
+      "Tell us about yourself. What do you do with your time, and what kind of work have you done?",
+      "Describe something you built, fixed, or organized with your hands. Walk us through step by step.",
+      "You're working solo at a customer's house and something goes wrong — maybe you crack a shelf or can't find a stud. What do you do?",
+      "What does 'showing up' mean to you? If a friend described you as someone who always shows up, what would they mean?",
+      "Why Garage Scholars? We're a startup — things move fast and roles shift. What about that sounds good or bad to you?"
+    ];
+
+    const PREP_SECONDS = 10;
+    const RECORD_SECONDS = 90;
+
+    // ── State ──
+    let applicantId = null;
+    let currentPrompt = 0;
+    let mediaStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recordedBlobs = []; // Store all 5 video blobs
+    let timerInterval = null;
+
+    // ── DOM refs ──
+    const $ = (id) => document.getElementById(id);
+
+    // ── Get applicant ID from URL ──
+    function getApplicantId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    // ── Screen navigation ──
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      $(screenId).classList.add('active');
+    }
+
+    function updateProgress() {
+      const pct = (currentPrompt / PROMPTS.length) * 100;
+      $('progressFill').style.width = pct + '%';
+      $('stepIndicator').textContent = `Question ${currentPrompt + 1} of ${PROMPTS.length}`;
+    }
+
+    // ── Camera setup ──
+    async function setupCamera() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: true
+        });
+        $('videoPreview').srcObject = mediaStream;
+        return true;
+      } catch (err) {
+        console.error('Camera access failed:', err);
+        $('errorMsg').textContent = 'We couldn\'t access your camera. Please grant camera and microphone permissions in your browser settings, then reload this page.';
+        showScreen('screenError');
+        return false;
+      }
+    }
+
+    // ── Recording logic ──
+    function startRecording() {
+      recordedChunks = [];
+
+      // Determine best supported MIME type
+      const mimeTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+      let mimeType = '';
+      for (const mt of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mt)) { mimeType = mt; break; }
+      }
+
+      mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : {});
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
+        recordedBlobs.push(blob);
+        onRecordingComplete();
+      };
+      mediaRecorder.start(1000); // Collect data every second
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+    }
+
+    // ── Timer ──
+    function startTimer(seconds, onTick, onDone) {
+      let remaining = seconds;
+      onTick(remaining);
+      timerInterval = setInterval(() => {
+        remaining--;
+        onTick(remaining);
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          onDone();
+        }
+      }, 1000);
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // ── Prompt flow ──
+    function showPrompt() {
+      updateProgress();
+      $('promptNum').textContent = currentPrompt + 1;
+      $('promptText').textContent = PROMPTS[currentPrompt];
+      $('btnRecord').disabled = true;
+      $('btnRecord').textContent = 'Recording starts automatically';
+      $('statusMsg').textContent = '';
+
+      // Prep countdown
+      const overlay = $('timerOverlay');
+      overlay.className = 'timer-overlay prep';
+
+      startTimer(PREP_SECONDS,
+        (rem) => { overlay.textContent = `Get ready... ${rem}s`; },
+        () => {
+          // Start recording
+          overlay.className = 'timer-overlay recording';
+          overlay.innerHTML = '<span class="rec-dot"></span> REC';
+          $('btnRecord').disabled = false;
+          $('btnRecord').textContent = 'Stop Early';
+          $('btnRecord').className = 'btn btn-danger';
+          $('statusMsg').textContent = 'Speak naturally. Recording will auto-stop at 90 seconds.';
+          startRecording();
+
+          startTimer(RECORD_SECONDS,
+            (rem) => { overlay.innerHTML = `<span class="rec-dot"></span> ${formatTime(rem)}`; },
+            () => { stopRecording(); }
+          );
+        }
+      );
+    }
+
+    function onRecordingComplete() {
+      clearInterval(timerInterval);
+      currentPrompt++;
+
+      if (currentPrompt < PROMPTS.length) {
+        // Next prompt
+        $('timerOverlay').className = 'timer-overlay prep';
+        $('timerOverlay').textContent = 'Next question...';
+        $('btnRecord').disabled = true;
+        $('btnRecord').textContent = 'Next question loading...';
+        $('btnRecord').className = 'btn btn-primary';
+        setTimeout(() => showPrompt(), 1500);
+      } else {
+        // All done — upload
+        uploadAll();
+      }
+    }
+
+    // ── Upload all videos to Firebase Storage ──
+    async function uploadAll() {
+      showScreen('screenUpload');
+      $('progressFill').style.width = '100%';
+
+      const storagePaths = [];
+
+      try {
+        for (let i = 0; i < recordedBlobs.length; i++) {
+          $('uploadStatus').textContent = `Uploading video ${i + 1} of ${recordedBlobs.length}...`;
+          $('uploadFill').style.width = `${((i) / recordedBlobs.length) * 100}%`;
+
+          const path = `hiring-videos/${applicantId}/video_${i + 1}.webm`;
+          const ref = storageRef.ref(path);
+          await ref.put(recordedBlobs[i], { contentType: 'video/webm' });
+          storagePaths.push(path);
+
+          $('uploadFill').style.width = `${((i + 1) / recordedBlobs.length) * 100}%`;
+        }
+
+        // Signal completion to Firestore (triggers gsProcessVideoCompletion)
+        $('uploadStatus').textContent = 'Finalizing...';
+        await db.collection('gs_hiringVideoCompletions').add({
+          applicantId: applicantId,
+          storagePaths: storagePaths,
+          completedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Stop camera
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(t => t.stop());
+        }
+
+        showScreen('screenDone');
+      } catch (err) {
+        console.error('Upload failed:', err);
+        $('errorMsg').textContent = 'Upload failed. Please check your connection and try again. Your recordings are saved locally.';
+        showScreen('screenError');
+      }
+    }
+
+    // ── Early stop button ──
+    $('btnRecord').addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        clearInterval(timerInterval);
+        stopRecording();
+      }
+    });
+
+    // ── Start button ──
+    $('btnStart').addEventListener('click', async () => {
+      applicantId = getApplicantId();
+      if (!applicantId) {
+        $('errorMsg').textContent = 'Invalid link. Please use the link from your email to access this page.';
+        showScreen('screenError');
+        return;
+      }
+
+      // Verify applicant exists and is in correct status
+      try {
+        const doc = await db.collection('gs_hiringApplicants').doc(applicantId).get();
+        if (!doc.exists) {
+          $('errorMsg').textContent = 'We couldn\'t find your application. Please contact us if you think this is an error.';
+          showScreen('screenError');
+          return;
+        }
+        const data = doc.data();
+        if (data.status !== 'video_invited') {
+          if (data.videoCompletedAt) {
+            $('errorMsg').textContent = 'You\'ve already completed your video screen. We\'ll be in touch soon!';
+          } else {
+            $('errorMsg').textContent = 'This link is no longer active. Please contact us if you need help.';
+          }
+          showScreen('screenError');
+          return;
+        }
+
+        // Update status to pending_video
+        await db.collection('gs_hiringApplicants').doc(applicantId).update({
+          status: 'pending_video'
+        });
+      } catch (err) {
+        console.error('Verification failed:', err);
+        // Continue anyway — don't block candidate on read errors
+      }
+
+      const cameraOk = await setupCamera();
+      if (cameraOk) {
+        showScreen('screenRecord');
+        showPrompt();
+      }
+    });
+  </script>
+</body>
+</html>

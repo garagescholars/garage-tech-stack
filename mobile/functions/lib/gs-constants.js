@@ -31,6 +31,10 @@ exports.GS_COLLECTIONS = {
     // Social media & review campaigns
     SOCIAL_CONTENT_QUEUE: "gs_socialContentQueue",
     REVIEW_CAMPAIGNS: "gs_reviewCampaigns",
+    // Hiring pipeline collections
+    HIRING_APPLICANTS: "gs_hiringApplicants",
+    HIRING_VIDEO_COMPLETIONS: "gs_hiringVideoCompletions",
+    HIRING_INTERVIEW_SCORES: "gs_hiringInterviewScores",
 };
 /** Quality score weights — must total 1.0 */
 exports.SCORING_WEIGHTS = {

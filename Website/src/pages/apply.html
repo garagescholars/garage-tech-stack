@@ -1,7 +1,7 @@
-<!-- config title: Become a Scholar - Earn $35-45/hr | Garage Scholars Denver -->
-<!-- config description: Join the Garage Scholars team. Earn $35-45/hr with flexible scheduling. -->
+<!-- config title: Join Our Team — Garage Transformation Technician | Garage Scholars Denver -->
+<!-- config description: Apply to join the Garage Scholars team. Earn $35-45/hr with flexible scheduling. Denver, CO. -->
 <!-- config activeNav: apply -->
-<!-- config firebase: app,firestore,storage -->
+<!-- config firebase: app,firestore -->
 <!-- config hasQuoteModal: false -->
 
 {{head}}
@@ -10,7 +10,7 @@
     <!-- ========== APPLICATION ========== -->
     <div class="apply-page">
         <div class="apply-container">
-            <h1>Become a Scholar</h1>
+            <h1>Join Our Team</h1>
             <p class="apply-highlight">Earn $35-45/hour</p>
 
             <div class="benefits-list">
@@ -22,25 +22,39 @@
             </div>
 
             <div id="successMessage" class="success-message">
-                <h2>Application Submitted!</h2>
-                <p>We'll text you within 24 hours for a quick phone interview.</p>
+                <h2>Application Received!</h2>
+                <p>Thanks for applying to Garage Scholars. We review every application personally and you'll hear from us within 24-48 hours.</p>
+                <p style="margin-top: 8px;">Keep an eye on your email for next steps.</p>
             </div>
 
             <div id="errorMessage" class="error-message"></div>
 
             <form id="applicationForm">
+                <!-- Contact Info -->
                 <div class="form-group">
                     <label for="name">Full Name *</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="phone">Phone Number *</label>
-                    <input type="tel" id="phone" name="phone" placeholder="(720) 555-1234" required>
+                    <input type="text" id="name" name="name" required placeholder="John Smith">
                 </div>
                 <div class="form-group">
                     <label for="email">Email *</label>
-                    <input type="email" id="email" name="email" required>
+                    <input type="email" id="email" name="email" required placeholder="john@example.com">
                 </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number *</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="(303) 555-1234">
+                </div>
+                <div class="form-group">
+                    <label for="source">How did you find us? *</label>
+                    <select id="source" name="source" required>
+                        <option value="">Select...</option>
+                        <option value="indeed">Indeed</option>
+                        <option value="handshake">Handshake</option>
+                        <option value="referral">Friend / Referral</option>
+                        <option value="direct">Website / Google</option>
+                    </select>
+                </div>
+
+                <!-- Student Info -->
                 <div class="form-group">
                     <label for="isStudent">Are you a student or recent graduate? *</label>
                     <select id="isStudent" name="isStudent" required>
@@ -73,45 +87,44 @@
                         <option value="Recent Graduate">Recent Graduate (within 2 years)</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="availability">Weekly Availability (hours/week) *</label>
-                    <select id="availability" name="availability" required>
-                        <option value="">Select availability</option>
-                        <option value="5-10">5-10 hours/week</option>
-                        <option value="10-15">10-15 hours/week</option>
-                        <option value="15-20">15-20 hours/week</option>
-                        <option value="20+">20+ hours/week</option>
-                    </select>
+
+                <!-- Screening Questions (Spec Step 6.1) -->
+                <div style="border-top: 1px solid var(--color-border); margin: 28px 0; padding-top: 24px;">
+                    <h3 style="color: var(--color-white); font-size: 1.1rem; margin-bottom: 4px;">Screening Questions</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 20px;">Answer honestly in your own words. There are no trick questions.</p>
                 </div>
+
                 <div class="form-group">
-                    <label for="hasCar">Do you have reliable transportation? *</label>
-                    <select id="hasCar" name="hasCar" required>
-                        <option value="">Select</option>
-                        <option value="Yes">Yes - I have a car</option>
-                        <option value="No">No</option>
-                    </select>
+                    <label for="q1">1. Do you have reliable transportation to job sites across the Denver metro area? Describe your vehicle situation. *</label>
+                    <textarea id="q1" name="q1_transport" required placeholder="I have a 2019 Honda Civic. I'm used to driving across town for work..."></textarea>
                 </div>
+
                 <div class="form-group">
-                    <label for="referral">How did you hear about us?</label>
-                    <select id="referral" name="referral">
-                        <option value="">Select</option>
-                        <option value="Flyer">Campus Flyer</option>
-                        <option value="Friend">Friend/Referral</option>
-                        <option value="Facebook">Facebook</option>
-                        <option value="Instagram">Instagram</option>
-                        <option value="Other">Other</option>
-                    </select>
+                    <label for="q2">2. What tools do you own or have used? List any power tools, hand tools, or equipment you're comfortable with. *</label>
+                    <textarea id="q2" name="q2_tools" required placeholder="I own a drill, tape measure, level. I've used a circular saw and impact driver at work..."></textarea>
                 </div>
+
                 <div class="form-group">
-                    <label for="whyJoin">Why do you want to work with Garage Scholars?</label>
-                    <textarea id="whyJoin" name="whyJoin" rows="4" placeholder="Tell us why you're interested..."></textarea>
+                    <label for="q3">3. Tell us about a time you completed a physical project on your own without anyone telling you exactly what to do. *</label>
+                    <textarea id="q3" name="q3_project" required placeholder="Last summer I built a bookshelf from scratch in my apartment. I measured the space, bought lumber..."></textarea>
                 </div>
+
                 <div class="form-group">
-                    <label for="resume">Upload Resume (Optional)</label>
-                    <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" style="padding: 10px;">
-                    <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 5px;">PDF, DOC, or DOCX format. Max 5MB.</p>
+                    <label for="q4">4. If you showed up to a job and the garage was in way worse shape than expected, what would you do? *</label>
+                    <textarea id="q4" name="q4_problem" required placeholder="I'd take a step back and assess the situation. Then I'd figure out what needs to happen first..."></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;" id="submitBtn">Apply Now</button>
+
+                <div class="form-group">
+                    <label for="q5">5. What hours and days are you available? Any commitments that might affect reliability? *</label>
+                    <textarea id="q5" name="q5_availability" required placeholder="Available Mon-Sat, flexible on hours. I have class on Tuesday mornings but otherwise fully open..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="q6">6. Why does this job interest you specifically? *</label>
+                    <textarea id="q6" name="q6_interest" required placeholder="I enjoy hands-on work and seeing a visible before/after transformation..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;" id="submitBtn">Submit Application</button>
             </form>
         </div>
     </div>
@@ -122,13 +135,25 @@
     <script>
         firebase.initializeApp(window.firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
         const form = document.getElementById('applicationForm');
         const submitBtn = document.getElementById('submitBtn');
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
 
+        // ── Auto-detect source from URL param ──
+        // e.g. garagescholars.com/apply.html?source=indeed
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSource = urlParams.get('source');
+        if (urlSource) {
+            const sourceSelect = document.getElementById('source');
+            const validSources = ['indeed', 'handshake', 'referral', 'direct'];
+            if (validSources.includes(urlSource.toLowerCase())) {
+                sourceSelect.value = urlSource.toLowerCase();
+            }
+        }
+
+        // ── Student conditional fields ──
         document.getElementById('isStudent').addEventListener('change', function() {
             const show = this.value === 'Yes';
             document.getElementById('schoolGroup').style.display = show ? 'block' : 'none';
@@ -136,6 +161,7 @@
             document.getElementById('school').required = show;
         });
 
+        // ── Form submission → gs_hiringApplicants ──
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             submitBtn.disabled = true;
@@ -143,45 +169,33 @@
             errorMessage.style.display = 'none';
 
             try {
-                const formData = {
-                    name: document.getElementById('name').value,
-                    phone: document.getElementById('phone').value,
-                    email: document.getElementById('email').value,
+                const data = {
+                    name: document.getElementById('name').value.trim(),
+                    email: document.getElementById('email').value.trim().toLowerCase(),
+                    phone: document.getElementById('phone').value.trim(),
+                    source: document.getElementById('source').value,
                     isStudent: document.getElementById('isStudent').value,
-                    school: document.getElementById('school').value || 'N/A',
-                    year: document.getElementById('year').value || 'N/A',
-                    availability: document.getElementById('availability').value,
-                    hasCar: document.getElementById('hasCar').value,
-                    referralSource: document.getElementById('referral').value,
-                    whyJoin: document.getElementById('whyJoin').value,
-                    status: 'NEW',
-                    appliedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    source: 'landing-page'
+                    school: document.getElementById('school').value || '',
+                    year: document.getElementById('year').value || '',
+                    q1_transport: document.getElementById('q1').value.trim(),
+                    q2_tools: document.getElementById('q2').value.trim(),
+                    q3_project: document.getElementById('q3').value.trim(),
+                    q4_problem: document.getElementById('q4').value.trim(),
+                    q5_availability: document.getElementById('q5').value.trim(),
+                    q6_interest: document.getElementById('q6').value.trim(),
+                    status: 'pending_ai',
+                    appliedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                const resumeFile = document.getElementById('resume').files[0];
-                if (resumeFile) {
-                    if (resumeFile.size > 5 * 1024 * 1024) {
-                        errorMessage.textContent = 'Resume file is too large. Please upload a file under 5MB.';
-                        errorMessage.style.display = 'block';
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Apply Now';
-                        return;
-                    }
-                    const resumeRef = storage.ref('scholar-resumes/' + Date.now() + '-' + resumeFile.name);
-                    await resumeRef.put(resumeFile);
-                    formData.resumeURL = await resumeRef.getDownloadURL();
-                }
-
-                await db.collection('scholarApplications').add(formData);
+                await db.collection('gs_hiringApplicants').add(data);
                 form.style.display = 'none';
                 successMessage.style.display = 'block';
             } catch (error) {
-                console.error('Error:', error);
-                errorMessage.textContent = 'Error submitting application. Please try again or text us at (720) 507-3969';
+                console.error('Submission failed:', error);
+                errorMessage.textContent = 'Something went wrong. Please try again or email us at garagescholars@gmail.com';
                 errorMessage.style.display = 'block';
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Apply Now';
+                submitBtn.textContent = 'Submit Application';
             }
         });
     </script>

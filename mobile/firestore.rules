@@ -236,5 +236,28 @@ service cloud.firestore {
       allow read: if isAdminByEmail() || configId == 'mobileApp';
       allow write: if isAdminByEmail();
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // Hiring Pipeline Collections
+    // ═══════════════════════════════════════════════════════════
+
+    // gs_hiringApplicants — public create (candidates submit), public read (video app verifies status)
+    match /gs_hiringApplicants/{applicantId} {
+      allow create: if true;
+      allow read: if true;
+      allow update, delete: if isAdminByEmail();
+    }
+
+    // gs_hiringVideoCompletions — public create (video app signals upload done)
+    match /gs_hiringVideoCompletions/{completionId} {
+      allow create: if true;
+      allow read: if true;
+      allow update, delete: if isAdminByEmail();
+    }
+
+    // gs_hiringInterviewScores — admin only (Cal.com webhook writes via Cloud Functions)
+    match /gs_hiringInterviewScores/{scoreId} {
+      allow read, write: if isAdminByEmail();
+    }
   }
 }

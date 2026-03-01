@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apply — Garage Scholars Technician</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+    .header {
+      background: #1e293b;
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .header h1 { color: #fff; font-size: 22px; }
+    .header p { color: #94a3b8; font-size: 14px; margin-top: 6px; }
+
+    .container { max-width: 640px; margin: 0 auto; padding: 24px 20px 60px; }
+
+    .intro {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .intro h2 { font-size: 16px; color: #1e40af; margin-bottom: 8px; }
+    .intro p { font-size: 14px; color: #475569; line-height: 1.5; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .form-group .hint {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      color: #1e293b;
+      background: #fff;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    textarea { resize: vertical; min-height: 100px; }
+
+    .required { color: #dc2626; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 28px 0;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+    }
+
+    .btn-submit {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: #1d4ed8; }
+    .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .success-card {
+      display: none;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 32px 20px;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .success-card h2 { color: #166534; font-size: 20px; margin-bottom: 12px; }
+    .success-card p { color: #475569; font-size: 14px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Garage Scholars</h1>
+    <p>Garage Transformation Technician — Denver, CO</p>
+  </div>
+
+  <div class="container">
+    <div class="intro">
+      <h2>About This Role</h2>
+      <p>We transform messy garages into organized, functional spaces. You'll install shelves, wall-mounted storage, clean, organize, and interact with homeowners. We're looking for reliable, hands-on people who can work independently.</p>
+    </div>
+
+    <form id="applicationForm">
+      <!-- Contact Info -->
+      <div class="section-title">Contact Info</div>
+
+      <div class="form-group">
+        <label>Full Name <span class="required">*</span></label>
+        <input type="text" name="name" required placeholder="John Smith">
+      </div>
+
+      <div class="form-group">
+        <label>Email <span class="required">*</span></label>
+        <input type="email" name="email" required placeholder="john@example.com">
+      </div>
+
+      <div class="form-group">
+        <label>Phone <span class="required">*</span></label>
+        <input type="tel" name="phone" required placeholder="(303) 555-1234">
+      </div>
+
+      <div class="form-group">
+        <label>How did you find us? <span class="required">*</span></label>
+        <select name="source" required>
+          <option value="">Select...</option>
+          <option value="indeed">Indeed</option>
+          <option value="handshake">Handshake</option>
+          <option value="referral">Friend / Referral</option>
+          <option value="direct">Website / Google</option>
+        </select>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Screening Questions (Step 6.1) -->
+      <div class="section-title">Screening Questions</div>
+      <p style="font-size:13px;color:#64748b;margin:-8px 0 20px;">Answer honestly in your own words. There are no trick questions.</p>
+
+      <div class="form-group">
+        <label>1. Do you have reliable transportation to job sites across the Denver metro area? Describe your vehicle situation. <span class="required">*</span></label>
+        <textarea name="q1_transport" required placeholder="I have a 2019 Honda Civic. I'm used to driving across town for work..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>2. What tools do you own or have used? List any power tools, hand tools, or equipment you're comfortable with. <span class="required">*</span></label>
+        <textarea name="q2_tools" required placeholder="I own a drill, tape measure, level. I've used a circular saw and impact driver at work..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>3. Tell us about a time you completed a physical project on your own without anyone telling you exactly what to do. <span class="required">*</span></label>
+        <textarea name="q3_project" required placeholder="Last summer I built a bookshelf from scratch in my apartment. I measured the space, bought lumber..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>4. If you showed up to a job and the garage was in way worse shape than expected, what would you do? <span class="required">*</span></label>
+        <textarea name="q4_problem" required placeholder="I'd take a step back and assess the situation. Then I'd figure out what needs to happen first..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>5. What hours and days are you available? Any commitments that might affect reliability? <span class="required">*</span></label>
+        <textarea name="q5_availability" required placeholder="Available Mon-Sat, flexible on hours. I have class on Tuesday mornings but otherwise fully open..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>6. Why does this job interest you specifically? <span class="required">*</span></label>
+        <textarea name="q6_interest" required placeholder="I enjoy hands-on work and seeing a visible before/after transformation..."></textarea>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">Submit Application</button>
+    </form>
+
+    <div class="success-card" id="successCard">
+      <h2>Application Received!</h2>
+      <p>Thanks for applying to Garage Scholars. We review every application personally and you'll hear from us within 24-48 hours.</p>
+      <p style="margin-top:12px;">Keep an eye on your email for next steps.</p>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPOosKjdOrj1dMLmgs1bH2Z9FoqqrZQI8",
+      authDomain: "garage-scholars-v2.firebaseapp.com",
+      projectId: "garage-scholars-v2",
+      storageBucket: "garage-scholars-v2.firebasestorage.app",
+      messagingSenderId: "583159785746",
+      appId: "1:583159785746:web:87d8ed8f5634ea79c26bcb"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const form = document.getElementById('applicationForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Auto-detect source from URL param (e.g. ?source=indeed)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSource = urlParams.get('source');
+    if (urlSource) {
+      const sourceSelect = form.querySelector('[name="source"]');
+      const validSources = ['indeed', 'handshake', 'referral', 'direct'];
+      if (validSources.includes(urlSource.toLowerCase())) {
+        sourceSelect.value = urlSource.toLowerCase();
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      const data = new FormData(form);
+
+      try {
+        // Write to gs_hiringApplicants — triggers gsScoreHiringApplication
+        await db.collection('gs_hiringApplicants').add({
+          name: data.get('name').trim(),
+          email: data.get('email').trim().toLowerCase(),
+          phone: data.get('phone').trim(),
+          source: data.get('source'),
+          q1_transport: data.get('q1_transport').trim(),
+          q2_tools: data.get('q2_tools').trim(),
+          q3_project: data.get('q3_project').trim(),
+          q4_problem: data.get('q4_problem').trim(),
+          q5_availability: data.get('q5_availability').trim(),
+          q6_interest: data.get('q6_interest').trim(),
+          status: 'pending_ai',
+          appliedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        form.style.display = 'none';
+        document.getElementById('successCard').style.display = 'block';
+      } catch (err) {
+        console.error('Submission failed:', err);
+        alert('Something went wrong. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Application';
+      }
+    });
+  </script>
+</body>
+</html>

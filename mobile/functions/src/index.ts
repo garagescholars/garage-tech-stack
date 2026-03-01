@@ -55,6 +55,15 @@ export {
   gsReviewCampaign,
 } from "./gs-review-campaign";
 
+// ── Garage Scholars Hiring Pipeline functions ──
+export {
+  gsScoreHiringApplication,
+  gsProcessVideoCompletion,
+  gsCalBookingWebhook,
+  gsProcessInterviewScore,
+  gsHiringWeeklyDigest,
+} from "./gs-hiring";
+
 const db = getFirestore();
 const storage = getStorage();
 const adminAuth = getAuth();
