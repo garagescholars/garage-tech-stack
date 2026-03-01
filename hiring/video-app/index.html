@@ -267,6 +267,9 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.3; }
     }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
     /* ── Buttons ── */
     .btn {
@@ -420,8 +423,19 @@
   </div>
 
   <div class="main">
+    <!-- Screen: Loading (shown during verification) -->
+    <div class="screen active" id="screenLoading">
+      <div class="card welcome-card">
+        <div style="margin-bottom:16px;">
+          <div style="width:40px;height:40px;border:3px solid var(--border-default);border-top-color:var(--brand-teal);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div>
+        </div>
+        <h2>Verifying your link...</h2>
+        <p class="subtitle">One moment while we confirm your access.</p>
+      </div>
+    </div>
+
     <!-- Screen: Welcome -->
-    <div class="screen active" id="screenWelcome">
+    <div class="screen" id="screenWelcome">
       <div class="card welcome-card">
         <div style="margin-bottom:16px;">
           <span class="badge badge-teal"><span class="badge-dot"></span>5 Questions</span>
@@ -713,26 +727,44 @@
       }
     });
 
-    // ── Start button ──
-    $('btnStart').addEventListener('click', async () => {
-      applicantId = getApplicantId();
-      if (!applicantId) {
+    // ── Security: Page-load verification ──
+    // Verifies applicant ID + secure token before showing any content.
+    // Token is generated server-side (crypto.randomBytes) and sent only via email.
+    (async function verifyAccess() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const token = params.get('token');
+
+      if (!id || !token) {
         $('errorMsg').textContent = 'Invalid link. Please use the link from your email to access this page.';
         showScreen('screenError');
         return;
       }
 
       try {
-        const doc = await db.collection('gs_hiringApplicants').doc(applicantId).get();
+        const doc = await db.collection('gs_hiringApplicants').doc(id).get();
+
         if (!doc.exists) {
           $('errorMsg').textContent = 'We couldn\'t find your application. Please contact us if you think this is an error.';
           showScreen('screenError');
           return;
         }
+
         const data = doc.data();
-        if (data.status !== 'video_invited') {
-          if (data.videoCompletedAt) {
+
+        // Verify the secure token matches
+        if (!data.videoToken || data.videoToken !== token) {
+          $('errorMsg').textContent = 'This link is invalid or has expired. Please contact us if you need help.';
+          showScreen('screenError');
+          return;
+        }
+
+        // Verify status allows video recording
+        if (data.status !== 'video_invited' && data.status !== 'pending_video') {
+          if (data.videoCompletedAt || data.status === 'video_scoring' || data.status === 'zoom_invited' || data.status === 'zoom_scheduled' || data.status === 'hired') {
             $('errorMsg').textContent = 'You\'ve already completed your video screen. We\'ll be in touch soon!';
+          } else if (data.status === 'rejected') {
+            $('errorMsg').textContent = 'This link is no longer active. Please contact us if you need help.';
           } else {
             $('errorMsg').textContent = 'This link is no longer active. Please contact us if you need help.';
           }
@@ -740,11 +772,26 @@
           return;
         }
 
+        // All checks passed — save ID and show welcome screen
+        applicantId = id;
+        showScreen('screenWelcome');
+      } catch (err) {
+        console.error('Verification failed:', err);
+        $('errorMsg').textContent = 'Unable to verify your link. Please check your connection and try again.';
+        showScreen('screenError');
+      }
+    })();
+
+    // ── Start button (only accessible after page-load verification passed) ──
+    $('btnStart').addEventListener('click', async () => {
+      if (!applicantId) return;
+
+      try {
         await db.collection('gs_hiringApplicants').doc(applicantId).update({
           status: 'pending_video'
         });
       } catch (err) {
-        console.error('Verification failed:', err);
+        console.error('Status update failed:', err);
       }
 
       const cameraOk = await setupCamera();

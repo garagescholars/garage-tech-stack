@@ -91,6 +91,7 @@ export interface HiringApplicant {
   appScores?: AppScoringResult;
 
   // ── Video Screen (set by video app + gsProcessVideoCompletion) ──
+  videoToken?: string;            // Secure access token (crypto.randomBytes, 32 bytes hex)
   videoStoragePaths?: string[];  // Firebase Storage paths
   videoScores?: VideoScoringResult;
 

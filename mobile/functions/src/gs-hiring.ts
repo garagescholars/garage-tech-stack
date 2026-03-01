@@ -585,11 +585,13 @@ Now score this applicant:
       console.log(`[Hiring] App scores for ${appId}: composite=${scores.composite_score}, pass=${scores.pass}`);
 
       if (scores.pass) {
-        // PASS → send video invite
-        const videoLink = `${VIDEO_APP_BASE_URL}?id=${appId}`;
+        // PASS → generate secure video access token and send video invite
+        const videoToken = crypto.randomBytes(32).toString("hex");
+        const videoLink = `${VIDEO_APP_BASE_URL}?id=${appId}&token=${videoToken}`;
         await docRef.update({
           appScores: scores,
           status: "video_invited",
+          videoToken,
           videoInvitedAt: FieldValue.serverTimestamp(),
         });
 
