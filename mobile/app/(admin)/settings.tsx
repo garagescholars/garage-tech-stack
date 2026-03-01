@@ -38,7 +38,7 @@ function SkeletonBlock({
         {
           width: width as any,
           height,
-          backgroundColor: "#1e293b",
+          backgroundColor: "#1a2332",
           borderRadius: 8,
         },
         style,
@@ -91,7 +91,7 @@ function SettingsSkeleton() {
 
 const skeletonStyles = StyleSheet.create({
   card: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     padding: 18,
     marginBottom: 8,
@@ -101,7 +101,7 @@ const skeletonStyles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     marginBottom: 20,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 10,
     padding: 14,
   },
@@ -236,7 +236,7 @@ export default function SettingsScreen() {
                   value={QR_REDIRECT_URL}
                   size={100}
                   backgroundColor="#ffffff"
-                  color="#0f1b2d"
+                  color="#0a0f1a"
                 />
               </View>
             </View>
@@ -379,7 +379,7 @@ export default function SettingsScreen() {
 function TouchableClose({ onPress }: { onPress: () => void }) {
   return (
     <TouchableOpacity onPress={onPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-      <Ionicons name="close" size={16} color="#94a3b8" />
+      <Ionicons name="close" size={16} color="#8b9bb5" />
     </TouchableOpacity>
   );
 }
@@ -405,17 +405,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   headerSubtitle: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginTop: 4,
   },
 
   // QR Card
   qrCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
@@ -439,12 +439,12 @@ const styles = StyleSheet.create({
   qrCardTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 4,
   },
   qrCardDesc: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     lineHeight: 17,
     marginBottom: 8,
   },
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
 
   // Form card
   formCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     padding: 18,
     marginBottom: 16,
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   },
   infoBannerDesc: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     lineHeight: 18,
   },
 
@@ -575,12 +575,12 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     lineHeight: 19,
     flex: 1,
   },
   infoTextBold: {
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
 });

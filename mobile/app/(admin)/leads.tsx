@@ -736,7 +736,7 @@ export default function AdminLeadsScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.leadName}>{lead.clientName || "Unknown"}</Text>
           <View style={styles.inlineRow}>
-            <Ionicons name="location-outline" size={13} color="#64748b" />
+            <Ionicons name="location-outline" size={13} color="#5a6a80" />
             <Text style={styles.leadMeta}>{lead.zipcode || lead.address || "N/A"}</Text>
           </View>
         </View>
@@ -747,7 +747,7 @@ export default function AdminLeadsScreen() {
       <View style={styles.contactRow}>
         {lead.clientEmail ? (
           <View style={styles.inlineRow}>
-            <Ionicons name="mail-outline" size={13} color="#64748b" />
+            <Ionicons name="mail-outline" size={13} color="#5a6a80" />
             <Text style={styles.leadMeta} numberOfLines={1}>
               {lead.clientEmail}
             </Text>
@@ -755,7 +755,7 @@ export default function AdminLeadsScreen() {
         ) : null}
         {lead.clientPhone ? (
           <View style={styles.inlineRow}>
-            <Ionicons name="call-outline" size={13} color="#64748b" />
+            <Ionicons name="call-outline" size={13} color="#5a6a80" />
             <Text style={styles.leadMeta}>{lead.clientPhone}</Text>
           </View>
         ) : null}
@@ -814,7 +814,7 @@ export default function AdminLeadsScreen() {
           disabled={busyId === lead.id}
           activeOpacity={0.7}
         >
-          <Ionicons name="close-circle-outline" size={14} color="#94a3b8" />
+          <Ionicons name="close-circle-outline" size={14} color="#8b9bb5" />
           <Text style={styles.btnDisqualifyText}>Disqualify</Text>
         </TouchableOpacity>
       </View>
@@ -857,7 +857,7 @@ export default function AdminLeadsScreen() {
         </View>
         <View style={[styles.summaryCard, isDesktop && styles.summaryCardDesktop]}>
           <Text style={styles.summaryLabel}>THIS WEEK</Text>
-          <Text style={[styles.summaryValue, { color: "#f8fafc" }]}>
+          <Text style={[styles.summaryValue, { color: "#f1f5f9" }]}>
             {summaryStats.thisWeek}
           </Text>
         </View>
@@ -871,7 +871,7 @@ export default function AdminLeadsScreen() {
         scrollEnabled={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="mail-outline" size={40} color="#334155" />
+            <Ionicons name="mail-outline" size={40} color="#2a3545" />
             <Text style={styles.emptyTitle}>No leads yet</Text>
             <Text style={styles.emptySubtitle}>
               New quote requests from the website will appear here
@@ -897,7 +897,7 @@ export default function AdminLeadsScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Lead Details</Text>
                 <TouchableOpacity onPress={() => setSelectedLead(null)}>
-                  <Ionicons name="close" size={24} color="#94a3b8" />
+                  <Ionicons name="close" size={24} color="#8b9bb5" />
                 </TouchableOpacity>
               </View>
 
@@ -1034,7 +1034,7 @@ export default function AdminLeadsScreen() {
                     setSopError(null);
                   }}
                 >
-                  <Ionicons name="close" size={24} color="#94a3b8" />
+                  <Ionicons name="close" size={24} color="#8b9bb5" />
                 </TouchableOpacity>
               </View>
 
@@ -1181,9 +1181,9 @@ export default function AdminLeadsScreen() {
                         setConvertFormData((p) => ({ ...p, scheduledDate: e.target.value }))
                       }
                       style={{
-                        backgroundColor: "#1e293b",
-                        color: "#f8fafc",
-                        border: "1px solid #334155",
+                        backgroundColor: "#1a2332",
+                        color: "#f1f5f9",
+                        border: "1px solid #2a3545",
                         borderRadius: 10,
                         padding: 14,
                         fontSize: 15,
@@ -1227,7 +1227,7 @@ export default function AdminLeadsScreen() {
                           onPress={() => updateShelvingQty(shelf.id, -1)}
                           activeOpacity={0.7}
                         >
-                          <Ionicons name="remove" size={16} color="#94a3b8" />
+                          <Ionicons name="remove" size={16} color="#8b9bb5" />
                         </TouchableOpacity>
                         <Text style={styles.qtyValue}>{qty}</Text>
                         <TouchableOpacity
@@ -1263,7 +1263,7 @@ export default function AdminLeadsScreen() {
                           onPress={() => updateOverheadQty(item.id, -1)}
                           activeOpacity={0.7}
                         >
-                          <Ionicons name="remove" size={16} color="#94a3b8" />
+                          <Ionicons name="remove" size={16} color="#8b9bb5" />
                         </TouchableOpacity>
                         <Text style={styles.qtyValue}>{qty}</Text>
                         <TouchableOpacity
@@ -1296,7 +1296,7 @@ export default function AdminLeadsScreen() {
                       }
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="remove" size={16} color="#94a3b8" />
+                      <Ionicons name="remove" size={16} color="#8b9bb5" />
                     </TouchableOpacity>
                     <Text style={styles.qtyValue}>{productSelections.extraHaulAways}</Text>
                     <TouchableOpacity
@@ -1344,7 +1344,7 @@ export default function AdminLeadsScreen() {
                       }
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="remove" size={16} color="#94a3b8" />
+                      <Ionicons name="remove" size={16} color="#8b9bb5" />
                     </TouchableOpacity>
                     <Text style={styles.qtyValue}>{productSelections.extraBinPacks}</Text>
                     <TouchableOpacity
@@ -1413,7 +1413,7 @@ export default function AdminLeadsScreen() {
                                     onPress={() => updateGymEquipmentQty(equip.id, -1)}
                                     activeOpacity={0.7}
                                   >
-                                    <Ionicons name="remove" size={16} color="#94a3b8" />
+                                    <Ionicons name="remove" size={16} color="#8b9bb5" />
                                   </TouchableOpacity>
                                   <Text style={styles.qtyValue}>{qty}</Text>
                                   <TouchableOpacity
@@ -1463,7 +1463,7 @@ export default function AdminLeadsScreen() {
                       <TouchableOpacity
                         onPress={addCustomEquipment}
                         style={{
-                          backgroundColor: customEquipmentName.trim() ? "#14b8a6" : "#334155",
+                          backgroundColor: customEquipmentName.trim() ? "#14b8a6" : "#2a3545",
                           paddingHorizontal: 12,
                           paddingVertical: 10,
                           borderRadius: 8,
@@ -1620,7 +1620,7 @@ export default function AdminLeadsScreen() {
                         </Text>
                       </View>
                       <TouchableOpacity onPress={handleSopCancel}>
-                        <Ionicons name="close" size={24} color="#94a3b8" />
+                        <Ionicons name="close" size={24} color="#8b9bb5" />
                       </TouchableOpacity>
                     </View>
 
@@ -1721,7 +1721,7 @@ export default function AdminLeadsScreen() {
                                     expandedSections.has(idx) ? "chevron-up" : "chevron-down"
                                   }
                                   size={16}
-                                  color="#94a3b8"
+                                  color="#8b9bb5"
                                 />
                               </TouchableOpacity>
                               {expandedSections.has(idx) ? (
@@ -1768,7 +1768,7 @@ export default function AdminLeadsScreen() {
                 onPress={handleSopCancel}
                 activeOpacity={0.7}
               >
-                <Ionicons name="close-circle-outline" size={16} color="#94a3b8" />
+                <Ionicons name="close-circle-outline" size={16} color="#8b9bb5" />
                 <Text style={styles.sopFooterBtnCancelText}>Cancel</Text>
               </TouchableOpacity>
 
@@ -1864,11 +1864,11 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   pageSubtitle: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 2,
   },
 
@@ -1916,11 +1916,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   summaryCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   summaryCardDesktop: {
     flex: 1,
@@ -1928,24 +1928,24 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#64748b",
+    color: "#5a6a80",
     letterSpacing: 0.8,
   },
   summaryValue: {
     fontSize: 24,
     fontWeight: "800",
     marginTop: 6,
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
 
   // ── Lead Cards ──
   leadCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   leadCardDesktop: {
     padding: 20,
@@ -1959,20 +1959,20 @@ const styles = StyleSheet.create({
   leadName: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   leadDate: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
   },
   leadMeta: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginLeft: 4,
   },
   leadMetaSmall: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 4,
   },
   inlineRow: {
@@ -2029,7 +2029,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
     borderRadius: 8,
   },
   btnViewText: {
@@ -2057,15 +2057,15 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   btnDisqualifyText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   btnDisabled: {
     opacity: 0.5,
@@ -2080,7 +2080,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#64748b",
+    color: "#5a6a80",
   },
   emptySubtitle: {
     fontSize: 13,
@@ -2105,12 +2105,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalContent: {
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 16,
     width: "100%",
     maxHeight: "95%",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     overflow: "hidden",
   },
   modalContentDesktop: {
@@ -2122,16 +2122,16 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#1e293b",
+    borderBottomColor: "#1a2332",
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   modalSubtitle: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 4,
   },
   modalBody: {
@@ -2142,7 +2142,7 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "#1e293b",
+    borderTopColor: "#1a2332",
   },
 
   footerBtnSecondary: {
@@ -2152,15 +2152,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 14,
     paddingHorizontal: 20,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   footerBtnSecondaryText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   footerBtnPrimary: {
     flexDirection: "row",
@@ -2182,7 +2182,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#64748b",
+    color: "#5a6a80",
     letterSpacing: 0.8,
     marginBottom: 10,
   },
@@ -2191,16 +2191,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#1e293b",
+    borderBottomColor: "#1a2332",
   },
   detailLabel: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     fontWeight: "600",
   },
   detailValue: {
     fontSize: 14,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     fontWeight: "500",
     maxWidth: "60%",
     textAlign: "right",
@@ -2221,14 +2221,14 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
 
   // ── Convert Form Specifics ──
   formSectionTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginTop: 20,
     marginBottom: 14,
     paddingBottom: 8,
@@ -2238,7 +2238,7 @@ const styles = StyleSheet.create({
   subSectionLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 6,
@@ -2294,7 +2294,7 @@ const styles = StyleSheet.create({
   },
   qtyItemDims: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 2,
   },
   qtyControls: {
@@ -2323,17 +2323,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
 
   // ══════════════════════════════════════════════════
   // SOP Review Modal
   // ══════════════════════════════════════════════════
   sopHeader: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#2a3545",
   },
   sopHeaderTop: {
     flexDirection: "row",
@@ -2344,11 +2344,11 @@ const styles = StyleSheet.create({
   sopHeaderTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   sopHeaderSubtitle: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginTop: 4,
   },
   sopMetaGrid: {
@@ -2363,21 +2363,21 @@ const styles = StyleSheet.create({
   sopMetaLabel: {
     fontSize: 9,
     fontWeight: "800",
-    color: "#64748b",
+    color: "#5a6a80",
     letterSpacing: 0.8,
     marginBottom: 2,
   },
   sopMetaValue: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   sopIntakeThumb: {
     width: 96,
     height: 64,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     marginRight: 8,
   },
 
@@ -2391,7 +2391,7 @@ const styles = StyleSheet.create({
   sopBodyTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   sopEditToggleBtn: {
     flexDirection: "row",
@@ -2408,7 +2408,7 @@ const styles = StyleSheet.create({
   sopTextEditor: {
     backgroundColor: "#162032",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     borderRadius: 10,
     padding: 16,
     color: "#e2e8f0",
@@ -2442,11 +2442,11 @@ const styles = StyleSheet.create({
   sopAccordionBody: {
     padding: 14,
     paddingTop: 0,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
   },
   sopAccordionText: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     lineHeight: 20,
   },
   sopFallback: {
@@ -2456,7 +2456,7 @@ const styles = StyleSheet.create({
   },
   sopFallbackText: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     lineHeight: 20,
   },
 
@@ -2470,7 +2470,7 @@ const styles = StyleSheet.create({
   sopRegenerateInput: {
     backgroundColor: "#162032",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     borderRadius: 10,
     padding: 12,
     color: "#e2e8f0",
@@ -2486,8 +2486,8 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 14,
     borderTopWidth: 1,
-    borderTopColor: "#1e293b",
-    backgroundColor: "#0f1b2d",
+    borderTopColor: "#1a2332",
+    backgroundColor: "#0a0f1a",
   },
   sopFooterBtnCancel: {
     flexDirection: "row",
@@ -2496,15 +2496,15 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   sopFooterBtnCancelText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   sopFooterBtnRegen: {
     flexDirection: "row",
@@ -2549,23 +2549,23 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   confirmCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 16,
     padding: 24,
     width: "100%",
     maxWidth: 360,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   confirmTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 8,
   },
   confirmMessage: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     lineHeight: 20,
     marginBottom: 24,
   },
@@ -2584,7 +2584,7 @@ const styles = StyleSheet.create({
   confirmBtnCancelText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   confirmBtnDanger: {
     flex: 1,

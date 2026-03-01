@@ -190,9 +190,9 @@ export default function AdminJobDetailScreen() {
               <Ionicons
                 name={item.completed ? "checkbox" : "square-outline"}
                 size={item.isSubItem ? 16 : 18}
-                color={item.completed ? "#10b981" : "#64748b"}
+                color={item.completed ? "#10b981" : "#5a6a80"}
               />
-              <Text style={[styles.checkText, item.isSubItem && { fontSize: 13, color: "#94a3b8" }]}>{item.text}</Text>
+              <Text style={[styles.checkText, item.isSubItem && { fontSize: 13, color: "#8b9bb5" }]}>{item.text}</Text>
             </View>
           ))}
         </Section>
@@ -237,7 +237,7 @@ function DetailRow({ icon, text }: { icon: string; text: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { color: "#ef4444", fontSize: 16 },
   scroll: { padding: 16 },
@@ -248,16 +248,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statusBadge: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  statusText: { color: "#94a3b8", fontSize: 12, fontWeight: "700" },
-  title: { fontSize: 22, fontWeight: "800", color: "#f8fafc", marginBottom: 4 },
+  statusText: { color: "#8b9bb5", fontSize: 12, fontWeight: "700" },
+  title: { fontSize: 22, fontWeight: "800", color: "#f1f5f9", marginBottom: 4 },
   payout: { fontSize: 24, fontWeight: "800", color: "#10b981", marginBottom: 16 },
   section: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#64748b",
+    color: "#5a6a80",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 10,
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 8,
     marginRight: 8,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
   },
   checkItem: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
   checkText: { fontSize: 14, color: "#cbd5e1", flex: 1 },

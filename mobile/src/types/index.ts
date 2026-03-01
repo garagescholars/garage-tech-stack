@@ -152,6 +152,11 @@ export type GsJob = {
   extractedItemIds?: string[];
   intakeImageUrls?: string[];
 
+  // Checkout completion tracking
+  resaleStatus?: "pending" | "captured" | "not_applicable";
+  donationStatus?: "pending" | "captured" | "receipt_uploaded" | "not_applicable";
+  gymInstallStatus?: "pending" | "captured" | "not_applicable";
+
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
@@ -586,6 +591,8 @@ export type GsActivityFeedItem = {
 
 export type SocialContentStatus = "pending" | "processing" | "posted" | "failed" | "permanently_failed";
 
+export type SocialContentType = "before_after" | "resale" | "donation" | "gym_install";
+
 export type GsSocialContentItem = {
   id: string;
   jobId: string;
@@ -595,6 +602,9 @@ export type GsSocialContentItem = {
   packageTier: string;
   beforePhotoUrl: string;
   afterPhotoUrl: string;
+  contentType?: SocialContentType;
+  itemName?: string;
+  itemPhotos?: string[];
   status: SocialContentStatus;
   compositeUrl?: string;
   caption?: string;
@@ -622,4 +632,58 @@ export type GsReviewCampaign = {
   day5Sent: boolean;
   day5SentAt?: Timestamp;
   templateIndex: number;
+};
+
+// ── Resale & Donation Items (gs_resale_donation_items) ──
+
+export type ItemCondition = "like_new" | "good" | "fair" | "poor";
+export type ResaleDonationStatus = "photos_taken" | "ai_analyzed" | "worker_confirmed" | "listed" | "sold" | "donated";
+
+export type GsResaleDonationItem = {
+  id: string;
+  jobId: string;
+  type: "resale" | "donation";
+  photos: Record<string, string>; // key = angle name, value = Storage URL
+  aiSuggestion?: {
+    name: string;
+    description: string;
+    condition: ItemCondition;
+    estimatedPrice?: number;
+    category: string;
+  };
+  workerConfirmed?: {
+    name: string;
+    description: string;
+    condition: string;
+    estimatedPrice?: number;
+    confirmedAt: Timestamp;
+  };
+  status: ResaleDonationStatus;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+};
+
+// ── Donation Receipts (gs_donation_receipts) ──
+
+export type GsDonationReceipt = {
+  id: string;
+  jobId: string;
+  donationCenter: string;
+  receiptPhotoUrl: string;
+  itemIds: string[];
+  emailSentTo: string[];
+  uploadedAt?: Timestamp;
+  uploadedBy: string;
+};
+
+// ── Gym Installation Photos (gs_gym_install_photos) ──
+
+export type GsGymInstallPhotos = {
+  id: string;
+  jobId: string;
+  photos: string[];
+  equipmentInstalled: string[];
+  notes?: string;
+  capturedAt?: Timestamp;
+  capturedBy: string;
 };

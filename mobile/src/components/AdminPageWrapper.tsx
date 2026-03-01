@@ -1,6 +1,7 @@
 import React from "react";
 import { ScrollView, View, StyleSheet, Platform } from "react-native";
 import { useResponsive } from "../lib/responsive";
+import { colors, layout } from "../constants/theme";
 
 type Props = {
   children: React.ReactNode;
@@ -37,20 +38,20 @@ export default function AdminPageWrapper({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: colors.bg.primary,
   },
   scroll: {
     flexGrow: 1,
   },
   inner: {
     flex: 1,
-    padding: 16,
+    padding: layout.screenPadding,
     paddingBottom: 40,
   },
   innerDesktop: {
-    maxWidth: 1200,
+    maxWidth: layout.maxContentWidth,
     alignSelf: "center",
     width: "100%" as any,
-    paddingHorizontal: 32,
+    paddingHorizontal: 40,
   },
 });

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, KeyboardTypeOptions } from "react-native";
+import { colors, radius, typography } from "../constants/theme";
 
 type Props = {
   label: string;
@@ -44,7 +45,7 @@ export default function FormInput({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#475569"
+        placeholderTextColor={colors.text.muted}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
@@ -62,41 +63,38 @@ export default function FormInput({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 14,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#94a3b8",
-    marginBottom: 6,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    ...typography.label,
+    color: colors.text.secondary,
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: "#1e293b",
-    borderRadius: 10,
+    backgroundColor: colors.bg.input,
+    borderRadius: radius.sm,
     padding: 14,
-    color: "#f8fafc",
-    fontSize: 15,
+    color: colors.text.primary,
+    ...typography.body,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: colors.border.default,
   },
   multiline: {
     minHeight: 80,
     textAlignVertical: "top",
   },
   inputFocused: {
-    borderColor: "#14b8a6",
+    borderColor: colors.border.focus,
   },
   inputError: {
-    borderColor: "#ef4444",
+    borderColor: colors.status.error,
   },
   inputDisabled: {
     opacity: 0.5,
   },
   errorText: {
     fontSize: 12,
-    color: "#ef4444",
+    color: colors.status.error,
     marginTop: 4,
     marginLeft: 4,
   },

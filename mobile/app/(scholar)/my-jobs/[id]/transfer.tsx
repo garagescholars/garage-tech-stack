@@ -186,7 +186,7 @@ export default function TransferScreen() {
             <Ionicons
               name="person-add-outline"
               size={24}
-              color={transferType === "direct" ? "#14b8a6" : "#64748b"}
+              color={transferType === "direct" ? "#14b8a6" : "#5a6a80"}
             />
           </View>
           <View style={styles.optionTextWrap}>
@@ -219,7 +219,7 @@ export default function TransferScreen() {
             <Ionicons
               name="globe-outline"
               size={24}
-              color={transferType === "requeue" ? "#14b8a6" : "#64748b"}
+              color={transferType === "requeue" ? "#14b8a6" : "#5a6a80"}
             />
           </View>
           <View style={styles.optionTextWrap}>
@@ -255,7 +255,7 @@ export default function TransferScreen() {
                 <Ionicons
                   name="people-outline"
                   size={32}
-                  color="#334155"
+                  color="#2a3545"
                 />
                 <Text style={styles.emptyText}>
                   No other scholars available
@@ -280,7 +280,7 @@ export default function TransferScreen() {
                         color={
                           selectedScholar?.uid === s.uid
                             ? "#14b8a6"
-                            : "#64748b"
+                            : "#5a6a80"
                         }
                       />
                     </View>
@@ -316,7 +316,7 @@ export default function TransferScreen() {
               value={reason}
               onChangeText={setReason}
               placeholder="Why are you transferring this job?"
-              placeholderTextColor="#64748b"
+              placeholderTextColor="#5a6a80"
               multiline
               numberOfLines={3}
               textAlignVertical="top"
@@ -353,17 +353,17 @@ export default function TransferScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
   },
   errorText: { color: "#ef4444", fontSize: 16 },
   scroll: { padding: 16 },
   summaryCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -371,31 +371,31 @@ const styles = StyleSheet.create({
   jobTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 4,
   },
-  jobAddress: { fontSize: 14, color: "#94a3b8", marginBottom: 2 },
-  jobTime: { fontSize: 13, color: "#64748b", marginBottom: 10 },
+  jobAddress: { fontSize: 14, color: "#8b9bb5", marginBottom: 2 },
+  jobTime: { fontSize: 13, color: "#5a6a80", marginBottom: 10 },
   payoutRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "#334155",
+    borderTopColor: "#2a3545",
     paddingTop: 10,
   },
-  payoutLabel: { fontSize: 13, color: "#64748b", fontWeight: "600" },
+  payoutLabel: { fontSize: 13, color: "#5a6a80", fontWeight: "600" },
   payoutValue: { fontSize: 18, fontWeight: "800", color: "#14b8a6" },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 12,
   },
   optionCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -425,11 +425,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   optionTitleActive: {
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   optionDesc: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#5a6a80",
     lineHeight: 18,
   },
   scholarSection: {
@@ -440,12 +440,12 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   emptyText: {
-    color: "#64748b",
+    color: "#5a6a80",
     fontSize: 14,
     marginTop: 8,
   },
   scholarList: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     overflow: "hidden",
   },
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#2a3545",
   },
   scholarRowActive: {
     backgroundColor: "#14b8a615",
@@ -470,20 +470,20 @@ const styles = StyleSheet.create({
     color: "#cbd5e1",
   },
   scholarNameActive: {
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   reasonSection: {
     marginTop: 20,
   },
   reasonInput: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     minHeight: 90,
   },
   bottomBar: {
@@ -493,9 +493,9 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingBottom: 32,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderTopWidth: 1,
-    borderTopColor: "#1e293b",
+    borderTopColor: "#1a2332",
   },
   submitBtn: {
     backgroundColor: "#14b8a6",

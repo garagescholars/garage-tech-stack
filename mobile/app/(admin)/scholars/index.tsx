@@ -86,11 +86,11 @@ export default function ScholarsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.searchRow}>
-        <Ionicons name="search" size={18} color="#64748b" />
+        <Ionicons name="search" size={18} color="#5a6a80" />
         <TextInput
           style={styles.searchInput}
           placeholder="Search scholars..."
-          placeholderTextColor="#64748b"
+          placeholderTextColor="#5a6a80"
           value={search}
           onChangeText={setSearch}
         />
@@ -164,22 +164,22 @@ export default function ScholarsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     margin: 12,
     marginBottom: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     gap: 8,
   },
-  searchInput: { flex: 1, color: "#f8fafc", fontSize: 15 },
+  searchInput: { flex: 1, color: "#f1f5f9", fontSize: 15 },
   summaryRow: {
     flexDirection: "row",
     gap: 8,
@@ -188,16 +188,16 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 10,
     padding: 12,
     alignItems: "center",
   },
   summaryNum: { fontSize: 22, fontWeight: "800", color: "#14b8a6" },
-  summaryLabel: { fontSize: 11, color: "#64748b", fontWeight: "600" },
+  summaryLabel: { fontSize: 11, color: "#5a6a80", fontWeight: "600" },
   list: { padding: 12, paddingTop: 0 },
   card: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
@@ -207,14 +207,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
   },
   cardInfo: { flex: 1 },
-  name: { fontSize: 15, fontWeight: "700", color: "#f8fafc" },
-  contact: { fontSize: 12, color: "#64748b" },
+  name: { fontSize: 15, fontWeight: "700", color: "#f1f5f9" },
+  contact: { fontSize: 12, color: "#5a6a80" },
   tierBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   tierText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
   cardBottom: {
@@ -222,10 +222,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderTopWidth: 1,
-    borderTopColor: "#334155",
+    borderTopColor: "#2a3545",
     paddingTop: 8,
   },
-  stat: { fontSize: 12, color: "#94a3b8", fontWeight: "600" },
+  stat: { fontSize: 12, color: "#8b9bb5", fontWeight: "600" },
   empty: { padding: 32, alignItems: "center" },
-  emptyText: { color: "#64748b", fontSize: 16 },
+  emptyText: { color: "#5a6a80", fontSize: 16 },
 });

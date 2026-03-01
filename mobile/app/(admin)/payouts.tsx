@@ -57,7 +57,7 @@ function SkeletonBlock({ width, height, style }: { width: number | string; heigh
         {
           width: width as any,
           height,
-          backgroundColor: "#1e293b",
+          backgroundColor: "#1a2332",
           borderRadius: 8,
         },
         style,
@@ -120,12 +120,12 @@ const skeletonStyles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
   },
   listCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
@@ -330,7 +330,7 @@ export default function PayoutsScreen() {
       </View>
       <View style={[styles.summaryCard, isDesktop && styles.summaryCardDesktop]}>
         <Text style={styles.summaryLabel}>Total Payouts</Text>
-        <Text style={[styles.summaryValue, { color: "#f8fafc" }]}>
+        <Text style={[styles.summaryValue, { color: "#f1f5f9" }]}>
           {payouts.length}
         </Text>
       </View>
@@ -435,7 +435,7 @@ export default function PayoutsScreen() {
   // ---------- Empty state ----------
   const renderEmpty = () => (
     <View style={styles.empty}>
-      <Ionicons name="cash-outline" size={48} color="#334155" />
+      <Ionicons name="cash-outline" size={48} color="#2a3545" />
       <Text style={styles.emptyTitle}>No payouts yet</Text>
       <Text style={styles.emptySubtitle}>
         Payouts will appear here when scholars complete jobs
@@ -536,7 +536,7 @@ export default function PayoutsScreen() {
                   ${markPaidModal.amount.toFixed(2)}
                 </Text>{" "}
                 to{" "}
-                <Text style={{ fontWeight: "700", color: "#f8fafc" }}>
+                <Text style={{ fontWeight: "700", color: "#f1f5f9" }}>
                   {markPaidModal.scholarName}
                 </Text>
               </Text>
@@ -606,11 +606,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   headerSubtitle: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginTop: 2,
   },
   exportBtn: {
@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
   },
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -680,18 +680,18 @@ const styles = StyleSheet.create({
   // Desktop table
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#2a3545",
   },
   tableHeaderCell: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     paddingHorizontal: 8,
@@ -699,15 +699,15 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     paddingVertical: 14,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#0f1b2d",
+    borderBottomColor: "#0a0f1a",
   },
   tableCell: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     paddingHorizontal: 8,
   },
   cellMono: {
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
   },
   cellBold: {
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   cellAmount: {
     fontWeight: "700",
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
 
   // Mobile card
   card: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
@@ -739,12 +739,12 @@ const styles = StyleSheet.create({
   cardId: {
     fontSize: 12,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: "#64748b",
+    color: "#5a6a80",
   },
   cardScholar: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 10,
   },
   cardDetailsRow: {
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
   cardDetailLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748b",
+    color: "#5a6a80",
     textTransform: "uppercase",
     letterSpacing: 0.3,
   },
@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
   cardDetailValue: {
     fontSize: 13,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
 
   // Buttons
@@ -818,11 +818,11 @@ const styles = StyleSheet.create({
   },
   paidInfoText: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   paidDate: {
     fontSize: 11,
-    color: "#64748b",
+    color: "#5a6a80",
   },
 
   // Empty
@@ -836,11 +836,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
   },
   emptySubtitle: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#5a6a80",
     textAlign: "center",
     maxWidth: 260,
   },
@@ -853,11 +853,11 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContent: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     maxWidth: 460,
     width: "100%",
     alignSelf: "center",
@@ -868,12 +868,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 8,
   },
   modalDescription: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: "#8b9bb5",
     marginBottom: 20,
     lineHeight: 20,
   },

@@ -39,7 +39,7 @@ export default function GoalsScreen() {
         <View style={{ padding: 12 }}>
           {[0, 1].map((i) => (
             <FadeInView key={i} delay={i * 120} style={{ marginBottom: 12 }}>
-              <View style={{ backgroundColor: '#1e293b', borderRadius: 12, padding: 16 }}>
+              <View style={{ backgroundColor: '#1a2332', borderRadius: 12, padding: 16 }}>
                 <SkeletonBox width={120} height={16} style={{ marginBottom: 12 }} />
                 <SkeletonBox width="80%" height={28} style={{ marginBottom: 10 }} />
                 <SkeletonBox width="100%" height={8} borderRadius={4} />
@@ -84,7 +84,7 @@ export default function GoalsScreen() {
 
             {goals.length === 0 ? (
               <View style={styles.emptyCard}>
-                <Ionicons name="flag-outline" size={40} color="#334155" />
+                <Ionicons name="flag-outline" size={40} color="#2a3545" />
                 <Text style={styles.emptyTitle}>No goals set</Text>
                 <Text style={styles.emptySubtext}>
                   Set a monthly jobs or earnings goal to track your progress
@@ -164,7 +164,7 @@ export default function GoalsScreen() {
             <Text style={styles.sectionTitle}>Achievements</Text>
             {achievements.length === 0 ? (
               <View style={styles.emptyCard}>
-                <Ionicons name="medal-outline" size={40} color="#334155" />
+                <Ionicons name="medal-outline" size={40} color="#2a3545" />
                 <Text style={styles.emptyTitle}>No badges yet</Text>
                 <Text style={styles.emptySubtext}>
                   Complete jobs and hit goals to earn achievement badges
@@ -193,13 +193,13 @@ export default function GoalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   tabRow: {
     flexDirection: "row",
     margin: 12,
     marginBottom: 4,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 4,
   },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabActive: { backgroundColor: "#14b8a6" },
-  tabText: { fontSize: 13, fontWeight: "700", color: "#64748b" },
+  tabText: { fontSize: 13, fontWeight: "700", color: "#5a6a80" },
   tabTextActive: { color: "#fff" },
   scroll: { padding: 12, paddingBottom: 32 },
   monthHeader: {
@@ -219,19 +219,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  monthTitle: { fontSize: 20, fontWeight: "800", color: "#f8fafc" },
+  monthTitle: { fontSize: 20, fontWeight: "800", color: "#f1f5f9" },
   setBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
   },
   setBtnText: { color: "#14b8a6", fontWeight: "700", fontSize: 13 },
   goalCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -245,31 +245,31 @@ const styles = StyleSheet.create({
   goalLabel: { fontSize: 14, fontWeight: "700", color: "#cbd5e1", flex: 1 },
   metBadge: { flexDirection: "row", alignItems: "center", gap: 4 },
   metText: { color: "#10b981", fontWeight: "800", fontSize: 12 },
-  goalProgress: { fontSize: 28, fontWeight: "800", color: "#f8fafc", marginBottom: 8 },
-  goalTarget: { fontSize: 16, fontWeight: "600", color: "#64748b" },
+  goalProgress: { fontSize: 28, fontWeight: "800", color: "#f1f5f9", marginBottom: 8 },
+  goalTarget: { fontSize: 16, fontWeight: "600", color: "#5a6a80" },
   almostText: { color: "#f59e0b", fontSize: 12, fontWeight: "700", marginTop: 6 },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 12,
   },
   lbCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     overflow: "hidden",
   },
   emptyCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 32,
     alignItems: "center",
     gap: 8,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#f8fafc" },
+  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#f1f5f9" },
   emptySubtext: {
     fontSize: 14,
-    color: "#64748b",
+    color: "#5a6a80",
     textAlign: "center",
     lineHeight: 20,
   },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   achCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
@@ -299,6 +299,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   achInfo: { flex: 1 },
-  achTitle: { fontSize: 15, fontWeight: "700", color: "#f8fafc" },
-  achDesc: { fontSize: 13, color: "#94a3b8", marginTop: 2 },
+  achTitle: { fontSize: 15, fontWeight: "700", color: "#f1f5f9" },
+  achDesc: { fontSize: 13, color: "#8b9bb5", marginTop: 2 },
 });

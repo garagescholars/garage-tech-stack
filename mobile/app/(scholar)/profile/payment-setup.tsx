@@ -65,7 +65,7 @@ export default function PaymentSetupScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={24} color="#f8fafc" />
+        <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
       </TouchableOpacity>
 
       <Text style={styles.title}>Payment Setup</Text>
@@ -79,7 +79,7 @@ export default function PaymentSetupScreen() {
           <Ionicons
             name={payoutsEnabled ? "checkmark-circle" : "ellipse-outline"}
             size={24}
-            color={payoutsEnabled ? "#10b981" : "#64748b"}
+            color={payoutsEnabled ? "#10b981" : "#5a6a80"}
           />
           <View style={styles.statusInfo}>
             <Text style={styles.statusLabel}>Bank Account</Text>
@@ -97,7 +97,7 @@ export default function PaymentSetupScreen() {
           <Ionicons
             name={isOnboarded ? "checkmark-circle" : "ellipse-outline"}
             size={24}
-            color={isOnboarded ? "#10b981" : "#64748b"}
+            color={isOnboarded ? "#10b981" : "#5a6a80"}
           />
           <View style={styles.statusInfo}>
             <Text style={styles.statusLabel}>Identity Verified</Text>
@@ -111,7 +111,7 @@ export default function PaymentSetupScreen() {
           <Ionicons
             name={payoutsEnabled ? "checkmark-circle" : "ellipse-outline"}
             size={24}
-            color={payoutsEnabled ? "#10b981" : "#64748b"}
+            color={payoutsEnabled ? "#10b981" : "#5a6a80"}
           />
           <View style={styles.statusInfo}>
             <Text style={styles.statusLabel}>Payouts</Text>
@@ -193,19 +193,19 @@ function InfoRow({ icon, text }: { icon: string; text: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   scroll: { padding: 16, paddingBottom: 40 },
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     justifyContent: "center",
     alignItems: "center",
   },
   backBtn: { marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: "800", color: "#f8fafc", marginBottom: 4 },
-  subtitle: { fontSize: 14, color: "#94a3b8", marginBottom: 20, lineHeight: 20 },
+  title: { fontSize: 24, fontWeight: "800", color: "#f1f5f9", marginBottom: 4 },
+  subtitle: { fontSize: 14, color: "#8b9bb5", marginBottom: 20, lineHeight: 20 },
   statusCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     gap: 16,
@@ -213,8 +213,8 @@ const styles = StyleSheet.create({
   },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   statusInfo: { flex: 1 },
-  statusLabel: { fontSize: 14, fontWeight: "700", color: "#f8fafc" },
-  statusValue: { fontSize: 12, color: "#94a3b8", marginTop: 2 },
+  statusLabel: { fontSize: 14, fontWeight: "700", color: "#f1f5f9" },
+  statusValue: { fontSize: 12, color: "#8b9bb5", marginTop: 2 },
   setupBtn: {
     backgroundColor: "#14b8a6",
     borderRadius: 12,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   },
   successText: { flex: 1, color: "#10b981", fontSize: 13, lineHeight: 19 },
   infoCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     gap: 14,
@@ -248,12 +248,12 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   fallbackNote: {
-    color: "#64748b",
+    color: "#5a6a80",
     fontSize: 12,
     textAlign: "center",
     lineHeight: 18,

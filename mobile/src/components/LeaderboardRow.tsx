@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#1e293b",
     gap: 12,
   },
   currentUser: {
@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
   },
   rankText: { color: "#64748b", fontWeight: "800", fontSize: 14 },
   info: { flex: 1, gap: 4 },
-  name: { fontSize: 15, fontWeight: "700", color: "#f8fafc" },
+  name: { fontSize: 15, fontWeight: "700", color: "#f1f5f9" },
   stats: { alignItems: "center" },
   jobCount: { fontSize: 18, fontWeight: "800", color: "#14b8a6" },
-  jobLabel: { fontSize: 10, color: "#64748b", fontWeight: "600" },
+  jobLabel: { fontSize: 10, color: "#5a6a80", fontWeight: "600" },
 });

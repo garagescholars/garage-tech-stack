@@ -74,7 +74,7 @@ export default function MoreScreen() {
             <Text style={styles.menuLabel}>{item.label}</Text>
             <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+          <Ionicons name="chevron-forward" size={18} color="#5a6a80" />
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -82,12 +82,12 @@ export default function MoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   scroll: { padding: 16, paddingBottom: 40 },
   heading: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#94a3b8",
+    color: "#8b9bb5",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 12,
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
@@ -110,6 +110,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   textWrap: { flex: 1 },
-  menuLabel: { fontSize: 15, fontWeight: "700", color: "#f8fafc" },
-  menuSubtitle: { fontSize: 12, color: "#94a3b8", marginTop: 2 },
+  menuLabel: { fontSize: 15, fontWeight: "700", color: "#f1f5f9" },
+  menuSubtitle: { fontSize: 12, color: "#8b9bb5", marginTop: 2 },
 });

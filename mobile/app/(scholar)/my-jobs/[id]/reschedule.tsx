@@ -143,12 +143,12 @@ export default function RescheduleScreen() {
         <Text style={styles.sectionTitle}>Current Schedule</Text>
         <View style={styles.currentSchedule}>
           <View style={styles.scheduleRow}>
-            <Ionicons name="calendar-outline" size={18} color="#64748b" />
+            <Ionicons name="calendar-outline" size={18} color="#5a6a80" />
             <Text style={styles.scheduleLabel}>Date</Text>
             <Text style={styles.scheduleValue}>{job.scheduledDate}</Text>
           </View>
           <View style={styles.scheduleRow}>
-            <Ionicons name="time-outline" size={18} color="#64748b" />
+            <Ionicons name="time-outline" size={18} color="#5a6a80" />
             <Text style={styles.scheduleLabel}>Start</Text>
             <Text style={styles.scheduleValue}>
               {job.scheduledTimeStart}
@@ -156,7 +156,7 @@ export default function RescheduleScreen() {
           </View>
           {job.scheduledTimeEnd && (
             <View style={styles.scheduleRow}>
-              <Ionicons name="time-outline" size={18} color="#64748b" />
+              <Ionicons name="time-outline" size={18} color="#5a6a80" />
               <Text style={styles.scheduleLabel}>End</Text>
               <Text style={styles.scheduleValue}>
                 {job.scheduledTimeEnd}
@@ -175,7 +175,7 @@ export default function RescheduleScreen() {
             value={newDate}
             onChangeText={setNewDate}
             placeholder="YYYY-MM-DD"
-            placeholderTextColor="#64748b"
+            placeholderTextColor="#5a6a80"
             keyboardType="numbers-and-punctuation"
             maxLength={10}
           />
@@ -188,7 +188,7 @@ export default function RescheduleScreen() {
             value={newStartTime}
             onChangeText={setNewStartTime}
             placeholder="e.g. 9:00 AM"
-            placeholderTextColor="#64748b"
+            placeholderTextColor="#5a6a80"
           />
         </View>
 
@@ -199,7 +199,7 @@ export default function RescheduleScreen() {
             value={newEndTime}
             onChangeText={setNewEndTime}
             placeholder="e.g. 12:00 PM"
-            placeholderTextColor="#64748b"
+            placeholderTextColor="#5a6a80"
           />
         </View>
 
@@ -210,7 +210,7 @@ export default function RescheduleScreen() {
             value={reason}
             onChangeText={setReason}
             placeholder="Why do you need to reschedule?"
-            placeholderTextColor="#64748b"
+            placeholderTextColor="#5a6a80"
             multiline
             numberOfLines={3}
             textAlignVertical="top"
@@ -242,17 +242,17 @@ export default function RescheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
   },
   errorText: { color: "#ef4444", fontSize: 16 },
   scroll: { padding: 16 },
   summaryCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -260,18 +260,18 @@ const styles = StyleSheet.create({
   jobTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 4,
   },
-  jobAddress: { fontSize: 14, color: "#94a3b8" },
+  jobAddress: { fontSize: 14, color: "#8b9bb5" },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginBottom: 12,
   },
   currentSchedule: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     marginBottom: 24,
@@ -282,17 +282,17 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#2a3545",
   },
   scheduleLabel: {
     fontSize: 14,
-    color: "#64748b",
+    color: "#5a6a80",
     fontWeight: "600",
     width: 50,
   },
   scheduleValue: {
     fontSize: 15,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     fontWeight: "700",
     flex: 1,
     textAlign: "right",
@@ -307,14 +307,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   reasonInput: {
     minHeight: 90,
@@ -326,9 +326,9 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingBottom: 32,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderTopWidth: 1,
-    borderTopColor: "#1e293b",
+    borderTopColor: "#1a2332",
   },
   submitBtn: {
     backgroundColor: "#14b8a6",

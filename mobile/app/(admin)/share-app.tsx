@@ -108,7 +108,7 @@ export default function ShareAppScreen() {
             value={QR_REDIRECT_URL}
             size={250}
             backgroundColor="#ffffff"
-            color="#0f1b2d"
+            color="#0a0f1a"
           />
         </View>
 
@@ -173,7 +173,7 @@ export default function ShareAppScreen() {
           value={editUrl}
           onChangeText={setEditUrl}
           placeholder="exp://192.168.1.5:8081"
-          placeholderTextColor="#64748b"
+          placeholderTextColor="#5a6a80"
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -212,8 +212,8 @@ function Step({ number, text }: { number: number; text: string }) {
 
 const styles = StyleSheet.create({
   headerSection: { marginBottom: 20 },
-  headerTitle: { fontSize: 22, fontWeight: "800", color: "#f8fafc" },
-  headerSubtitle: { fontSize: 13, color: "#94a3b8", marginTop: 4 },
+  headerTitle: { fontSize: 22, fontWeight: "800", color: "#f1f5f9" },
+  headerSubtitle: { fontSize: 13, color: "#8b9bb5", marginTop: 4 },
 
   // Setup card
   setupCard: {
@@ -231,13 +231,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   setupTitle: { fontSize: 16, fontWeight: "700", color: "#eab308" },
-  setupText: { fontSize: 13, color: "#94a3b8", lineHeight: 19, marginBottom: 12 },
+  setupText: { fontSize: 13, color: "#8b9bb5", lineHeight: 19, marginBottom: 12 },
   setupSteps: { marginBottom: 12 },
-  setupNote: { fontSize: 12, color: "#64748b", fontStyle: "italic", lineHeight: 17 },
+  setupNote: { fontSize: 12, color: "#5a6a80", fontStyle: "italic", lineHeight: 17 },
 
   // QR card
   qrCard: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 14,
     padding: 24,
     alignItems: "center",
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   scanText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     textAlign: "center",
     marginBottom: 16,
   },
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   copyBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
   currentUrl: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#5a6a80",
     marginBottom: 12,
     textAlign: "center",
   },
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   instructionsTitle: { fontSize: 14, fontWeight: "700", color: "#60a5fa" },
-  instructionsIntro: { fontSize: 13, color: "#94a3b8", marginBottom: 14, lineHeight: 19 },
+  instructionsIntro: { fontSize: 13, color: "#8b9bb5", marginBottom: 14, lineHeight: 19 },
 
   // Admin notes
   adminNoteCard: {
@@ -315,25 +315,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   stepNumber: { fontSize: 12, fontWeight: "800", color: "#14b8a6" },
-  stepText: { fontSize: 13, color: "#94a3b8", flex: 1, lineHeight: 19 },
+  stepText: { fontSize: 13, color: "#8b9bb5", flex: 1, lineHeight: 19 },
 
   // Edit URL
   editPanel: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
-  editLabel: { fontSize: 14, fontWeight: "700", color: "#f8fafc", marginBottom: 4 },
-  editHint: { fontSize: 12, color: "#64748b", marginBottom: 12, lineHeight: 17 },
+  editLabel: { fontSize: 14, fontWeight: "700", color: "#f1f5f9", marginBottom: 4 },
+  editHint: { fontSize: 12, color: "#5a6a80", marginBottom: 12, lineHeight: 17 },
   editInput: {
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     padding: 12,
     fontSize: 14,
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   saveBtn: {
     backgroundColor: "#14b8a6",

@@ -109,7 +109,7 @@ export function SkeletonBox({
           width: width as number,
           height,
           borderRadius,
-          backgroundColor: '#334155',
+          backgroundColor: '#2a3545',
           opacity,
         },
         style,

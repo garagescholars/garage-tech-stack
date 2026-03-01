@@ -1192,7 +1192,7 @@ export const onScholarApplicationCreated = onDocumentCreated(
     try {
       // Send admin notification to both inboxes
       await db.collection('mail').add({
-        to: ['garagescholars@gmail.com', 'admin@garagescholars.com'],
+        to: ['garagescholars@gmail.com', 'admin@garagescholars.com', 'Zach.harmon25@gmail.com', 'tylerzsodia@gmail.com'],
         message: {
           subject: `New Scholar Application: ${appData.name} — ${appData.school || 'N/A'} (${appData.availability} hrs/wk)`,
           html: adminEmailHtml,

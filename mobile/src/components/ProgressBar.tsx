@@ -60,11 +60,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 6,
   },
-  label: { fontSize: 13, color: "#94a3b8", fontWeight: "600" },
+  label: { fontSize: 13, color: "#8b9bb5", fontWeight: "600" },
   percent: { fontSize: 13, fontWeight: "800" },
   track: {
     height: 8,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
     borderRadius: 4,
     overflow: "hidden",
   },

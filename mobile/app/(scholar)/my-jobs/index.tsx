@@ -100,7 +100,7 @@ export default function MyJobsScreen() {
         </View>
         {[0, 1, 2].map((i) => (
           <FadeInView key={i} delay={i * 100} style={{ paddingHorizontal: 12, paddingTop: 8 }}>
-            <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#334155' }}>
+            <View style={{ backgroundColor: '#1a2332', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#2a3545' }}>
               <SkeletonBox width={80} height={20} style={{ marginBottom: 10 }} />
               <SkeletonBox width="70%" height={17} style={{ marginBottom: 8 }} />
               <SkeletonBox width="50%" height={13} />
@@ -132,7 +132,7 @@ export default function MyJobsScreen() {
             <Ionicons
               name={analytics.jobsTrend === "increasing" ? "trending-up" : analytics.jobsTrend === "declining" ? "trending-down" : "remove"}
               size={16}
-              color={analytics.jobsTrend === "increasing" ? "#10b981" : analytics.jobsTrend === "declining" ? "#ef4444" : "#64748b"}
+              color={analytics.jobsTrend === "increasing" ? "#10b981" : analytics.jobsTrend === "declining" ? "#ef4444" : "#5a6a80"}
             />
             <Text style={styles.statValue}>{analytics.jobsLast30Days ?? 0}</Text>
             <Text style={styles.statLabel}>30d</Text>
@@ -163,7 +163,7 @@ export default function MyJobsScreen() {
           <Ionicons
             name={tab === "active" ? "calendar-outline" : "checkmark-done-outline"}
             size={48}
-            color="#334155"
+            color="#2a3545"
           />
           <Text style={styles.emptyText}>
             {tab === "active" ? "No active jobs" : "No completed jobs yet"}
@@ -229,18 +229,18 @@ export default function MyJobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-evenly",
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     margin: 12,
     marginBottom: 4,
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
   statItem: {
     alignItems: "center",
@@ -249,19 +249,19 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#f8fafc",
+    color: "#f1f5f9",
   },
   statLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#64748b",
+    color: "#5a6a80",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   statDivider: {
     width: 1,
     height: 32,
-    backgroundColor: "#334155",
+    backgroundColor: "#2a3545",
   },
   center: {
     flex: 1,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     margin: 12,
     marginBottom: 4,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 4,
   },
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#64748b",
+    color: "#5a6a80",
   },
   tabTextActive: {
     color: "#fff",
@@ -304,12 +304,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: "#f1f5f9",
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#64748b",
+    color: "#5a6a80",
     marginTop: 6,
     textAlign: "center",
   },
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalSheet: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
@@ -335,17 +335,17 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: 16,
   },
-  modalTitle: { fontSize: 18, fontWeight: "800", color: "#f8fafc", marginBottom: 4 },
-  modalSub: { fontSize: 14, color: "#94a3b8", marginBottom: 16 },
-  modalLabel: { fontSize: 13, fontWeight: "600", color: "#94a3b8", marginBottom: 8 },
+  modalTitle: { fontSize: 18, fontWeight: "800", color: "#f1f5f9", marginBottom: 4 },
+  modalSub: { fontSize: 14, color: "#8b9bb5", marginBottom: 16 },
+  modalLabel: { fontSize: 13, fontWeight: "600", color: "#8b9bb5", marginBottom: 8 },
   cancelInput: {
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 10,
     padding: 12,
-    color: "#f8fafc",
+    color: "#f1f5f9",
     fontSize: 14,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
     minHeight: 80,
     textAlignVertical: "top",
     marginBottom: 16,
@@ -353,14 +353,14 @@ const styles = StyleSheet.create({
   modalActions: { flexDirection: "row", gap: 8 },
   modalCancelBtn: {
     flex: 1,
-    backgroundColor: "#0f1b2d",
+    backgroundColor: "#0a0f1a",
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#2a3545",
   },
-  modalCancelText: { color: "#94a3b8", fontSize: 15, fontWeight: "700" },
+  modalCancelText: { color: "#8b9bb5", fontSize: 15, fontWeight: "700" },
   modalConfirmBtn: {
     flex: 2,
     backgroundColor: "#ef4444",

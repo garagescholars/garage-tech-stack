@@ -190,7 +190,7 @@ function StatusBadge({ status }: { status: string }) {
     accepted: { bg: "#10b98120", text: "#10b981" },
     approved: { bg: "#10b98120", text: "#10b981" },
     declined: { bg: "#ef444420", text: "#ef4444" },
-    expired: { bg: "#64748b20", text: "#64748b" },
+    expired: { bg: "#5a6a8020", text: "#5a6a80" },
   };
   const c = colors[status] || colors.pending;
   return (
@@ -203,7 +203,7 @@ function StatusBadge({ status }: { status: string }) {
 function EmptyState({ text, icon }: { text: string; icon: string }) {
   return (
     <View style={styles.empty}>
-      <Ionicons name={icon as any} size={48} color="#334155" />
+      <Ionicons name={icon as any} size={48} color="#2a3545" />
       <Text style={styles.emptyText}>{text}</Text>
     </View>
   );
@@ -215,13 +215,13 @@ const badgeStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1b2d" },
+  container: { flex: 1, backgroundColor: "#0a0f1a" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   tabRow: {
     flexDirection: "row",
     margin: 12,
     marginBottom: 4,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 4,
   },
@@ -232,11 +232,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabActive: { backgroundColor: "#14b8a6" },
-  tabText: { fontSize: 13, fontWeight: "700", color: "#64748b" },
+  tabText: { fontSize: 13, fontWeight: "700", color: "#5a6a80" },
   tabTextActive: { color: "#fff" },
   list: { padding: 12 },
   card: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1a2332",
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
@@ -247,9 +247,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  cardType: { fontSize: 14, fontWeight: "700", color: "#f8fafc" },
-  cardDetail: { fontSize: 13, color: "#94a3b8" },
-  cardReason: { fontSize: 12, color: "#64748b", marginTop: 4, fontStyle: "italic" },
+  cardType: { fontSize: 14, fontWeight: "700", color: "#f1f5f9" },
+  cardDetail: { fontSize: 13, color: "#8b9bb5" },
+  cardReason: { fontSize: 12, color: "#5a6a80", marginTop: 4, fontStyle: "italic" },
   actionRow: { flexDirection: "row", gap: 8, marginTop: 10 },
   actionBtn: {
     flex: 1,
@@ -264,5 +264,5 @@ const styles = StyleSheet.create({
   declineBtn: { backgroundColor: "#ef4444" },
   actionText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   empty: { padding: 40, alignItems: "center", gap: 12 },
-  emptyText: { color: "#64748b", fontSize: 16 },
+  emptyText: { color: "#5a6a80", fontSize: 16 },
 });
