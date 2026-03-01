@@ -31,6 +31,10 @@ exports.GS_COLLECTIONS = {
     // Social media & review campaigns
     SOCIAL_CONTENT_QUEUE: "gs_socialContentQueue",
     REVIEW_CAMPAIGNS: "gs_reviewCampaigns",
+    // Inventory & donation collections
+    RESALE_DONATION_ITEMS: "gs_resaleDonationItems",
+    GYM_INSTALL_PHOTOS: "gs_gymInstallPhotos",
+    DONATION_RECEIPTS: "gs_donationReceipts",
     // Hiring pipeline collections
     HIRING_APPLICANTS: "gs_hiringApplicants",
     HIRING_VIDEO_COMPLETIONS: "gs_hiringVideoCompletions",
