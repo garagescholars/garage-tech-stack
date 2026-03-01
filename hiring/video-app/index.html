@@ -727,9 +727,11 @@
       }
     });
 
-    // ── Security: Page-load verification ──
-    // Verifies applicant ID + secure token before showing any content.
-    // Token is generated server-side (crypto.randomBytes) and sent only via email.
+    // ── Security: Page-load verification via Cloud Function ──
+    // Calls a server-side function to verify the token (stored in admin-only collection).
+    // The token is NEVER exposed to the client via Firestore reads.
+    const VERIFY_URL = 'https://gsverifyvideoaccess-4rdedojp6q-uc.a.run.app';
+
     (async function verifyAccess() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
@@ -742,35 +744,28 @@
       }
 
       try {
-        const doc = await db.collection('gs_hiringApplicants').doc(id).get();
+        const res = await fetch(VERIFY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, token })
+        });
 
-        if (!doc.exists) {
-          $('errorMsg').textContent = 'We couldn\'t find your application. Please contact us if you think this is an error.';
+        const result = await res.json();
+
+        if (!result.valid) {
+          const errorMessages = {
+            'invalid_token': 'This link is invalid or has expired. Please contact us if you need help.',
+            'not_found': 'We couldn\'t find your application. Please contact us if you think this is an error.',
+            'already_completed': 'You\'ve already completed your video screen. We\'ll be in touch soon!',
+            'link_expired': 'This link is no longer active. Please contact us if you need help.',
+          };
+          $('errorMsg').textContent = errorMessages[result.error] || 'This link is invalid. Please contact us if you need help.';
           showScreen('screenError');
           return;
         }
 
-        const data = doc.data();
-
-        // Verify the secure token matches
-        if (!data.videoToken || data.videoToken !== token) {
-          $('errorMsg').textContent = 'This link is invalid or has expired. Please contact us if you need help.';
-          showScreen('screenError');
-          return;
-        }
-
-        // Verify status allows video recording
-        if (data.status !== 'video_invited' && data.status !== 'pending_video') {
-          if (data.videoCompletedAt || data.status === 'video_scoring' || data.status === 'zoom_invited' || data.status === 'zoom_scheduled' || data.status === 'hired') {
-            $('errorMsg').textContent = 'You\'ve already completed your video screen. We\'ll be in touch soon!';
-          } else if (data.status === 'rejected') {
-            $('errorMsg').textContent = 'This link is no longer active. Please contact us if you need help.';
-          } else {
-            $('errorMsg').textContent = 'This link is no longer active. Please contact us if you need help.';
-          }
-          showScreen('screenError');
-          return;
-        }
+        // Strip token from URL to prevent leakage via browser history/referrer
+        window.history.replaceState({}, '', '?id=' + id);
 
         // All checks passed — save ID and show welcome screen
         applicantId = id;

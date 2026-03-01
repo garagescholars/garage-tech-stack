@@ -39,6 +39,7 @@ exports.GS_COLLECTIONS = {
     HIRING_APPLICANTS: "gs_hiringApplicants",
     HIRING_VIDEO_COMPLETIONS: "gs_hiringVideoCompletions",
     HIRING_INTERVIEW_SCORES: "gs_hiringInterviewScores",
+    HIRING_VIDEO_TOKENS: "gs_hiringVideoTokens",
 };
 /** Quality score weights — must total 1.0 */
 exports.SCORING_WEIGHTS = {

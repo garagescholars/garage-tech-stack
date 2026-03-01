@@ -49,7 +49,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.gsHiringWeeklyDigest = exports.gsProcessInterviewScore = exports.gsCalBookingWebhook = exports.gsProcessVideoCompletion = exports.gsScoreHiringApplication = void 0;
+exports.gsHiringWeeklyDigest = exports.gsProcessInterviewScore = exports.gsCalBookingWebhook = exports.gsProcessVideoCompletion = exports.gsScoreHiringApplication = exports.gsVerifyVideoAccess = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
@@ -471,6 +471,50 @@ function firstName(name) {
     return name.split(" ")[0] || name;
 }
 // ════════════════════════════════════════════════════════════════════
+// SECTION 3.5: VIDEO ACCESS VERIFICATION (SECURITY)
+// ════════════════════════════════════════════════════════════════════
+/**
+ * HTTP endpoint for the video app to verify applicant access.
+ * Checks applicant ID + token from the admin-only gs_hiringVideoTokens
+ * collection. This prevents exposing the token via public Firestore reads.
+ */
+exports.gsVerifyVideoAccess = (0, https_1.onRequest)({ memory: "128MiB", timeoutSeconds: 10, cors: true }, async (req, res) => {
+    if (req.method !== "POST") {
+        res.status(405).send("Method not allowed");
+        return;
+    }
+    const { id, token } = req.body;
+    if (!id || !token || typeof id !== "string" || typeof token !== "string") {
+        res.status(400).json({ valid: false, error: "Missing id or token" });
+        return;
+    }
+    try {
+        // Check token in admin-only collection
+        const tokenDoc = await db.collection(gs_constants_1.GS_COLLECTIONS.HIRING_VIDEO_TOKENS).doc(id).get();
+        if (!tokenDoc.exists || tokenDoc.data()?.token !== token) {
+            res.status(403).json({ valid: false, error: "invalid_token" });
+            return;
+        }
+        // Verify applicant status
+        const applicantDoc = await db.collection(gs_constants_1.GS_COLLECTIONS.HIRING_APPLICANTS).doc(id).get();
+        if (!applicantDoc.exists) {
+            res.status(404).json({ valid: false, error: "not_found" });
+            return;
+        }
+        const data = applicantDoc.data();
+        if (data.status !== "video_invited" && data.status !== "pending_video") {
+            const error = data.videoCompletedAt ? "already_completed" : "link_expired";
+            res.status(403).json({ valid: false, error });
+            return;
+        }
+        res.status(200).json({ valid: true, name: firstName(data.name) });
+    }
+    catch (error) {
+        console.error("[Hiring] Video access verification error:", error);
+        res.status(500).json({ valid: false, error: "server_error" });
+    }
+});
+// ════════════════════════════════════════════════════════════════════
 // SECTION 4: PIPELINE FUNCTION 1 — Application AI Scoring
 // ════════════════════════════════════════════════════════════════════
 /**
@@ -540,12 +584,17 @@ Now score this applicant:
         console.log(`[Hiring] App scores for ${appId}: composite=${scores.composite_score}, pass=${scores.pass}`);
         if (scores.pass) {
             // PASS → generate secure video access token and send video invite
+            // Token stored in separate admin-only collection (not in applicant doc)
+            // to prevent exposure via public Firestore reads (SECURITY FIX)
             const videoToken = crypto.randomBytes(32).toString("hex");
             const videoLink = `${VIDEO_APP_BASE_URL}?id=${appId}&token=${videoToken}`;
+            await db.collection(gs_constants_1.GS_COLLECTIONS.HIRING_VIDEO_TOKENS).doc(appId).set({
+                token: videoToken,
+                createdAt: firestore_2.FieldValue.serverTimestamp(),
+            });
             await docRef.update({
                 appScores: scores,
                 status: "video_invited",
-                videoToken,
                 videoInvitedAt: firestore_2.FieldValue.serverTimestamp(),
             });
             await sendHiringEmail([appData.email], "Next Step — Garage Scholars Video Screen (5 min)", videoInviteEmail(firstName(appData.name), videoLink));
@@ -597,6 +646,19 @@ exports.gsProcessVideoCompletion = (0, firestore_1.onDocumentCreated)({
     if (!completion)
         return;
     const { applicantId, storagePaths } = completion;
+    // ── Server-side validation (SECURITY FIX) ──
+    if (!applicantId || typeof applicantId !== "string") {
+        console.error("[Hiring] Video completion missing applicantId");
+        return;
+    }
+    if (!Array.isArray(storagePaths) || storagePaths.length !== 5) {
+        console.error(`[Hiring] Video completion invalid storagePaths count: ${storagePaths?.length}`);
+        return;
+    }
+    if (!storagePaths.every((p) => typeof p === "string" && p.startsWith(`hiring-videos/${applicantId}/`))) {
+        console.error(`[Hiring] Video completion invalid storage paths for ${applicantId}`);
+        return;
+    }
     const applicantRef = db.collection(gs_constants_1.GS_COLLECTIONS.HIRING_APPLICANTS).doc(applicantId);
     const applicantSnap = await applicantRef.get();
     if (!applicantSnap.exists) {
@@ -604,6 +666,11 @@ exports.gsProcessVideoCompletion = (0, firestore_1.onDocumentCreated)({
         return;
     }
     const applicant = applicantSnap.data();
+    // Verify applicant is in the correct pipeline stage
+    if (!["video_invited", "pending_video"].includes(applicant.status)) {
+        console.error(`[Hiring] Applicant ${applicantId} not in video stage (status: ${applicant.status})`);
+        return;
+    }
     console.log(`[Hiring] Processing video completion for ${applicantId} (${applicant.name})`);
     try {
         // Update status to scoring
@@ -666,19 +733,22 @@ exports.gsCalBookingWebhook = (0, https_1.onRequest)({ memory: "256MiB", timeout
         res.status(405).send("Method not allowed");
         return;
     }
-    // Verify Cal.com webhook signature
+    // Verify Cal.com webhook signature (MANDATORY — SECURITY FIX)
     const calSecret = process.env.CAL_WEBHOOK_SECRET;
-    if (calSecret) {
-        const signature = req.headers["x-cal-signature-256"];
-        const expectedSig = crypto
-            .createHmac("sha256", calSecret)
-            .update(JSON.stringify(req.body))
-            .digest("hex");
-        if (!signature || signature !== expectedSig) {
-            console.error("[Hiring] Cal.com webhook signature mismatch");
-            res.status(401).send("Invalid signature");
-            return;
-        }
+    if (!calSecret) {
+        console.error("[Hiring] CAL_WEBHOOK_SECRET not configured — rejecting request");
+        res.status(500).send("Webhook not configured");
+        return;
+    }
+    const signature = req.headers["x-cal-signature-256"];
+    const expectedSig = crypto
+        .createHmac("sha256", calSecret)
+        .update(JSON.stringify(req.body))
+        .digest("hex");
+    if (!signature || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+        console.error("[Hiring] Cal.com webhook signature mismatch");
+        res.status(401).send("Invalid signature");
+        return;
     }
     try {
         const payload = req.body;
@@ -776,8 +846,9 @@ exports.gsProcessInterviewScore = (0, firestore_1.onDocumentCreated)({
         // Apply decision logic
         let decision;
         let decisionLabel;
-        // Gut check override (Step 6.6)
-        if (scores.gut_check === "no") {
+        // Gut check override (Step 6.6 — spec alignment)
+        // "no" or "maybe" gut check → always route to founder review
+        if (scores.gut_check === "no" || scores.gut_check === "maybe") {
             decision = "review";
             decisionLabel = "REVIEW";
         }

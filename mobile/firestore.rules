@@ -241,12 +241,12 @@ service cloud.firestore {
     // Hiring Pipeline Collections
     // ═══════════════════════════════════════════════════════════
 
-    // gs_hiringApplicants — public create (candidates submit), limited read/update for video app
+    // gs_hiringApplicants — public create (candidates submit), admin read/update
+    // Video app verification now uses Cloud Function (gsVerifyVideoAccess)
+    // so public get is no longer needed (SECURITY FIX)
     match /gs_hiringApplicants/{applicantId} {
       allow create: if true;
-      // Only allow reading a specific doc by ID (video app needs status check)
-      // Collection-level queries are blocked — get() by doc ID only
-      allow get: if true;
+      allow get: if isAdminByEmail();
       allow list: if isAdminByEmail();
       // Allow video app to set status to pending_video (unauthenticated)
       allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
@@ -255,11 +255,20 @@ service cloud.firestore {
       allow delete: if isAdminByEmail();
     }
 
-    // gs_hiringVideoCompletions — public create (video app signals upload done)
+    // gs_hiringVideoCompletions — validated public create (video app signals upload done)
+    // Server-side validation in gsProcessVideoCompletion checks status, paths, and count
     match /gs_hiringVideoCompletions/{completionId} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasOnly(['applicantId', 'storagePaths', 'completedAt'])
+                    && request.resource.data.applicantId is string
+                    && request.resource.data.storagePaths is list
+                    && request.resource.data.storagePaths.size() == 5;
       allow read: if isAdminByEmail();
       allow update, delete: if isAdminByEmail();
+    }
+
+    // gs_hiringVideoTokens — admin only (Cloud Functions read/write, never client-readable)
+    match /gs_hiringVideoTokens/{tokenId} {
+      allow read, write: if isAdminByEmail();
     }
 
     // gs_hiringInterviewScores — admin only (Cal.com webhook writes via Cloud Functions)

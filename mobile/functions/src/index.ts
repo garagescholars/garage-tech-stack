@@ -70,6 +70,7 @@ export {
   gsCalBookingWebhook,
   gsProcessInterviewScore,
   gsHiringWeeklyDigest,
+  gsVerifyVideoAccess,
 } from "./gs-hiring";
 
 const db = getFirestore();
